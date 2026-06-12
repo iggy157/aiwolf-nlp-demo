@@ -50,11 +50,9 @@
     if (s.finished) introOpen = false;
     if (s.deadline) {
       deadline = s.deadline.getTime();
-      startCountdown();
     } else {
       deadline = null;
       remain = null;
-      stopCountdown();
     }
   });
 
@@ -109,8 +107,37 @@
     Request.GUARD,
     Request.ATTACK,
   ];
+  // 求められているアクション名
+  const ACTION_JP: Record<string, string> = {
+    TALK: "発言",
+    WHISPER: "囁き",
+    VOTE: "投票",
+    DIVINE: "占い",
+    GUARD: "護衛",
+    ATTACK: "襲撃",
+  };
+  const actionName = $derived(ACTION_JP[request as string] ?? "アクション");
+  const actionHint = $derived(
+    request === Request.TALK || request === Request.WHISPER
+      ? "メッセージを入力"
+      : request === Request.VOTE
+        ? "追放する相手を選択"
+        : request === Request.DIVINE
+          ? "占う相手を選択"
+          : request === Request.GUARD
+            ? "護衛する相手を選択"
+            : request === Request.ATTACK
+              ? "襲撃する相手を選択"
+              : "対象を選択",
+  );
+
+  // 一時停止（開始ポップアップ表示中も実質停止扱い）
+  let paused = $state(false);
+  const effectivePaused = $derived(paused || introOpen);
+
   // 自分の live なリクエストが pending（=deadline 有り）のときだけ送信可（誤送信防止：HANDOFF §5-4）
   const isMyTurn = $derived(deadline !== null && request !== null);
+  const canAct = $derived(isMyTurn && !effectivePaused);
   const isSelection = $derived(
     isMyTurn && SELECTION_REQUESTS.includes(request as Request),
   );
@@ -123,9 +150,11 @@
     if (status !== "connected") {
       return status === "connecting" ? "接続中…" : "未接続";
     }
+    if (isMyTurn && effectivePaused) {
+      return `一時停止中（あなたの番：${actionName}）`;
+    }
     if (isMyTurn) {
-      if (isSelection) return "あなたの番です（対象を選んでください）";
-      return "あなたの番です";
+      return `あなたの番です：${actionName}（${actionHint}）`;
     }
     if (currentTurnAgent && currentTurnAgent !== agent) {
       return `${currentTurnAgent} さんが入力中…`;
@@ -157,6 +186,14 @@
   });
 
   let message = $state("");
+  let streamEl = $state<HTMLElement | null>(null);
+
+  // 開始ポップアップの「ゲームを開始する」: 確認した時点から議論を読み始められるよう先頭へ
+  function startGame() {
+    introAck = true;
+    introOpen = false;
+    requestAnimationFrame(() => streamEl?.scrollTo({ top: 0 }));
+  }
 
   function avatarSrc(name: string): string {
     const path = DefaultProfileAvatars[name as keyof typeof DefaultProfileAvatars];
@@ -164,7 +201,7 @@
   }
 
   function handleSend() {
-    if (!isMyTurn) return;
+    if (!canAct) return;
     const text = message.trim();
     if (!text) return;
     demoSocketState.send(text);
@@ -172,7 +209,7 @@
   }
 
   function sendValue(v: string) {
-    if (!isMyTurn) return;
+    if (!canAct) return;
     demoSocketState.send(v);
     message = "";
   }
@@ -201,6 +238,13 @@
       rafId = null;
     }
   }
+
+  // 一時停止中はカウントダウン表示を凍結。再開時は実 deadline から再計算。
+  // ※ サーバ側の制限時間は裏で進むため「短い小休止」用（長時間止めると番が飛ぶ）。
+  $effect(() => {
+    if (deadline !== null && !effectivePaused) startCountdown();
+    else stopCountdown();
+  });
 
   const remainSec = $derived(remain !== null ? Math.ceil(remain / 1000) : null);
 
@@ -367,7 +411,15 @@
       <span class="badge badge-sm {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
         {status === "connected" ? "接続中" : status === "connecting" ? "接続中…" : "未接続"}
       </span>
-      {#if status === "connected"}
+      {#if status === "connected" && !finished}
+        <button
+          class="btn btn-xs {paused ? 'btn-success' : 'btn-ghost'}"
+          onclick={() => (paused = !paused)}
+          aria-label={paused ? "再開" : "一時停止"}
+        >
+          <iconify-icon icon={paused ? "mdi:play" : "mdi:pause"}></iconify-icon>
+          {paused ? "再開" : "一時停止"}
+        </button>
         <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label="情報">
           <iconify-icon icon="mdi:information-outline"></iconify-icon>情報
         </button>
@@ -474,7 +526,7 @@
           <div class="text-xs whitespace-pre-wrap opacity-70 bg-base-200 rounded p-2 max-h-32 overflow-y-auto">{profile}</div>
         {/if}
         <p class="text-sm font-bold mt-1">あなたはこのキャラクター・役職としてゲーム内で振る舞ってください。</p>
-        <button class="btn btn-primary btn-block" onclick={() => { introAck = true; introOpen = false; }}>
+        <button class="btn btn-primary btn-block" onclick={startGame}>
           ゲームを開始する
         </button>
       </div>
@@ -553,7 +605,7 @@
     </div>
   {:else}
   <!-- LINE風 逐次ストリーム -->
-  <div class="grow overflow-y-auto p-4 flex flex-col gap-1">
+  <div class="grow overflow-y-auto p-4 flex flex-col gap-1" bind:this={streamEl}>
     {#if feed.length === 0}
       <div class="m-auto text-center opacity-50">
         {#if status === "connected"}
@@ -607,35 +659,43 @@
 
   <!-- 入力エリア：自分のターンだけ enable（HANDOFF §5-4 誤送信防止）-->
   <footer class="flex-none bg-base-200 p-3">
-    {#if isSelection}
+    {#if isMyTurn && effectivePaused}
+      <div class="flex items-center justify-center gap-3 py-2">
+        <span class="text-sm opacity-70">⏸ 一時停止中（あなたの番：{actionName}）</span>
+        <button class="btn btn-sm btn-success" onclick={() => (paused = false)}>
+          <iconify-icon icon="mdi:play"></iconify-icon>再開して入力
+        </button>
+      </div>
+    {:else if isSelection}
       <!-- 投票/占い/護衛/襲撃：生存対象ボタン -->
+      <div class="text-xs font-bold opacity-70 mb-1">{actionName}：{actionHint}</div>
       <div class="flex flex-wrap gap-2">
         {#each aliveTargets as t}
-          <button class="btn btn-sm" onclick={() => sendValue(t)}>{t}</button>
+          <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue(t)}>{t}</button>
         {/each}
         {#if request === Request.ATTACK && setting?.attack_vote?.allow_no_target}
-          <button class="btn btn-sm btn-ghost" onclick={() => sendValue("")}>対象なし</button>
+          <button class="btn btn-sm btn-ghost" disabled={!canAct} onclick={() => sendValue("")}>対象なし</button>
         {/if}
       </div>
     {:else}
       <div class="flex items-end gap-2">
         <div class="flex gap-1">
           {#if isTalk && (info?.remain_skip ?? 0) > 0}
-            <button class="btn btn-sm" disabled={!isMyTurn} onclick={() => sendValue("Skip")}>スキップ</button>
+            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Skip")}>スキップ</button>
           {/if}
           {#if isTalk}
-            <button class="btn btn-sm" disabled={!isMyTurn} onclick={() => sendValue("Over")}>終了</button>
+            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Over")}>終了</button>
           {/if}
         </div>
         <textarea
           class="textarea textarea-bordered grow resize-none"
           rows="1"
-          placeholder={isMyTurn ? "メッセージを入力（Enterで送信）" : "あなたの番になると入力できます"}
+          placeholder={isTalk ? "メッセージを入力（Enterで送信）" : "あなたの番になると入力できます"}
           bind:value={message}
           onkeydown={onKeydown}
-          disabled={!isTalk}
+          disabled={!canAct || !isTalk}
         ></textarea>
-        <button class="btn btn-primary" disabled={!isTalk || message.trim() === ""} onclick={handleSend}>
+        <button class="btn btn-primary" disabled={!canAct || !isTalk || message.trim() === ""} onclick={handleSend}>
           送信
         </button>
       </div>
