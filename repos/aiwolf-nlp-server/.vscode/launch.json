@@ -1,0 +1,38 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "通常の5人村サーバを起動する",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}${pathSeparator}main.go",
+            "args": [
+                "-c",
+                "${workspaceFolder}${pathSeparator}config${pathSeparator}default_5.yml"
+            ],
+        },
+        {
+            "name": "パイロットタスク(グループチャット方式)の5人村サーバを起動する",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}${pathSeparator}main.go",
+            "args": [
+                "-c",
+                "${workspaceFolder}${pathSeparator}config${pathSeparator}freeform_5.yml"
+            ],
+        },
+        {
+            "name": "通常の9人村サーバを起動する",
+            "type": "go",
+            "request": "launch",
+            "mode": "debug",
+            "program": "${workspaceFolder}${pathSeparator}main.go",
+            "args": [
+                "-c",
+                "${workspaceFolder}${pathSeparator}config${pathSeparator}default_9.yml"
+            ],
+        },
+    ]
+}

@@ -1,0 +1,27 @@
+# ===== 機密・実行時生成物（絶対にコミットしない）=====
+.env
+.env.local
+.env.*.local
+.tunnel.pid
+.tunnel.log
+*.log
+
+# トンネルバイナリ（make public が自動取得するのでコミットしない）
+/bin/
+
+# ===== Node / フロントビルド =====
+**/node_modules/
+**/.svelte-kit/
+repos/aiwolf-nlp-viewer/build/
+repos/aiwolf-nlp-viewer/.vercel/
+
+# ===== Python =====
+**/__pycache__/
+**/*.pyc
+**/.venv/
+lobby/.generated/
+
+# ===== その他 =====
+**/log/
+**/cache/
+.DS_Store

@@ -1,0 +1,64 @@
+# aiwolf-nlp-demo: 会場再現スタック（HANDOFF §6）
+#   caddy        : TLS終端 + 静的ビューア配信(/demo含む) + wss/api リバプロ
+#   game-server  : ゲーム本体（self_match:true, agent_count:5, turn-based）
+#   lobby        : 採番・セッション発行・AI spawn・キュー（agent-llm 同梱）
+# vLLM は GPU 都合で compose 外（商用APIモードなら不要）。
+# 起動: make demo（= docker compose up --build）。LLMキー/モデルは .env で設定。
+
+services:
+  game-server:
+    build:
+      context: .
+      dockerfile: docker/game-server.Dockerfile
+    volumes:
+      - ./configs:/app/configs:ro
+      - game_log:/app/log
+    expose:
+      - "8080"
+    # ローカルでサーバを直接叩いて検証したい場合は下記を有効化:
+    # ports:
+    #   - "8080:8080"
+    restart: unless-stopped
+
+  lobby:
+    build:
+      context: .
+      dockerfile: docker/lobby.Dockerfile
+    env_file:
+      - .env
+    environment:
+      # AI が接続する内部URL（compose ネットワーク内のサービス名）
+      GAME_WS_INTERNAL_URL: ws://game-server:8080/ws
+      # 人間(ブラウザ)が接続する公開URL。Caddy のスキームに合わせる。
+      #   http(:80)        -> ws://localhost/ws
+      #   TLSドメイン       -> wss://<domain>/ws
+      GAME_WS_PUBLIC_URL: ${GAME_WS_PUBLIC_URL:-ws://localhost/ws}
+      MAX_CONCURRENT_GAMES: ${MAX_CONCURRENT_GAMES:-1}
+      AI_COUNT: ${AI_COUNT:-4}
+    depends_on:
+      - game-server
+    expose:
+      - "8002"
+    restart: unless-stopped
+
+  caddy:
+    build:
+      context: .
+      dockerfile: docker/caddy.Dockerfile
+    environment:
+      DEMO_SITE_ADDRESS: ${DEMO_SITE_ADDRESS:-:80}
+    ports:
+      - "${HTTP_PORT:-80}:80"
+      - "${HTTPS_PORT:-443}:443"
+    depends_on:
+      - lobby
+      - game-server
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+    restart: unless-stopped
+
+volumes:
+  game_log:
+  caddy_data:
+  caddy_config:

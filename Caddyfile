@@ -1,0 +1,28 @@
+# aiwolf-nlp-demo: 会場配信用 Caddy 設定
+#  - 静的ビューア（/demo 含む）をルート配信
+#  - /ws        -> game-server（WebSocket。wss はここで TLS 終端）
+#  - /api/*      -> lobby（採番・キュー・AI spawn）
+#
+# サイトアドレスは環境変数で切替:
+#   ローカル: DEMO_SITE_ADDRESS=:80        -> http://localhost で検証（ws://localhost/ws）
+#   本番   : DEMO_SITE_ADDRESS=demo.example.com -> Caddy が自動で Let's Encrypt TLS（wss://）
+{$DEMO_SITE_ADDRESS::80} {
+	encode gzip
+
+	# 採番・キュー・AI spawn API
+	handle /api/* {
+		reverse_proxy lobby:8002
+	}
+
+	# ゲームサーバへの WebSocket（Caddy が Upgrade を透過、TLS 終端で wss 化）
+	handle /ws {
+		reverse_proxy game-server:8080
+	}
+
+	# 静的ビューア（SvelteKit adapter-static の出力。/demo -> demo.html）
+	handle {
+		root * /srv
+		try_files {path} {path}.html {path}/index.html /index.html
+		file_server
+	}
+}

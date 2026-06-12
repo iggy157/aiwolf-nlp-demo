@@ -1,0 +1,13 @@
+# build context（作業ルート）から重い/不要なものを除外
+**/.git
+**/node_modules
+**/.svelte-kit
+repos/aiwolf-nlp-viewer/build
+repos/aiwolf-nlp-viewer/.vercel
+**/__pycache__
+**/*.pyc
+**/.venv
+lobby/.generated
+**/log
+**/cache
+*.log
