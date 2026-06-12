@@ -60,7 +60,10 @@ make public
 ```
 - **初回はビルドで数分**（Go/lobby/viewer の3イメージ。2回目以降はキャッシュで速い）。
 - トンネルは ngrok でも可（`ngrok config add-authtoken <token>` 済みなら自動検出）。cloudflared は
-  アカウント不要・初回警告ページ無しで多人数配布向き。`qrencode` があれば端末にQRも表示。
+  アカウント不要・初回警告ページ無しで多人数配布向き。
+- **QRコードを PNG 出力**: `make public` 後にプロジェクト直下へ `demo-qr.png` を自動生成（DLして配布に使える）。
+  qrencode があればローカル生成、無ければ lobby の `/api/qr` 経由で生成。
+  ブラウザからは `<公開URL>/api/qr?data=<デモURL>` でも取得可。
 
 ### B. ローカル / 会場LANで試す ─ `make demo`
 ```bash

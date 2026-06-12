@@ -119,16 +119,31 @@ echo "==> ${DOCKER} compose up --build -d"
 $DOCKER compose up --build -d
 
 DEMO_URL="$PUBLIC_URL/demo"
+QR_PNG="$ROOT/demo-qr.png"
 echo
 echo "============================================================"
 echo "  公開デモURL（QRにこれを埋める）:"
 echo "  $DEMO_URL"
 echo "============================================================"
+
+# --- QR を PNG ファイルに出力（ダウンロードするだけで使える）---
+#   1) qrencode があればローカル生成
+#   2) 無ければ lobby の /api/qr エンドポイント経由でPNG取得（起動待ちでリトライ）
 if command -v qrencode >/dev/null 2>&1; then
-  qrencode -t ANSIUTF8 "$DEMO_URL"
+  qrencode -o "$QR_PNG" -s 10 -m 2 "$DEMO_URL" && echo "  QRコード(PNG): $QR_PNG"
+  qrencode -t ANSIUTF8 "$DEMO_URL" 2>/dev/null || true
 else
-  echo "  (端末にQRを出すなら qrencode を導入: 例) sudo apt-get install qrencode"
+  echo "  QR(PNG)を lobby 経由で生成中…"
+  for _ in $(seq 1 30); do
+    if curl -fsS -G --data-urlencode "data=$DEMO_URL" \
+        "http://localhost:${PORT}/api/qr" -o "$QR_PNG" 2>/dev/null; then
+      echo "  QRコード(PNG): $QR_PNG"
+      break
+    fi
+    sleep 1
+  done
 fi
+echo "  ブラウザでDLも可: ${PUBLIC_URL}/api/qr?data=$(printf %s "$DEMO_URL" | sed 's/:/%3A/g; s#/#%2F#g')"
 echo
 echo "コンテナもトンネルも【バックグラウンド常駐】です。"
 echo "  → このターミナルは閉じてOK。明示的に止めるまで動き続けます。"

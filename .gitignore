@@ -4,6 +4,7 @@
 .env.*.local
 .tunnel.pid
 .tunnel.log
+demo-qr.png
 *.log
 
 # トンネルバイナリ（make public が自動取得するのでコミットしない）

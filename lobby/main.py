@@ -27,6 +27,7 @@ from typing import Any
 import yaml
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 
 # ---------------------------------------------------------------------------
@@ -413,6 +414,27 @@ async def _on_shutdown() -> None:
     # 走行中のAIプロセスを全て停止
     for session in list(lobby.sessions.values()):
         lobby.kill_session(session)
+
+
+@app.get("/api/qr")
+async def qr(data: str, scale: int = 10) -> Response:
+    """任意文字列(URL)を QR コードの PNG にして返す。
+    ブラウザで開けばダウンロード、serve-public.sh からは保存に使う。"""
+    import io
+
+    import qrcode  # lazy import（qrcode[pil] が必要。Docker で導入）
+
+    qr_obj = qrcode.QRCode(box_size=max(1, min(scale, 30)), border=2)
+    qr_obj.add_data(data)
+    qr_obj.make(fit=True)
+    img = qr_obj.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    return Response(
+        content=buf.getvalue(),
+        media_type="image/png",
+        headers={"Content-Disposition": 'inline; filename="demo-qr.png"'},
+    )
 
 
 @app.get("/api/health")
