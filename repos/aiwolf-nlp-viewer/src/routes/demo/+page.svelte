@@ -724,6 +724,10 @@
           送信
         </button>
       </div>
+      <p class="text-[11px] opacity-60 mt-1 px-1">
+        💡「終了」=本日の発言を終える ／「スキップ」=今回はパス。
+        手入力する場合は大文字始まりの <code>Over</code> / <code>Skip</code>（小文字 over/skip は通常の発言になります）。
+      </p>
     {/if}
   </footer>
   {/if}
