@@ -265,6 +265,14 @@ function createDemoSocketState() {
         if (packet.turn) {
             if (packet.turn.type === 'start') newState.currentTurnAgent = packet.turn.agent;
             else if (packet.turn.type === 'end') newState.currentTurnAgent = null;
+        } else if (
+            !isBroadcast &&
+            packet.request !== Request.TALK &&
+            packet.request !== Request.WHISPER
+        ) {
+            // トークフェーズ外（夜のアクション/投票/日替わり）のパケットでは
+            // 「○○さんが入力中」表示を消す。夜の実行者が漏れないようにするため。
+            newState.currentTurnAgent = null;
         }
 
         // フェーズ・日付アナウンス（request 種別で判定。同一キーは1回だけ）
@@ -332,11 +340,18 @@ function createDemoSocketState() {
         }
     }
 
+    // 切断して状態を初期化（ホームに戻る/中断用。finished や feed もリセットされる）
+    function reset() {
+        disconnect();
+        update(() => createInitialState());
+    }
+
     return {
         subscribe,
         connect,
         disconnect,
         send,
+        reset,
     };
 }
 

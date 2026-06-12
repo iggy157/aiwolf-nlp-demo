@@ -339,10 +339,11 @@
       // スロット解放を lobby に通知（AIプロセスも停止される）
       fetch(`${lobbyBase}/api/session/${sessionId}/leave`, { method: "POST" }).catch(() => {});
     }
-    demoSocketState.disconnect();
+    demoSocketState.reset();
     infoOpen = false;
     introOpen = false;
     introAck = false;
+    paused = false;
     sessionId = null;
     displayName = null;
     queuePos = 0;
