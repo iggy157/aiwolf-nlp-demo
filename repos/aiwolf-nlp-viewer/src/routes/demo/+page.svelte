@@ -9,8 +9,8 @@
   import { page } from "$app/state";
   import { Status } from "$lib/constants/common";
   import { agentSettings } from "$lib/stores/agent-settings";
-  import { DefaultProfileAvatars, Request, type Talk } from "$lib/types/agent";
-  import { demoSocketState } from "$lib/utils/demo-socket";
+  import { DefaultProfileAvatars, Request } from "$lib/types/agent";
+  import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
   import "../../app.css";
 
@@ -21,7 +21,10 @@
   let profile = $state<string | null>(null);
   let request = $state<Request | null>(null);
   let info = $state<ReturnType<() => any> | null>(null);
-  let talkHistory = $state<Talk[]>([]);
+  let feed = $state<FeedEntry[]>([]);
+  let finished = $state(false);
+  let divineResults = $state<any[]>([]);
+  let mediumResults = $state<any[]>([]);
   let currentTurnAgent = $state<string | null>(null);
   let deadline = $state<number | null>(null);
   let setting = $state<any>(null);
@@ -36,9 +39,15 @@
     profile = s.profile;
     request = s.request;
     info = s.info;
-    talkHistory = s.talkHistory;
+    feed = s.feed;
+    finished = s.finished;
+    divineResults = s.divineResults;
+    mediumResults = s.mediumResults;
     currentTurnAgent = s.currentTurnAgent;
     setting = s.setting;
+    // ゲーム開始時(役職判明)に1回だけ説明ポップアップを出す
+    if (s.role && s.agent && !introAck) introOpen = true;
+    if (s.finished) introOpen = false;
     if (s.deadline) {
       deadline = s.deadline.getTime();
       startCountdown();
@@ -59,8 +68,39 @@
     POSSESSED: "狂人",
   };
   const roleJp = (r: string | null | undefined) => (r ? (ROLE_JP[r] ?? r) : "—");
+  const speciesJp = (s: string | null | undefined) =>
+    s === "WEREWOLF" ? "人狼" : s === "HUMAN" ? "人間" : (s ?? "—");
+  // 役職の一言説明（開始ポップアップ用）
+  const ROLE_DESC: Record<string, string> = {
+    VILLAGER: "特殊能力はありません。議論と投票で人狼を見つけ出してください。",
+    WEREWOLF: "あなたは人狼です。正体を隠し、夜は仲間と襲撃します。村人を欺いてください。",
+    SEER: "毎晩1人を占い、人狼か人間かを知れます。情報を活かして村を導いてください。",
+    MEDIUM: "追放された人が人狼だったか毎晩わかります。",
+    BODYGUARD: "毎晩1人を護衛し、人狼の襲撃から守れます。",
+    POSSESSED: "あなたは狂人（人間陣営に見えるが人狼の味方）。人狼の勝利に協力してください。",
+  };
 
   let infoOpen = $state(false); // プロフィール/役職プレビューの開閉
+  let introOpen = $state(false); // ゲーム開始時の説明ポップアップ
+  let introAck = $state(false); // 説明を確認済みか
+
+  // 勝敗の推定（FINISH時の役職開示＋生存状況から）
+  const winnerText = $derived.by(() => {
+    if (!finished || !info?.role_map || !info?.status_map) return null;
+    let aliveWolf = 0;
+    let aliveHuman = 0;
+    for (const [name, st] of Object.entries(info.status_map as Record<string, string>)) {
+      if (st !== "ALIVE") continue;
+      if ((info.role_map as Record<string, string>)[name] === "WEREWOLF") aliveWolf++;
+      else aliveHuman++;
+    }
+    return aliveWolf === 0 ? "村人陣営の勝利" : "人狼陣営の勝利";
+  });
+  const myResult = $derived.by(() => {
+    if (!finished || !role || !winnerText) return null;
+    const myCamp = role === "WEREWOLF" || role === "POSSESSED" ? "人狼陣営" : "村人陣営";
+    return winnerText.startsWith(myCamp) ? "あなたの勝ち 🎉" : "あなたの負け…";
+  });
 
   // ---- 入力可否の判定 ----
   const SELECTION_REQUESTS = [
@@ -179,6 +219,8 @@
   async function startViaLobby() {
     lobbyPhase = "joining";
     lobbyError = null;
+    introAck = false;
+    introOpen = false;
     try {
       const res = await fetch(`${lobbyBase}/api/join`, { method: "POST" });
       if (!res.ok) throw new Error(`join failed: ${res.status}`);
@@ -250,6 +292,8 @@
     }
     demoSocketState.disconnect();
     infoOpen = false;
+    introOpen = false;
+    introAck = false;
     sessionId = null;
     displayName = null;
     queuePos = 0;
@@ -378,6 +422,90 @@
           </div>
           <p class="text-xs opacity-50 mt-2">※ 他プレイヤーの役職・プロフィールは人狼ゲームの性質上、原則非公開です。</p>
         </div>
+
+        <!-- 占い結果（占い師のみ届く。target は人狼/人間が判明）-->
+        {#if divineResults.length > 0}
+          <div>
+            <h3 class="font-bold mb-2">🔮 占い結果</h3>
+            <div class="flex flex-col gap-1">
+              {#each divineResults as j}
+                <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
+                  <span class="text-xs opacity-60">{j.day}日目</span>
+                  <span class="font-bold text-sm">{j.target}</span>
+                  <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
+                    {speciesJp(j.result)}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+        <!-- 霊媒結果（霊媒師のみ）-->
+        {#if mediumResults.length > 0}
+          <div>
+            <h3 class="font-bold mb-2">🔮 霊媒結果</h3>
+            <div class="flex flex-col gap-1">
+              {#each mediumResults as j}
+                <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
+                  <span class="text-xs opacity-60">{j.day}日目</span>
+                  <span class="font-bold text-sm">{j.target}</span>
+                  <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
+                    {speciesJp(j.result)}
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
+
+  <!-- ゲーム開始ポップアップ（役職・キャラ確認 → 確認で開始）-->
+  {#if introOpen && agent}
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
+      <div class="card bg-base-100 w-full max-w-sm p-5 flex flex-col items-center gap-3 text-center">
+        <div class="avatar"><div class="w-24 rounded-full ring ring-primary"><img src={avatarSrc(agent)} alt={agent} /></div></div>
+        <div class="text-sm opacity-70">あなたが担当するキャラクター</div>
+        <div class="text-2xl font-bold">{agent}</div>
+        <div class="badge badge-primary badge-lg">役職: {roleJp(role)}</div>
+        <p class="text-sm opacity-80">{role ? (ROLE_DESC[role] ?? "") : ""}</p>
+        {#if profile}
+          <div class="text-xs whitespace-pre-wrap opacity-70 bg-base-200 rounded p-2 max-h-32 overflow-y-auto">{profile}</div>
+        {/if}
+        <p class="text-sm font-bold mt-1">あなたはこのキャラクター・役職としてゲーム内で振る舞ってください。</p>
+        <button class="btn btn-primary btn-block" onclick={() => { introAck = true; introOpen = false; }}>
+          ゲームを開始する
+        </button>
+      </div>
+    </div>
+  {/if}
+
+  <!-- ゲーム終了結果画面 -->
+  {#if finished}
+    <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70">
+      <div class="card bg-base-100 w-full max-w-sm p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
+        <h2 class="text-2xl font-bold text-center">🏁 ゲーム終了</h2>
+        {#if winnerText}
+          <div class="text-center text-lg font-bold">{winnerText}</div>
+        {/if}
+        {#if myResult}
+          <div class="text-center text-xl font-bold {myResult.includes('勝ち') ? 'text-success' : 'text-error'}">{myResult}</div>
+        {/if}
+        <div class="divider my-1">役職の開示</div>
+        <div class="flex flex-col gap-1">
+          {#each Object.entries(info?.role_map ?? {}) as [name, r]}
+            {@const rs = r as string}
+            {@const alive = (info?.status_map ?? {})[name] === Status.ALIVE}
+            <div class="flex items-center gap-2 p-1.5 rounded {alive ? 'bg-base-200' : 'bg-base-300 opacity-70'}">
+              <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
+              <span class="font-bold text-sm">{name}{name === agent ? "（あなた）" : ""}</span>
+              <span class="badge badge-sm {rs === 'WEREWOLF' ? 'badge-error' : ''}">{roleJp(rs)}</span>
+              <span class="ml-auto text-xs opacity-60">{alive ? "生存" : "死亡"}</span>
+            </div>
+          {/each}
+        </div>
+        <button class="btn btn-primary btn-block mt-2" onclick={() => leaveGame(false)}>ホームに戻る</button>
       </div>
     </div>
   {/if}
@@ -426,7 +554,7 @@
   {:else}
   <!-- LINE風 逐次ストリーム -->
   <div class="grow overflow-y-auto p-4 flex flex-col gap-1">
-    {#if talkHistory.length === 0}
+    {#if feed.length === 0}
       <div class="m-auto text-center opacity-50">
         {#if status === "connected"}
           ゲームの開始を待っています…
@@ -435,25 +563,35 @@
         {/if}
       </div>
     {/if}
-    {#each talkHistory as talk (talk.day + "-" + talk.idx)}
-      {@const mine = talk.agent === agent}
-      <div class="chat {mine ? 'chat-end' : 'chat-start'}">
-        {#if !mine}
-          <div class="chat-image avatar">
-            <div class="w-8 rounded-full">
-              <img src={avatarSrc(talk.agent)} alt={talk.agent} />
+    {#each feed as entry, i (i)}
+      {#if entry.kind === "system"}
+        <!-- アナウンス（日付/夜/投票/結果/占い）-->
+        <div class="my-1 text-center">
+          <span class="badge badge-sm
+            {entry.tone === 'day' ? 'badge-warning' : entry.tone === 'night' ? 'badge-neutral' : entry.tone === 'vote' ? 'badge-info' : entry.tone === 'result' ? 'badge-error' : 'badge-ghost'}
+            whitespace-normal h-auto py-1">{entry.text}</span>
+        </div>
+      {:else}
+        {@const talk = entry.talk}
+        {@const mine = talk.agent === agent}
+        <div class="chat {mine ? 'chat-end' : 'chat-start'}">
+          {#if !mine}
+            <div class="chat-image avatar">
+              <div class="w-8 rounded-full">
+                <img src={avatarSrc(talk.agent)} alt={talk.agent} />
+              </div>
             </div>
-          </div>
-        {/if}
-        <div class="chat-header text-xs opacity-70">{talk.agent}</div>
-        {#if talk.over}
-          <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（発言終了）</div>
-        {:else if talk.skip}
-          <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（スキップ）</div>
-        {:else}
-          <div class="chat-bubble {mine ? 'chat-bubble-primary' : ''} break-words">{talk.text}</div>
-        {/if}
-      </div>
+          {/if}
+          <div class="chat-header text-xs opacity-70">{talk.agent}</div>
+          {#if talk.over}
+            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（発言終了）</div>
+          {:else if talk.skip}
+            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（スキップ）</div>
+          {:else}
+            <div class="chat-bubble {mine ? 'chat-bubble-primary' : ''} break-words">{talk.text}</div>
+          {/if}
+        </div>
+      {/if}
     {/each}
 
     <!-- 他者が入力中インジケータ -->

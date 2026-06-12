@@ -36,6 +36,12 @@ export interface DemoPacket extends Omit<Packet, 'request'> {
 
 const BROADCAST_REQUESTS = new Set<string>(['TALK_BROADCAST', 'WHISPER_BROADCAST']);
 
+// LINE風ストリームの要素: トーク or システムアナウンス（日付/夜/投票/結果/占い等）
+export type FeedTone = 'day' | 'night' | 'vote' | 'result' | 'info';
+export type FeedEntry =
+    | { kind: 'talk'; talk: Talk }
+    | { kind: 'system'; key: string; text: string; tone: FeedTone };
+
 export interface DemoSocket {
     status: ConnectionStatus;
     deadline: Date | null;
@@ -54,6 +60,8 @@ export interface DemoSocket {
     attackedAgents: string[];
     // /demo 拡張
     currentTurnAgent: string | null;   // いま発話中（入力中）のエージェント名。自分以外なら入力ロック
+    feed: FeedEntry[];                 // トーク＋アナウンスの統合ストリーム
+    finished: boolean;                 // FINISH 受信＝ゲーム終了
 }
 
 const createInitialState = (): DemoSocket => ({
@@ -73,12 +81,23 @@ const createInitialState = (): DemoSocket => ({
     executedAgents: [],
     attackedAgents: [],
     currentTurnAgent: null,
+    feed: [],
+    finished: false,
 });
 
 // 重複排除キー: talk.idx は「日ごとに 0 から振り直される」ため idx だけだと
 // 2日目以降が1日目と衝突して消える。day と idx の組で一意化する。
 function talkKey(t: Talk): string {
     return `${t.day}:${t.idx}`;
+}
+
+function speciesJp(s: string): string {
+    return s === 'WEREWOLF' ? '人狼' : s === 'HUMAN' ? '人間' : s;
+}
+
+function pushSystem(feed: FeedEntry[], key: string, text: string, tone: FeedTone): FeedEntry[] {
+    if (feed.some(e => e.kind === 'system' && e.key === key)) return feed; // 同一イベントは1回だけ
+    return [...feed, { kind: 'system', key, text, tone }];
 }
 
 function appendUniqueTalks(existing: Talk[], incoming: Talk[]): Talk[] {
@@ -187,14 +206,28 @@ function createDemoSocketState() {
             entries: [...state.entries, packet],
             request: isBroadcast ? state.request : (packet.request as Request)
         };
+        let feed = state.feed;
 
-        // 逐次push: 新着トーク/囁きを idx 重複排除して追記
-        if (packet.new_talk) {
-            newState.talkHistory = appendUniqueTalks(newState.talkHistory, [packet.new_talk]);
+        // 新着トーク（逐次push or 自分のターン時の talk_history 差分）を day:idx で重複排除し、
+        // talkHistory と feed の両方へ追記。
+        const incomingTalks: Talk[] = [];
+        if (packet.new_talk) incomingTalks.push(packet.new_talk);
+        if (packet.talk_history) incomingTalks.push(...packet.talk_history);
+        if (incomingTalks.length) {
+            const seen = new Set(newState.talkHistory.map(talkKey));
+            const fresh: Talk[] = [];
+            for (const t of incomingTalks) {
+                const k = talkKey(t);
+                if (!seen.has(k)) { seen.add(k); fresh.push(t); }
+            }
+            if (fresh.length) {
+                newState.talkHistory = [...newState.talkHistory, ...fresh];
+                feed = [...feed, ...fresh.map((t): FeedEntry => ({ kind: 'talk', talk: t }))];
+            }
         }
-        if (packet.new_whisper) {
-            newState.whisperHistory = appendUniqueTalks(newState.whisperHistory, [packet.new_whisper]);
-        }
+        // 囁き（通常デモでは無効だが一応保持）
+        if (packet.new_whisper) newState.whisperHistory = appendUniqueTalks(newState.whisperHistory, [packet.new_whisper]);
+        if (packet.whisper_history) newState.whisperHistory = appendUniqueTalks(newState.whisperHistory, packet.whisper_history);
 
         if (packet.info) {
             newState.info = packet.info;
@@ -203,20 +236,21 @@ function createDemoSocketState() {
                 const judge = packet.info.medium_result;
                 if (!newState.mediumResults.some(j => j.day === judge.day && j.agent === judge.agent)) {
                     newState.mediumResults = [...newState.mediumResults, judge];
+                    feed = pushSystem(feed, `medium-${judge.day}-${judge.target}`,
+                        `🔮【霊媒結果】${judge.target} は ${speciesJp(judge.result)} でした`, 'info');
                 }
             }
-
             if (packet.info.divine_result) {
                 const judge = packet.info.divine_result;
                 if (!newState.divineResults.some(j => j.day === judge.day && j.agent === judge.agent)) {
                     newState.divineResults = [...newState.divineResults, judge];
+                    feed = pushSystem(feed, `divine-${judge.day}-${judge.target}`,
+                        `🔮【占い結果】${judge.target} は ${speciesJp(judge.result)} でした`, 'info');
                 }
             }
-
             if (packet.info.executed_agent) {
                 newState.executedAgents = [...newState.executedAgents, packet.info.executed_agent];
             }
-
             if (packet.info.attacked_agent) {
                 newState.attackedAgents = [...newState.attackedAgents, packet.info.attacked_agent];
             }
@@ -227,30 +261,44 @@ function createDemoSocketState() {
             actionTimeout = packet.setting.timeout.action;
         }
 
-        // talk_history / whisper_history は idx で重複排除して追記
-        if (packet.talk_history) {
-            newState.talkHistory = appendUniqueTalks(newState.talkHistory, packet.talk_history);
-        }
-
-        if (packet.whisper_history) {
-            newState.whisperHistory = appendUniqueTalks(newState.whisperHistory, packet.whisper_history);
-        }
-
         // ターンマーカー（M5）: 開始で currentTurnAgent をセット、終了でクリア
         if (packet.turn) {
-            if (packet.turn.type === 'start') {
-                newState.currentTurnAgent = packet.turn.agent;
-            } else if (packet.turn.type === 'end') {
-                newState.currentTurnAgent = null;
-            }
+            if (packet.turn.type === 'start') newState.currentTurnAgent = packet.turn.agent;
+            else if (packet.turn.type === 'end') newState.currentTurnAgent = null;
         }
 
-        if (packet.request === Request.INITIALIZE && newState.info) {
-            newState.agent = newState.info.agent;
-            newState.role = newState.info.role_map[newState.info.agent];
-            newState.profile = newState.info.profile || null;
+        // フェーズ・日付アナウンス（request 種別で判定。同一キーは1回だけ）
+        const day = newState.info?.day;
+        switch (packet.request) {
+            case Request.INITIALIZE:
+                if (newState.info) {
+                    newState.agent = newState.info.agent;
+                    newState.role = newState.info.role_map[newState.info.agent];
+                    newState.profile = newState.info.profile || null;
+                }
+                break;
+            case Request.DAILY_INITIALIZE:
+                if (day !== undefined) {
+                    feed = pushSystem(feed, `morning-${day}`, `── ${day}日目の朝 ──`, 'day');
+                    const ex = newState.info?.executed_agent;
+                    const at = newState.info?.attacked_agent;
+                    if (ex) feed = pushSystem(feed, `exec-${day}-${ex}`, `🗳 前日の投票で ${ex} が追放されました`, 'result');
+                    if (at) feed = pushSystem(feed, `attack-${day}-${at}`, `🌙 夜が明け、${at} が無残な姿で発見されました`, 'night');
+                }
+                break;
+            case Request.VOTE:
+                if (day !== undefined) feed = pushSystem(feed, `vote-${day}`, `🗳 ${day}日目の昼の議論が終了。投票の時間です`, 'vote');
+                break;
+            case Request.DAILY_FINISH:
+                if (day !== undefined) feed = pushSystem(feed, `night-${day}`, `🌙 夜になりました。各役職が行動します`, 'night');
+                break;
+            case Request.FINISH:
+                newState.finished = true;
+                feed = pushSystem(feed, 'finish', '🏁 ゲーム終了', 'result');
+                break;
         }
 
+        newState.feed = feed;
         return newState;
     }
 
