@@ -1,11 +1,9 @@
-# aiwolf-nlp-demo: ゲームサーバ設定（configs/server.yml）
-# ベース: repos/aiwolf-nlp-server/config/default_5.yml
-# 変更点:
-#   - web_socket.host: 127.0.0.1 -> 0.0.0.0（docker/別ホスト/スマホ実機から到達可能にするため）
-#   - tts_broadcaster.enable: true -> false（VOICEVOX/ffmpeg の外部依存を避ける。音声デモ時のみ true）
-# 維持: matching.self_match=true, game.agent_count=5, ターンベース（talk.duration 未指定）, whisper per_agent=0
+# aiwolf-nlp-demo: 9人村サーバ設定（configs/server9.yml）
+# ベース: repos/aiwolf-nlp-server/config/default_9.yml
+# 配役: 村人3 / 狂人1 / 占い師1 / 騎士1 / 霊媒師1 / 人狼2 = 9
+# 変更点: host 0.0.0.0 / TTS無効 / 囁き無効(デモUI一貫) / 文字数(base_length)500 / 人間用 action 3分
+# 5人村は configs/server.yml（別サーバプロセス）。
 # https://github.com/aiwolfdial/aiwolf-nlp-server/blob/main/doc/ja/config.md
-# https://github.com/aiwolfdial/aiwolf-nlp-server/blob/main/doc/en/config.md
 
 server:
   web_socket:
@@ -14,20 +12,19 @@ server:
   authentication:
     enable: false
   timeout:
-    # 人間プレイヤーが入力する時間を確保するため 3分に延長（AIは数秒で応答するため影響なし）
     action: 180s
     response: 300s
     acceptable: 5s
   max_continue_error_ratio: 0.2
 
 game:
-  agent_count: 5
+  agent_count: 9
   max_day: -1
   vote_visibility: true
   talk:
     max_count:
       per_agent: 4
-      per_day: 20
+      per_day: 36
     max_length:
       count_in_word: false
       count_spaces: false
@@ -82,19 +79,19 @@ logic:
       actions: ["attack"]
       except_day: 0
   roles:
-    5:
-      WEREWOLF: 1
+    9:
+      WEREWOLF: 2
       POSSESSED: 1
       SEER: 1
-      BODYGUARD: 0
-      VILLAGER: 2
-      MEDIUM: 0
+      BODYGUARD: 1
+      VILLAGER: 3
+      MEDIUM: 1
 
 matching:
   self_match: true
   is_optimize: false
-  team_count: 5
-  game_count: 5
+  team_count: 9
+  game_count: 9
   output_path: ./log/match_optimizer.json
   infinite_loop: false
 

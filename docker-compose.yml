@@ -6,19 +6,31 @@
 # 起動: make demo（= docker compose up --build）。LLMキー/モデルは .env で設定。
 
 services:
+  # 5人村サーバ（agent_count:5）
   game-server:
     build:
       context: .
       dockerfile: docker/game-server.Dockerfile
+    command: ["-c", "/app/configs/server.yml"]
     volumes:
       - ./configs:/app/configs:ro
       # ゲームログをホストの ./log に保存（json=発話/応答, game=CSV, realtime=神視点JSONL）
       - ./log:/app/log
     expose:
       - "8080"
-    # ローカルでサーバを直接叩いて検証したい場合は下記を有効化:
-    # ports:
-    #   - "8080:8080"
+    restart: unless-stopped
+
+  # 9人村サーバ（agent_count:9, 村人3/狂人/占い/騎士/霊媒/人狼2）
+  game-server-9:
+    build:
+      context: .
+      dockerfile: docker/game-server.Dockerfile
+    command: ["-c", "/app/configs/server9.yml"]
+    volumes:
+      - ./configs:/app/configs:ro
+      - ./log:/app/log
+    expose:
+      - "8080"
     restart: unless-stopped
 
   lobby:
@@ -28,16 +40,20 @@ services:
     env_file:
       - .env
     environment:
-      # AI が接続する内部URL（compose ネットワーク内のサービス名）
-      GAME_WS_INTERNAL_URL: ws://game-server:8080/ws
+      # AI が接続する内部URL（compose ネットワーク内のサービス名）。サイズ別。
+      GAME_WS_INTERNAL_URL: ws://game-server:8080/ws        # 5人村（既定）
+      GAME_WS_INTERNAL_URL_9: ws://game-server-9:8080/ws    # 9人村
       # 人間(ブラウザ)が接続する公開URL。Caddy のスキームに合わせる。
-      #   http(:80)        -> ws://localhost/ws
-      #   TLSドメイン       -> wss://<domain>/ws
+      #   5人村: /ws    9人村: /ws9
+      #   http(:80) -> ws://localhost/ws ／ TLSドメイン -> wss://<domain>/ws
       GAME_WS_PUBLIC_URL: ${GAME_WS_PUBLIC_URL:-ws://localhost/ws}
+      # 未指定なら lobby が GAME_WS_PUBLIC_URL の /ws を /ws9 に置換して導出
+      GAME_WS_PUBLIC_URL_9: ${GAME_WS_PUBLIC_URL_9:-}
       MAX_CONCURRENT_GAMES: ${MAX_CONCURRENT_GAMES:-1}
       AI_COUNT: ${AI_COUNT:-4}
     depends_on:
       - game-server
+      - game-server-9
     expose:
       - "8002"
     restart: unless-stopped
@@ -54,6 +70,7 @@ services:
     depends_on:
       - lobby
       - game-server
+      - game-server-9
     volumes:
       - caddy_data:/data
       - caddy_config:/config

@@ -14,7 +14,13 @@
 		reverse_proxy lobby:8002
 	}
 
-	# ゲームサーバへの WebSocket（Caddy が Upgrade を透過、TLS 終端で wss 化）
+	# 9人村サーバへの WebSocket（/ws9 を内部 /ws に書き換えて転送）
+	handle /ws9 {
+		rewrite * /ws
+		reverse_proxy game-server-9:8080
+	}
+
+	# 5人村サーバへの WebSocket（Caddy が Upgrade を透過、TLS 終端で wss 化）
 	handle /ws {
 		reverse_proxy game-server:8080
 	}

@@ -259,6 +259,7 @@
   let directMode = $state(false); // ?url= 直接接続（手動検証用）
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
+  let villageSize = $state(5); // 村の人数（5 or 9）。最初のページで選択。
 
   async function startViaLobby() {
     lobbyPhase = "joining";
@@ -266,7 +267,11 @@
     introAck = false;
     introOpen = false;
     try {
-      const res = await fetch(`${lobbyBase}/api/join`, { method: "POST" });
+      const res = await fetch(`${lobbyBase}/api/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size: villageSize }),
+      });
       if (!res.ok) throw new Error(`join failed: ${res.status}`);
       const data = await res.json();
       sessionId = data.session_id;
@@ -576,10 +581,29 @@
     <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 class="text-xl font-bold">人狼知能大会 自然言語部門 体験デモ</h1>
       <p class="opacity-70 text-sm max-w-xs">
-        4体のAIエージェントと5人で人狼ゲーム。あなたの番になったら発言できます。
+        AIエージェントと人狼ゲーム。あなたの番になったら発言できます。
       </p>
 
       {#if lobbyPhase === "idle"}
+        <!-- 村の人数を選択（最初のページで決定。最小/既定は5）-->
+        <div class="flex flex-col items-center gap-2">
+          <div class="text-sm font-bold opacity-70">村の人数</div>
+          <div class="join">
+            <button
+              class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}"
+              onclick={() => (villageSize = 5)}>5人村</button>
+            <button
+              class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}"
+              onclick={() => (villageSize = 9)}>9人村</button>
+          </div>
+          <div class="text-xs opacity-60 max-w-xs text-center">
+            {#if villageSize === 5}
+              村人2・占い師・人狼・狂人（あなた＋AI4体）
+            {:else}
+              村人3・占い師・騎士・霊媒師・人狼2・狂人（あなた＋AI8体）
+            {/if}
+          </div>
+        </div>
         <button class="btn btn-primary btn-lg" onclick={startViaLobby}>ゲーム開始</button>
       {:else if lobbyPhase === "joining"}
         <span class="loading loading-spinner loading-lg"></span>

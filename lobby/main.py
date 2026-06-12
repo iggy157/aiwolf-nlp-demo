@@ -51,6 +51,27 @@ GAME_WS_INTERNAL_URL = _env("GAME_WS_INTERNAL_URL", "ws://127.0.0.1:8080/ws")
 # 人間(ブラウザ)が接続する公開URL（本番は wss://<host>/ws、ローカルは ws://localhost:8080/ws）
 GAME_WS_PUBLIC_URL = _env("GAME_WS_PUBLIC_URL", "ws://localhost:8080/ws")
 
+
+def _derive9(url: str) -> str:
+    # 末尾 /ws を /ws9 に置換（9人村サーバ用URLの導出）
+    return url[:-3] + "/ws9" if url.endswith("/ws") else url
+
+
+# 9人村サーバ用URL（未指定なら 5人村URLから導出）
+GAME_WS_INTERNAL_URL_9 = _env("GAME_WS_INTERNAL_URL_9", "") or _derive9(GAME_WS_INTERNAL_URL)
+GAME_WS_PUBLIC_URL_9 = _env("GAME_WS_PUBLIC_URL_9", "") or _derive9(GAME_WS_PUBLIC_URL)
+
+# 対応する村サイズ（=サーバの agent_count）。最小/既定は 5。
+VALID_SIZES = {5, 9}
+
+
+def internal_url_for(size: int) -> str:
+    return GAME_WS_INTERNAL_URL_9 if size == 9 else GAME_WS_INTERNAL_URL
+
+
+def public_url_for(size: int) -> str:
+    return GAME_WS_PUBLIC_URL_9 if size == 9 else GAME_WS_PUBLIC_URL
+
 # LLM 設定（.env 由来）。LLM_PROVIDER で openai|google|vllm を切替（HANDOFF §8）
 LLM_PROVIDER = _env("LLM_PROVIDER", "openai")
 LLM_MODEL = _env("LLM_MODEL", "gpt-4o-mini")
@@ -94,7 +115,8 @@ class Session:
     display_name: str  # 採番された表示名（user01 等）
     team: str          # マッチング用の一意チーム名（末尾は非数字）
     status: str = "queued"  # queued | running | finished | error
-    ai_count: int = 0       # この卓で起動するサンプルAI数（= AGENT_TOTAL - external_slots）
+    size: int = 5           # 村の人数（= サーバの agent_count。5 or 9）
+    ai_count: int = 0       # この卓で起動するサンプルAI数（= size - external_slots）
     external_slots: int = 1 # 外部接続数（人間 + 持ち込みエージェント）
     process: Any = None     # subprocess.Popen | None
     config_path: Path | None = None
@@ -125,10 +147,12 @@ class Lobby:
         token = secrets.token_hex(4) + secrets.choice(string.ascii_lowercase)
         return f"s-{display_name}-{token}"
 
-    async def create_session(self, external_slots: int) -> Session:
-        # external_slots = 外部接続数（人間 + 持ち込みエージェント）。
-        # 残り（AGENT_TOTAL - external_slots）をサンプルAIで埋める。
-        external_slots = max(1, min(external_slots, AGENT_TOTAL))
+    async def create_session(self, external_slots: int, size: int = 5) -> Session:
+        # size = 村の人数（5 or 9）。external_slots = 外部接続数（人間 + 持ち込みエージェント）。
+        # 残り（size - external_slots）をサンプルAIで埋める。
+        if size not in VALID_SIZES:
+            size = 5
+        external_slots = max(1, min(external_slots, size))
         async with self._lock:
             display = self._next_display_name()
             sid = secrets.token_urlsafe(9)
@@ -136,16 +160,17 @@ class Lobby:
                 id=sid,
                 display_name=display,
                 team=self._new_team(display),
-                ai_count=max(0, AGENT_TOTAL - external_slots),
+                size=size,
+                ai_count=max(0, size - external_slots),
                 external_slots=external_slots,
             )
             self.sessions[sid] = session
             self.queue.append(sid)
             return session
 
-    async def join(self) -> Session:
-        # /demo の人間1枠（外部=人間1人、残り4体AI）
-        return await self.create_session(external_slots=1)
+    async def join(self, size: int = 5) -> Session:
+        # /demo の人間1枠（外部=人間1人、残りをAIが埋める）
+        return await self.create_session(external_slots=1, size=size)
 
     def running_count(self) -> int:
         return sum(1 for s in self.sessions.values() if s.status == "running")
@@ -181,7 +206,7 @@ class Lobby:
         import subprocess
 
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-        cfg = self._build_agent_config(session.team, session.ai_count)
+        cfg = self._build_agent_config(session.team, session.ai_count, internal_url_for(session.size))
         cfg_path = GENERATED_DIR / f"{session.id}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -201,13 +226,13 @@ class Lobby:
             start_new_session=True,
         )
 
-    def _build_agent_config(self, team: str, ai_count: int) -> dict[str, Any]:
+    def _build_agent_config(self, team: str, ai_count: int, internal_url: str) -> dict[str, Any]:
         # テンプレート(configs/agent.yml: プロンプト等を含む)を読み、接続/チーム/LLMを上書き
         with AGENT_CONFIG_TEMPLATE.open(encoding="utf-8") as f:
             cfg: dict[str, Any] = yaml.safe_load(f)
 
         cfg.setdefault("web_socket", {})
-        cfg["web_socket"]["url"] = GAME_WS_INTERNAL_URL
+        cfg["web_socket"]["url"] = internal_url
         cfg["web_socket"]["token"] = cfg["web_socket"].get("token")
         cfg["web_socket"]["auto_reconnect"] = False
 
@@ -354,6 +379,11 @@ class JoinResponse(BaseModel):
     position: int
     ws_url: str
     ai_count: int
+    size: int
+
+
+class JoinRequest(BaseModel):
+    size: int = 5  # 村の人数（5 or 9）
 
 
 class StatusResponse(BaseModel):
@@ -363,6 +393,7 @@ class StatusResponse(BaseModel):
     status: str
     position: int
     ws_url: str
+    size: int
     error: str | None = None
 
 
@@ -397,8 +428,9 @@ async def health() -> dict[str, Any]:
 
 
 @app.post("/api/join", response_model=JoinResponse)
-async def join() -> JoinResponse:
-    session = await lobby.join()
+async def join(req: JoinRequest | None = None) -> JoinResponse:
+    size = req.size if req else 5
+    session = await lobby.join(size=size)
     # すぐ空きがあれば spawn を試みる
     await lobby._schedule()  # noqa: SLF001
     return JoinResponse(
@@ -407,14 +439,16 @@ async def join() -> JoinResponse:
         team=session.team,
         status=session.status,
         position=lobby.position_of(session.id),
-        ws_url=GAME_WS_PUBLIC_URL,
+        ws_url=public_url_for(session.size),
         ai_count=session.ai_count,
+        size=session.size,
     )
 
 
 class ByoRequest(BaseModel):
     agents: int = 1          # 持ち込みエージェントの数
     human: bool = False      # 人間プレイヤー(/demo)も1枠入れるか
+    size: int = 5            # 村の人数（5 or 9）
 
 
 class ByoResponse(BaseModel):
@@ -431,31 +465,33 @@ class ByoResponse(BaseModel):
 
 @app.post("/api/byo", response_model=ByoResponse)
 async def create_byo(req: ByoRequest) -> ByoResponse:
+    size = req.size if req.size in VALID_SIZES else 5
     agents = max(0, req.agents)
     human = 1 if req.human else 0
     external = agents + human
     if external < 1:
         raise HTTPException(status_code=400, detail="agents+human must be >= 1")
-    if external > AGENT_TOTAL:
-        raise HTTPException(status_code=400, detail=f"external slots must be <= {AGENT_TOTAL}")
+    if external > size:
+        raise HTTPException(status_code=400, detail=f"external slots must be <= {size}")
 
-    session = await lobby.create_session(external_slots=external)
+    session = await lobby.create_session(external_slots=external, size=size)
     await lobby._schedule()  # noqa: SLF001
 
+    pub = public_url_for(session.size)
     human_url = None
     if human:
         # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る
         from urllib.parse import quote
-        human_url = f"/demo?url={quote(GAME_WS_PUBLIC_URL, safe='')}&team={quote(session.team, safe='')}"
+        human_url = f"/demo?url={quote(pub, safe='')}&team={quote(session.team, safe='')}"
 
     return ByoResponse(
         session_id=session.id,
         team=session.team,
-        ws_url=GAME_WS_PUBLIC_URL,
+        ws_url=pub,
         ai_count=session.ai_count,
         agent_slots=agents,
         human_slots=human,
-        agent_total=AGENT_TOTAL,
+        agent_total=session.size,
         status=session.status,
         human_join_url=human_url,
     )
@@ -473,7 +509,8 @@ async def get_session(session_id: str) -> StatusResponse:
         team=session.team,
         status=session.status,
         position=lobby.position_of(session.id),
-        ws_url=GAME_WS_PUBLIC_URL,
+        ws_url=public_url_for(session.size),
+        size=session.size,
         error=session.error,
     )
 

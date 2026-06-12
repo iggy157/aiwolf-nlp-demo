@@ -8,6 +8,7 @@
   import { onDestroy } from "svelte";
   import "../../app.css";
 
+  let villageSize = $state(5); // 村の人数（5 or 9）
   let agents = $state(1); // 持ち込みエージェント数
   let human = $state(false); // 人間も1枠入れるか
   let phase = $state<"form" | "creating" | "ready" | "error">("form");
@@ -36,7 +37,7 @@
       const res = await fetch(`${lobbyBase}/api/byo`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ agents, human }),
+        body: JSON.stringify({ agents, human, size: villageSize }),
       });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const d = await res.json();
@@ -101,19 +102,25 @@
     {#if phase === "form" || phase === "creating"}
       <div class="card bg-base-100 p-4 flex flex-col gap-4">
         <p class="text-sm opacity-70">
-          自作エージェントを接続して対戦できます。1卓 {agentTotal} 名で、外部接続の残りは
-          サンプルAIが自動で埋まります。
+          自作エージェントを接続して対戦できます。外部接続の残りはサンプルAIが自動で埋まります。
         </p>
         <label class="flex items-center justify-between gap-3">
+          <span class="font-bold">村の人数</span>
+          <div class="join">
+            <button class="join-item btn btn-sm {villageSize === 5 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 5)}>5人村</button>
+            <button class="join-item btn btn-sm {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>9人村</button>
+          </div>
+        </label>
+        <label class="flex items-center justify-between gap-3">
           <span class="font-bold">持ち込みエージェント数</span>
-          <input type="number" min="1" max="5" class="input input-bordered w-24" bind:value={agents} />
+          <input type="number" min="1" max={villageSize} class="input input-bordered w-24" bind:value={agents} />
         </label>
         <label class="flex items-center justify-between gap-3">
           <span class="font-bold">人間も1枠参加する</span>
           <input type="checkbox" class="toggle" bind:checked={human} />
         </label>
         <div class="text-sm opacity-70">
-          サンプルAIは <span class="font-bold">{Math.max(0, 5 - agents - (human ? 1 : 0))}</span> 体になります。
+          {villageSize}人村。サンプルAIは <span class="font-bold">{Math.max(0, villageSize - agents - (human ? 1 : 0))}</span> 体になります。
         </div>
         <button class="btn btn-primary" disabled={phase === "creating"} onclick={createTable}>
           {phase === "creating" ? "作成中…" : "卓を作成"}
