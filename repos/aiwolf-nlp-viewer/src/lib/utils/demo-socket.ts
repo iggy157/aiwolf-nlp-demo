@@ -75,12 +75,19 @@ const createInitialState = (): DemoSocket => ({
     currentTurnAgent: null,
 });
 
+// 重複排除キー: talk.idx は「日ごとに 0 から振り直される」ため idx だけだと
+// 2日目以降が1日目と衝突して消える。day と idx の組で一意化する。
+function talkKey(t: Talk): string {
+    return `${t.day}:${t.idx}`;
+}
+
 function appendUniqueTalks(existing: Talk[], incoming: Talk[]): Talk[] {
-    const seen = new Set(existing.map((t) => t.idx));
+    const seen = new Set(existing.map(talkKey));
     const merged = existing.slice();
     for (const t of incoming) {
-        if (!seen.has(t.idx)) {
-            seen.add(t.idx);
+        const k = talkKey(t);
+        if (!seen.has(k)) {
+            seen.add(k);
             merged.push(t);
         }
     }

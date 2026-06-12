@@ -12,7 +12,8 @@ services:
       dockerfile: docker/game-server.Dockerfile
     volumes:
       - ./configs:/app/configs:ro
-      - game_log:/app/log
+      # ゲームログをホストの ./log に保存（json=発話/応答, game=CSV, realtime=神視点JSONL）
+      - ./log:/app/log
     expose:
       - "8080"
     # ローカルでサーバを直接叩いて検証したい場合は下記を有効化:
@@ -59,6 +60,5 @@ services:
     restart: unless-stopped
 
 volumes:
-  game_log:
   caddy_data:
   caddy_config:

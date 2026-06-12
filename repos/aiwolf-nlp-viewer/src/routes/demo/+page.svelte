@@ -17,6 +17,8 @@
   // ---- socket state（demo-socket の writable を購読）----
   let status = $state("disconnected");
   let agent = $state<string | null>(null);
+  let role = $state<string | null>(null);
+  let profile = $state<string | null>(null);
   let request = $state<Request | null>(null);
   let info = $state<ReturnType<() => any> | null>(null);
   let talkHistory = $state<Talk[]>([]);
@@ -30,6 +32,8 @@
   const unsub = demoSocketState.subscribe((s) => {
     status = s.status;
     agent = s.agent;
+    role = s.role;
+    profile = s.profile;
     request = s.request;
     info = s.info;
     talkHistory = s.talkHistory;
@@ -44,6 +48,19 @@
       stopCountdown();
     }
   });
+
+  // 役職の日本語表示
+  const ROLE_JP: Record<string, string> = {
+    VILLAGER: "村人",
+    WEREWOLF: "人狼",
+    SEER: "占い師",
+    MEDIUM: "霊媒師",
+    BODYGUARD: "騎士",
+    POSSESSED: "狂人",
+  };
+  const roleJp = (r: string | null | undefined) => (r ? (ROLE_JP[r] ?? r) : "—");
+
+  let infoOpen = $state(false); // プロフィール/役職プレビューの開閉
 
   // ---- 入力可否の判定 ----
   const SELECTION_REQUESTS = [
@@ -218,6 +235,28 @@
     }
   }
 
+  // ゲームを中断してホーム（スタート画面）に戻る
+  function leaveGame(confirmFirst = true) {
+    if (confirmFirst && !confirm("ゲームを中断してホームに戻りますか？（この卓は終了します）")) {
+      return;
+    }
+    if (pollTimer) {
+      clearTimeout(pollTimer);
+      pollTimer = null;
+    }
+    if (sessionId) {
+      // スロット解放を lobby に通知（AIプロセスも停止される）
+      fetch(`${lobbyBase}/api/session/${sessionId}/leave`, { method: "POST" }).catch(() => {});
+    }
+    demoSocketState.disconnect();
+    infoOpen = false;
+    sessionId = null;
+    displayName = null;
+    queuePos = 0;
+    lobbyError = null;
+    lobbyPhase = "idle";
+  }
+
   // ---- 接続（?url= 直接接続を優先。無ければロビー画面）----
   if (browser) {
     const params = page.url.searchParams;
@@ -260,34 +299,88 @@
   );
 </script>
 
-<svelte:head><title>AI人狼 体験デモ</title></svelte:head>
+<svelte:head><title>人狼知能大会 自然言語部門 体験デモ</title></svelte:head>
 
 <main class="h-dvh flex flex-col bg-base-300">
-  <!-- ヘッダ：自分の情報＋状態バナー -->
-  <header class="flex-none bg-base-100 px-4 py-2 flex items-center gap-3 shadow">
+  <!-- ヘッダ：タイトル＋自分の情報＋操作ボタン -->
+  <header class="flex-none bg-base-100 px-3 py-2 flex items-center gap-2 shadow">
     <div class="flex items-center gap-2 min-w-0">
       {#if agent}
-        <div class="avatar">
-          <div class="w-9 rounded-full">
+        <button class="avatar" onclick={() => (infoOpen = true)} aria-label="自分の情報">
+          <div class="w-9 rounded-full ring ring-primary ring-offset-1">
             <img src={avatarSrc(agent)} alt={agent} />
           </div>
-        </div>
+        </button>
         <div class="leading-tight min-w-0">
-          <div class="font-bold truncate">{agent}</div>
-          <div class="text-xs opacity-60">
-            {info ? `${info.day}日目` : ""}
-          </div>
+          <div class="font-bold truncate">{agent}<span class="ml-1 text-xs opacity-70">({roleJp(role)})</span></div>
+          <div class="text-xs opacity-60">{info ? `${info.day}日目` : ""}</div>
         </div>
       {:else}
-        <div class="font-bold">AI人狼 体験デモ</div>
+        <div class="font-bold text-sm leading-tight">人狼知能大会<br />自然言語部門 体験デモ</div>
       {/if}
     </div>
-    <div class="ml-auto flex items-center gap-2">
-      <span class="badge {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
+    <div class="ml-auto flex items-center gap-1.5">
+      <span class="badge badge-sm {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
         {status === "connected" ? "接続中" : status === "connecting" ? "接続中…" : "未接続"}
       </span>
+      {#if status === "connected"}
+        <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label="情報">
+          <iconify-icon icon="mdi:information-outline"></iconify-icon>情報
+        </button>
+        <button class="btn btn-xs btn-error btn-outline" onclick={() => leaveGame()} aria-label="中断">
+          <iconify-icon icon="mdi:home"></iconify-icon>中断
+        </button>
+      {/if}
     </div>
   </header>
+
+  <!-- プロフィール/役職プレビュー（ドロワー風モーダル）-->
+  {#if infoOpen}
+    <div class="fixed inset-0 z-50 flex">
+      <button class="absolute inset-0 bg-black/50" onclick={() => (infoOpen = false)} aria-label="閉じる"></button>
+      <div class="relative ml-auto h-full w-80 max-w-[85vw] bg-base-100 shadow-xl overflow-y-auto p-4 flex flex-col gap-4">
+        <div class="flex items-center justify-between">
+          <h2 class="font-bold text-lg">プレイヤー情報</h2>
+          <button class="btn btn-sm btn-circle btn-ghost" onclick={() => (infoOpen = false)}>✕</button>
+        </div>
+
+        <!-- 自分 -->
+        <div class="card bg-base-200 p-3">
+          <div class="flex items-center gap-3">
+            <div class="avatar"><div class="w-14 rounded-full"><img src={avatarSrc(agent ?? "")} alt={agent} /></div></div>
+            <div>
+              <div class="font-bold">{agent ?? "—"}</div>
+              <div class="badge badge-primary badge-sm">役職: {roleJp(role)}</div>
+            </div>
+          </div>
+          {#if profile}
+            <div class="mt-2 text-sm whitespace-pre-wrap opacity-80">{profile}</div>
+          {:else}
+            <div class="mt-2 text-xs opacity-50">プロフィール情報なし</div>
+          {/if}
+        </div>
+
+        <!-- 参加者一覧 -->
+        <div>
+          <h3 class="font-bold mb-2">参加者</h3>
+          <div class="flex flex-col gap-1">
+            {#each Object.entries(info?.status_map ?? {}) as [name, st]}
+              {@const known = info?.role_map?.[name]}
+              <div class="flex items-center gap-2 p-1.5 rounded {st === Status.ALIVE ? 'bg-base-200' : 'bg-base-300 opacity-60'}">
+                <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
+                <span class="font-bold text-sm">{name}{name === agent ? "（あなた）" : ""}</span>
+                {#if known}<span class="badge badge-xs">{roleJp(known)}</span>{/if}
+                <span class="ml-auto badge badge-xs {st === Status.ALIVE ? 'badge-success' : 'badge-error'}">
+                  {st === Status.ALIVE ? "生存" : "死亡"}
+                </span>
+              </div>
+            {/each}
+          </div>
+          <p class="text-xs opacity-50 mt-2">※ 他プレイヤーの役職・プロフィールは人狼ゲームの性質上、原則非公開です。</p>
+        </div>
+      </div>
+    </div>
+  {/if}
 
   <!-- 状態バナー -->
   <div class="flex-none px-4 py-2 text-center font-bold
@@ -301,7 +394,7 @@
   {#if showStartScreen}
     <!-- スタート/順番待ち画面（ロビー連携）-->
     <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <h1 class="text-2xl font-bold">AIと人狼で対戦</h1>
+      <h1 class="text-xl font-bold">人狼知能大会 自然言語部門 体験デモ</h1>
       <p class="opacity-70 text-sm max-w-xs">
         4体のAIエージェントと5人で人狼ゲーム。あなたの番になったら発言できます。
       </p>
@@ -342,7 +435,7 @@
         {/if}
       </div>
     {/if}
-    {#each talkHistory as talk (talk.idx)}
+    {#each talkHistory as talk (talk.day + "-" + talk.idx)}
       {@const mine = talk.agent === agent}
       <div class="chat {mine ? 'chat-end' : 'chat-start'}">
         {#if !mine}

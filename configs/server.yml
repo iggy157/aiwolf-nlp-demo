@@ -14,8 +14,9 @@ server:
   authentication:
     enable: false
   timeout:
-    action: 60s
-    response: 120s
+    # 人間プレイヤーが入力する時間を確保するため 3分に延長（AIは数秒で応答するため影響なし）
+    action: 180s
+    response: 300s
     acceptable: 5s
   max_continue_error_ratio: 0.2
 
