@@ -6,10 +6,14 @@
 ## エンドポイント
 | method | path | 役割 |
 |---|---|---|
-| POST | `/api/join` | 参加。採番・チーム発行し待機列へ。`{session_id, display_name, team, status, position, ws_url, ai_count}` |
+| POST | `/api/join` | 人間1枠で参加（/demo用）。残り(AGENT_TOTAL-1)をAIが埋める。`{session_id, team, ws_url, ai_count, ...}` |
+| POST | `/api/byo` | 持ち込みエージェント卓を作成。body `{agents:int, human:bool}`。外部枠=agents+human、残りをAIが埋める。`{team, ws_url, ai_count, human_join_url, ...}` |
 | GET | `/api/session/{id}` | 状態取得（`queued`→`running`→`finished`/`error`、`position`）。フロントはこれをポーリング |
 | POST | `/api/session/{id}/leave` | 離脱（スロット解放・AIプロセス停止） |
 | GET | `/api/health` | 稼働状況（running/queued/max, provider/model） |
+
+**卓の構成（fill-to-5）**: 1卓は `AGENT_TOTAL`(=5) 名。`external_slots`(外部接続=人間+持ち込みエージェント)を
+指定すると、残り `AGENT_TOTAL - external_slots` 体をサンプルAIが埋める。`external_slots=5` なら AI 0体（全持ち込み）。
 
 フロント(`/demo`)は `/api/join` → `position` を表示しつつポーリング → `running` で `ws_url`＋`team` に WebSocket 接続。
 

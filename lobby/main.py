@@ -58,6 +58,8 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "")
 
 # 1セッションあたりのAI体数（agent_count:5 のうち人間1枠を除いた数）
 AI_COUNT = int(_env("AI_COUNT", "4"))
+# 1卓の総人数（サーバの game.agent_count と一致させる）。外部接続＋サンプルAI = この値。
+AGENT_TOTAL = int(_env("AGENT_TOTAL", "5"))
 # 同時に走れる卓数（vLLMならGPU、商用APIならレート/コストで決める）
 MAX_CONCURRENT_GAMES = int(_env("MAX_CONCURRENT_GAMES", "1"))
 
@@ -92,6 +94,8 @@ class Session:
     display_name: str  # 採番された表示名（user01 等）
     team: str          # マッチング用の一意チーム名（末尾は非数字）
     status: str = "queued"  # queued | running | finished | error
+    ai_count: int = 0       # この卓で起動するサンプルAI数（= AGENT_TOTAL - external_slots）
+    external_slots: int = 1 # 外部接続数（人間 + 持ち込みエージェント）
     process: Any = None     # subprocess.Popen | None
     config_path: Path | None = None
     created_at: float = field(default_factory=time.time)
@@ -121,14 +125,27 @@ class Lobby:
         token = secrets.token_hex(4) + secrets.choice(string.ascii_lowercase)
         return f"s-{display_name}-{token}"
 
-    async def join(self) -> Session:
+    async def create_session(self, external_slots: int) -> Session:
+        # external_slots = 外部接続数（人間 + 持ち込みエージェント）。
+        # 残り（AGENT_TOTAL - external_slots）をサンプルAIで埋める。
+        external_slots = max(1, min(external_slots, AGENT_TOTAL))
         async with self._lock:
             display = self._next_display_name()
             sid = secrets.token_urlsafe(9)
-            session = Session(id=sid, display_name=display, team=self._new_team(display))
+            session = Session(
+                id=sid,
+                display_name=display,
+                team=self._new_team(display),
+                ai_count=max(0, AGENT_TOTAL - external_slots),
+                external_slots=external_slots,
+            )
             self.sessions[sid] = session
             self.queue.append(sid)
             return session
+
+    async def join(self) -> Session:
+        # /demo の人間1枠（外部=人間1人、残り4体AI）
+        return await self.create_session(external_slots=1)
 
     def running_count(self) -> int:
         return sum(1 for s in self.sessions.values() if s.status == "running")
@@ -157,10 +174,14 @@ class Lobby:
                     session.error = str(ex)
 
     def _spawn_agents(self, session: Session) -> None:
+        if session.ai_count <= 0:
+            # 外部接続のみの卓（サンプルAIなし）。spawnしない＝プロセスは持たない。
+            session.process = None
+            return
         import subprocess
 
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-        cfg = self._build_agent_config(session.team)
+        cfg = self._build_agent_config(session.team, session.ai_count)
         cfg_path = GENERATED_DIR / f"{session.id}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -180,7 +201,7 @@ class Lobby:
             start_new_session=True,
         )
 
-    def _build_agent_config(self, team: str) -> dict[str, Any]:
+    def _build_agent_config(self, team: str, ai_count: int) -> dict[str, Any]:
         # テンプレート(configs/agent.yml: プロンプト等を含む)を読み、接続/チーム/LLMを上書き
         with AGENT_CONFIG_TEMPLATE.open(encoding="utf-8") as f:
             cfg: dict[str, Any] = yaml.safe_load(f)
@@ -191,7 +212,7 @@ class Lobby:
         cfg["web_socket"]["auto_reconnect"] = False
 
         cfg.setdefault("agent", {})
-        cfg["agent"]["num"] = AI_COUNT
+        cfg["agent"]["num"] = ai_count
         cfg["agent"]["team"] = team
         cfg["agent"]["kill_on_timeout"] = True
 
@@ -226,7 +247,14 @@ class Lobby:
         now = time.time()
         async with self._lock:
             for session in self.sessions.values():
-                if session.status != "running" or session.process is None:
+                if session.status != "running":
+                    continue
+                if session.process is None:
+                    # 外部接続のみの卓（サンプルAIなし）はプロセスを持たないため、
+                    # 時間切れ(MAX_SESSION_SECONDS)でのみスロットを解放する。
+                    if session.started_at and (now - session.started_at) > MAX_SESSION_SECONDS:
+                        session.status = "finished"
+                        session.finished_at = now
                     continue
                 ret = session.process.poll()
                 if ret is not None:
@@ -380,7 +408,56 @@ async def join() -> JoinResponse:
         status=session.status,
         position=lobby.position_of(session.id),
         ws_url=GAME_WS_PUBLIC_URL,
-        ai_count=AI_COUNT,
+        ai_count=session.ai_count,
+    )
+
+
+class ByoRequest(BaseModel):
+    agents: int = 1          # 持ち込みエージェントの数
+    human: bool = False      # 人間プレイヤー(/demo)も1枠入れるか
+
+
+class ByoResponse(BaseModel):
+    session_id: str
+    team: str                # 持ち込みエージェントが使うチーム名
+    ws_url: str              # 接続先 WebSocket URL
+    ai_count: int            # 残りを埋めるサンプルAI数
+    agent_slots: int         # 持ち込みエージェント枠
+    human_slots: int         # 人間枠(0/1)
+    agent_total: int         # 1卓の総数
+    status: str
+    human_join_url: str | None = None  # 人間が /demo で参加する直リンク
+
+
+@app.post("/api/byo", response_model=ByoResponse)
+async def create_byo(req: ByoRequest) -> ByoResponse:
+    agents = max(0, req.agents)
+    human = 1 if req.human else 0
+    external = agents + human
+    if external < 1:
+        raise HTTPException(status_code=400, detail="agents+human must be >= 1")
+    if external > AGENT_TOTAL:
+        raise HTTPException(status_code=400, detail=f"external slots must be <= {AGENT_TOTAL}")
+
+    session = await lobby.create_session(external_slots=external)
+    await lobby._schedule()  # noqa: SLF001
+
+    human_url = None
+    if human:
+        # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る
+        from urllib.parse import quote
+        human_url = f"/demo?url={quote(GAME_WS_PUBLIC_URL, safe='')}&team={quote(session.team, safe='')}"
+
+    return ByoResponse(
+        session_id=session.id,
+        team=session.team,
+        ws_url=GAME_WS_PUBLIC_URL,
+        ai_count=session.ai_count,
+        agent_slots=agents,
+        human_slots=human,
+        agent_total=AGENT_TOTAL,
+        status=session.status,
+        human_join_url=human_url,
     )
 
 
