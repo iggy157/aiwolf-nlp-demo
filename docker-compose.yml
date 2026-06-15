@@ -49,7 +49,9 @@ services:
       GAME_WS_PUBLIC_URL: ${GAME_WS_PUBLIC_URL:-ws://localhost/ws}
       # 未指定なら lobby が GAME_WS_PUBLIC_URL の /ws を /ws9 に置換して導出
       GAME_WS_PUBLIC_URL_9: ${GAME_WS_PUBLIC_URL_9:-}
-      MAX_CONCURRENT_GAMES: ${MAX_CONCURRENT_GAMES:-1}
+      # 同時に走れる卓数。room_match により各卓は room で分離され、複数卓を並行ホストできる。
+      # 実上限は LLM スループット（vLLMのGPU/商用APIレート）次第。環境に合わせて .env で調整。
+      MAX_CONCURRENT_GAMES: ${MAX_CONCURRENT_GAMES:-20}
       AI_COUNT: ${AI_COUNT:-4}
     depends_on:
       - game-server

@@ -20,7 +20,7 @@ aiwolf-nlp-demo/
 ├── bin/
 │   └── cloudflared     # 同梱トンネルバイナリ（make public が自動検出）
 ├── configs/
-│   ├── server.yml      # ゲームサーバ設定（self_match, agent_count:5, turn-based, TTS無効）
+│   ├── server.yml      # ゲームサーバ設定（room_match, agent_count:5, turn-based, TTS無効）
 │   └── agent.yml       # AI設定テンプレ（lobby が動的生成のベース）
 ├── lobby/              # 採番・キュー・AI spawn（FastAPI, agent-llm 同梱）
 └── repos/

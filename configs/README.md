@@ -2,7 +2,7 @@
 
 | file | 用途 |
 |---|---|
-| `server.yml` | ゲームサーバ設定。`self_match:true`, `agent_count:5`, ターンベース, whisper無効, TTS無効, host `0.0.0.0`。 |
+| `server.yml` | ゲームサーバ設定。`room_match:true`（?room=卓IDで卓構成）, `agent_count:5`, ターンベース, whisper無効, TTS無効, host `0.0.0.0`。 |
 | `agent.yml`  | AIエージェント設定テンプレ（手動コア検証用）。`team=test`, `num=4`, `llm.type=openai`。 |
 
 ## マイルストン2（コア検証）の手動起動手順 ※起動は運営（人間）が実施

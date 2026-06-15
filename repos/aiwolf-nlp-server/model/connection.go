@@ -12,8 +12,11 @@ import (
 type Connection struct {
 	TeamName     string
 	OriginalName string
-	Conn         *websocket.Conn
-	Header       *http.Header
+	// Room は接続クエリ ?room=<id> で渡される卓ID。room_match マッチング時の
+	// グループ化キー。空文字なら未指定（room_match 無効時は使われない）。
+	Room   string
+	Conn   *websocket.Conn
+	Header *http.Header
 }
 
 func NewConnection(conn *websocket.Conn, header *http.Header) (*Connection, error) {

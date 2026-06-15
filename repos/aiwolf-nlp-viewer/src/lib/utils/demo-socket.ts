@@ -36,6 +36,11 @@ export interface DemoPacket extends Omit<Packet, 'request'> {
 
 const BROADCAST_REQUESTS = new Set<string>(['TALK_BROADCAST', 'WHISPER_BROADCAST']);
 
+// サーバ側の応答待ちタイマーを止める/再開する制御トークン（model/talk.go の C_PAUSE/C_RESUME と一致）。
+// 自分のターン（応答待ち中）にのみ送る。通常の発話・役職名・Over/Skip とは衝突しない予約文字列。
+const C_PAUSE = '__PAUSE__';
+const C_RESUME = '__RESUME__';
+
 // LINE風ストリームの要素: トーク or システムアナウンス（日付/夜/投票/結果/占い等）
 export type FeedTone = 'day' | 'night' | 'vote' | 'result' | 'info';
 export type FeedEntry =
@@ -120,6 +125,11 @@ function createDemoSocketState() {
     let settings: AgentSettings | null = null;
     let actionTimeout: number | null = null;
     let actionTimer: Timer | null = null;
+    // 一時停止状態。paused=UI上の一時停止。pausedServer=サーバへC_PAUSE送信済み（C_RESUMEが必要）。
+    // pauseRemainingMs=一時停止した時点での残り時間（再開時にこの残り時間でタイマーを張り直す）。
+    let paused = false;
+    let pausedServer = false;
+    let pauseRemainingMs: number | null = null;
 
     agentSettings.subscribe((value) => {
         settings = value;
@@ -135,6 +145,9 @@ function createDemoSocketState() {
             actionTimer.clear();
             actionTimer = null;
         }
+        paused = false;
+        pausedServer = false;
+        pauseRemainingMs = null;
     }
 
     function connect() {
@@ -194,6 +207,50 @@ function createDemoSocketState() {
             } catch (e) {
                 console.error("Failed to send message:", e);
             }
+        }
+    }
+
+    // 制御トークン等をUI副作用なし（feed非表示・タイマー非操作）でそのまま送る。
+    function rawSend(text: string) {
+        if (socket && socket.readyState === WebSocket.OPEN) {
+            try {
+                socket.send(text);
+            } catch (e) {
+                console.error("Failed to send control:", e);
+            }
+        }
+    }
+
+    // 一時停止: ローカルのTIMEOUTタイマーを止めて残り時間を保持し、
+    // 自分のターン（応答待ち中）ならサーバにも C_PAUSE を送ってタイムアウト計測を止める。
+    function pause() {
+        if (paused) return;
+        paused = true;
+        if (actionTimer) {
+            pauseRemainingMs = Math.max(0, actionTimer.deadline().getTime() - Date.now());
+            actionTimer.clear();
+            actionTimer = null;
+            rawSend(C_PAUSE);
+            pausedServer = true;
+        }
+        // 自分のターンでないとき（AIの番など）はサーバ側に進行中のタイマーが無いので送らない。
+    }
+
+    // 再開: サーバに C_RESUME を送り、保持していた残り時間でローカルタイマーを張り直す。
+    function resume() {
+        if (!paused) return;
+        paused = false;
+        if (pausedServer) {
+            rawSend(C_RESUME);
+            pausedServer = false;
+        }
+        if (pauseRemainingMs !== null) {
+            const newDeadline = new Date(Date.now() + pauseRemainingMs);
+            actionTimer = new Timer(() => {
+                send("TIMEOUT");
+            }, newDeadline);
+            update(state => ({ ...state, deadline: newDeadline }));
+            pauseRemainingMs = null;
         }
     }
 
@@ -324,15 +381,30 @@ function createDemoSocketState() {
                 // 自分のリクエストが来た = 自分のターン。currentTurnAgent も自分に。
                 if (actionTimer) {
                     actionTimer.clear();
+                    actionTimer = null;
                 }
-                actionTimer = new Timer(() => {
-                    send("TIMEOUT");
-                }, new Date(date + (actionTimeout ?? 60000)));
-                update(state => ({
-                    ...state,
-                    deadline: actionTimer?.deadline() ?? null,
-                    currentTurnAgent: state.agent,
-                }));
+                if (paused) {
+                    // 一時停止中に自分の番が来た（AIの番の間に一時停止していた等）:
+                    // ローカルタイマーは張らず、サーバ側のタイムアウト計測も止めておく。
+                    // 残り時間は満タン（actionTimeout）として保持し、再開時にそこから計測再開。
+                    pauseRemainingMs = actionTimeout ?? 60000;
+                    rawSend(C_PAUSE);
+                    pausedServer = true;
+                    update(state => ({
+                        ...state,
+                        deadline: new Date(date + (actionTimeout ?? 60000)),
+                        currentTurnAgent: state.agent,
+                    }));
+                } else {
+                    actionTimer = new Timer(() => {
+                        send("TIMEOUT");
+                    }, new Date(date + (actionTimeout ?? 60000)));
+                    update(state => ({
+                        ...state,
+                        deadline: actionTimer?.deadline() ?? null,
+                        currentTurnAgent: state.agent,
+                    }));
+                }
                 break;
             case Request.FINISH:
                 disconnect();
@@ -351,6 +423,8 @@ function createDemoSocketState() {
         connect,
         disconnect,
         send,
+        pause,
+        resume,
         reset,
     };
 }

@@ -3,7 +3,8 @@
 # 変更点:
 #   - web_socket.host: 127.0.0.1 -> 0.0.0.0（docker/別ホスト/スマホ実機から到達可能にするため）
 #   - tts_broadcaster.enable: true -> false（VOICEVOX/ffmpeg の外部依存を避ける。音声デモ時のみ true）
-# 維持: matching.self_match=true, game.agent_count=5, ターンベース（talk.duration 未指定）, whisper per_agent=0
+#   - matching.room_match: true（?room=<卓ID> で卓を構成。複数卓同時対戦＋1卓に複数チーム＋人間）
+# 維持: game.agent_count=5, ターンベース（talk.duration 未指定）, whisper per_agent=0
 # https://github.com/aiwolfdial/aiwolf-nlp-server/blob/main/doc/ja/config.md
 # https://github.com/aiwolfdial/aiwolf-nlp-server/blob/main/doc/en/config.md
 
@@ -91,7 +92,11 @@ logic:
       MEDIUM: 0
 
 matching:
-  self_match: true
+  # room_match: 接続クエリ ?room=<卓ID> で卓を構成する（self_match より優先）。
+  # 1卓に複数の異なるチーム＋人間を入れたまま、卓ごとに分離して同時並行ホストできる。
+  # ロビーが各卓に一意な room を割り当て、人間・外部チーム・埋めのサンプルAIを同じ room へ接続させる。
+  room_match: true
+  self_match: false
   is_optimize: false
   team_count: 5
   game_count: 5

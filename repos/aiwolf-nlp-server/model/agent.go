@@ -89,16 +89,82 @@ func (a *Agent) ReadChannel() <-chan AgentMessage {
 	return a.msgChan
 }
 
+// maxPauseBudget は1回の応答待ちにおける一時停止の上限時間。
+// クライアントが C_PAUSE のまま放置(タブ閉じ等で C_RESUME が来ない)しても
+// この時間で自動再開し、卓が無限にハングするのを防ぐ。
+// 接続断時は reader が msgChan にエラーを流すため、それより先に解消される。
+// 累積上限はロビーのセッション回収(MAX_SESSION_SECONDS)が別途担保する。
+const maxPauseBudget = 5 * time.Minute
+
 func (a *Agent) receive(timeout time.Duration) ([]byte, error) {
-	// チャネルからタイムアウト付きでメッセージを受信する
-	select {
-	case msg := <-a.msgChan:
-		if msg.Err != nil {
-			return nil, msg.Err
+	// チャネルからタイムアウト付きでメッセージを受信する。
+	// C_PAUSE/C_RESUME 制御トークンを受け取った場合はタイマーを止め/再開し、
+	// 一時停止中はタイムアウトを進めない（/demo のサーバ側一時停止対応）。
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	deadline := time.Now().Add(timeout)
+	remaining := timeout
+	paused := false
+
+	// 一時停止の上限タイマー。停止中のみ作動させる。
+	pauseTimer := time.NewTimer(maxPauseBudget)
+	pauseTimer.Stop()
+	defer pauseTimer.Stop()
+
+	resume := func() {
+		paused = false
+		pauseTimer.Stop()
+		timer.Reset(remaining)
+		deadline = time.Now().Add(remaining)
+	}
+
+	for {
+		select {
+		case msg := <-a.msgChan:
+			if msg.Err != nil {
+				return nil, msg.Err
+			}
+			switch strings.TrimSpace(string(msg.Data)) {
+			case C_PAUSE:
+				if !paused {
+					paused = true
+					remaining = time.Until(deadline)
+					if remaining < 0 {
+						remaining = 0
+					}
+					if !timer.Stop() {
+						select {
+						case <-timer.C:
+						default:
+						}
+					}
+					pauseTimer.Reset(maxPauseBudget)
+					slog.Info("応答待ちを一時停止しました", "agent", a.String(), "remaining", remaining.String())
+				}
+				continue
+			case C_RESUME:
+				if paused {
+					resume()
+					slog.Info("応答待ちを再開しました", "agent", a.String(), "remaining", remaining.String())
+				}
+				continue
+			default:
+				// 通常の応答
+				return msg.Data, nil
+			}
+		case <-timer.C:
+			if paused {
+				// 停止中はタイマーをStop済みのため通常ここには来ないが、念のため無視
+				continue
+			}
+			return nil, errors.New("レスポンスの受信がタイムアウトしました")
+		case <-pauseTimer.C:
+			if paused {
+				slog.Warn("一時停止が上限に達したため自動再開します", "agent", a.String(), "budget", maxPauseBudget.String())
+				resume()
+			}
+			continue
 		}
-		return msg.Data, nil
-	case <-time.After(timeout):
-		return nil, errors.New("レスポンスの受信がタイムアウトしました")
 	}
 }
 

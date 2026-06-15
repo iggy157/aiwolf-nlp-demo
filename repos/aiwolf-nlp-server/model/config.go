@@ -84,7 +84,12 @@ type Phase struct {
 }
 
 type MatchingConfig struct {
-	SelfMatch    bool   `yaml:"self_match"`
+	SelfMatch bool `yaml:"self_match"`
+	// RoomMatch を有効にすると、チーム名ではなく接続クエリ ?room=<id> の卓IDで
+	// 接続をグループ化する。これにより「1卓に複数の異なるチーム＋人間」を、
+	// 卓ごとに分離したまま同時並行でホストできる（/demo の複数卓同時対戦用）。
+	// self_match より優先される。TeamName は識別子として保持される。
+	RoomMatch    bool   `yaml:"room_match"`
 	IsOptimize   bool   `yaml:"is_optimize"`
 	TeamCount    int    `yaml:"team_count"`
 	GameCount    int    `yaml:"game_count"`

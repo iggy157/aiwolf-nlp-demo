@@ -119,7 +119,7 @@ aiwolf-nlp-demo/                 ← 作業ルート（このMDとClaude Code起
 │   └── aiwolf-nlp-agent-llm/     # feat/demo
 ├── lobby/                        # ★新規backend（FastAPI等）
 └── configs/
-    ├── server.yml               # self_match:true, agent_count:5, turn-based
+    ├── server.yml               # room_match:true（?room=卓IDで卓構成）, agent_count:5, turn-based
     └── agent.yml                # LLM接続（env から生成）
 ```
 
@@ -127,12 +127,13 @@ aiwolf-nlp-demo/                 ← 作業ルート（このMDとClaude Code起
 
 ## 4. なぜ成立するか（既存コードの根拠）
 
-### 4-1. 自動マッチ＝同一チーム5接続で即開始
-`repos/aiwolf-nlp-server/core/waiting_room.go` の `GetConnections()`：`self_match: true` のとき「**同一チーム名の接続が agent_count(=5) に達した瞬間にゲーム開始**」。中央ロビーも運営の開始操作も不要。
-`core/server.go` の `handleConnections()`：接続のたびに待機部屋へ追加し即マッチ判定 → 成立で goroutine 開始。ゲームは `sync.Map` で並行管理。
+### 4-1. 自動マッチ＝同一 room に agent_count 接続で即開始
+`repos/aiwolf-nlp-server/core/waiting_room.go` の `GetConnections()`：`room_match: true`（パッチ追加）のとき「**同一 room（接続クエリ `?room=<卓ID>`）の接続が agent_count(=5) に達した瞬間にゲーム開始**」。中央ロビーも運営の開始操作も不要。
+`core/server.go` の `handleConnections()`：接続のたびに `?room=` を読んで待機部屋へ追加し即マッチ判定 → 成立で goroutine 開始。ゲームは `sync.Map` で並行管理。
+（旧 `self_match:true` は「同一チーム名」でグルーピングしていたが、1卓に複数の別チーム＋人間を入れるため room グルーピングへ移行。）
 
-### 4-2. セッション隔離＝ユニークなチーム名
-待機部屋はチーム名でグルーピング。**1セッション = 使い捨てのユニークなチーム名**（例 `s-user01-x9f2`）にすれば、その人間＋その4体AIだけが同一卓にマッチし混線しない。1台のサーバで複数卓が同時進行可。表示名 `user01` は飾り、team名が隔離キー。
+### 4-2. 卓隔離＝ユニークな room（チーム名は識別子として保持）
+待機部屋は room でグルーピング。**1卓 = 使い捨てのユニークな room**（例 `session.id`）にし、その room へ人間・埋めのサンプルAI・持ち込みエージェントを同じ `?room=` で接続させれば、その面子だけが同一卓にマッチし混線しない。**各接続の TeamName はそのまま保持**されるので、人間（例 `you-user01`）・サンプル・外部チームを区別できる。1台のサーバで複数卓が同時進行可（`MAX_CONCURRENT_GAMES` で上限調整）。
 
 ### 4-3. AI 4体は1プロセスで起動
 `repos/aiwolf-nlp-agent-llm/src/main.py`：`agent.num` の数だけ `multiprocessing.Process` で接続。`num: 4` で1プロセス=4体。ロビーbackendがセッションのチーム名でこれを spawn。
@@ -205,8 +206,8 @@ for round := range MaxCount.PerDay {
 | service | 中身 | 役割 |
 |---|---|---|
 | `caddy` | Caddy | TLS終端 + 静的ビューア配信（**`/demo` 含むビルド**） + `wss` リバプロ + リアルタイムJSONL配信 |
-| `game-server` | Go（パッチ版） | ゲーム本体。`self_match:true`, agent_count:5, turn-based |
-| `lobby` | 新規backend＋agent-llm同梱 | 採番・セッションteam発行・ボタンでAI spawn・キュー。`.env` のLLM設定を子へ渡す |
+| `game-server` | Go（パッチ版） | ゲーム本体。`room_match:true`（?room=卓ID）, agent_count:5, turn-based |
+| `lobby` | 新規backend＋agent-llm同梱 | 採番・room発行・ボタンでAI spawn・キュー。`.env` のLLM設定を子へ渡す |
 
 （TTS音声を出すなら `voicevox` 追加。プレイには不要なので初期は無し）
 

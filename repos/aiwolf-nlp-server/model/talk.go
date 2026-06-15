@@ -34,3 +34,12 @@ const (
 	T_SKIP       = "Skip"
 	T_FORCE_SKIP = "ForceSkip"
 )
+
+// 制御トークン（/demo の一時停止用）。
+// 人間プレイヤーのWebSocket接続から応答待ち中に送られると、receive() の
+// タイムアウト計測を一時停止/再開する。通常の応答(発話/役職名/Over/Skip 等)とは
+// 衝突しない予約文字列。AIクライアントは送らないため影響なし。
+const (
+	C_PAUSE  = "__PAUSE__"
+	C_RESUME = "__RESUME__"
+)

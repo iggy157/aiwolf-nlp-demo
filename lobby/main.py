@@ -73,6 +73,16 @@ def internal_url_for(size: int) -> str:
 def public_url_for(size: int) -> str:
     return GAME_WS_PUBLIC_URL_9 if size == 9 else GAME_WS_PUBLIC_URL
 
+
+def with_room(url: str, room: str) -> str:
+    """WebSocket URL に ?room=<room> を付与する（room_match マッチング用の卓ID）。
+    人間・サンプルAI・持ち込みエージェントは同じ room を付けて接続することで同一卓に集まる。"""
+    if not room:
+        return url
+    from urllib.parse import quote
+    sep = "&" if "?" in url else "?"
+    return f"{url}{sep}room={quote(room, safe='')}"
+
 # LLM 設定（.env 由来）。LLM_PROVIDER で openai|google|vllm を切替（HANDOFF §8）
 LLM_PROVIDER = _env("LLM_PROVIDER", "openai")
 LLM_MODEL = _env("LLM_MODEL", "gpt-4o-mini")
@@ -82,8 +92,11 @@ OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "")
 AI_COUNT = int(_env("AI_COUNT", "4"))
 # 1卓の総人数（サーバの game.agent_count と一致させる）。外部接続＋サンプルAI = この値。
 AGENT_TOTAL = int(_env("AGENT_TOTAL", "5"))
-# 同時に走れる卓数（vLLMならGPU、商用APIならレート/コストで決める）
-MAX_CONCURRENT_GAMES = int(_env("MAX_CONCURRENT_GAMES", "1"))
+# 同時に走れる卓数（vLLMならGPU、商用APIならレート/コストで決める）。
+# room_match により各卓は room で分離され、ゲームサーバは1プロセスで複数卓を並行ホストできる。
+# 実上限は LLM スループット（vLLMのGPU同時処理/商用APIレート）と spawn するプロセス数で決まるため、
+# 環境に合わせて .env で調整する。
+MAX_CONCURRENT_GAMES = int(_env("MAX_CONCURRENT_GAMES", "20"))
 
 # --- 無人運転（HANDOFF §7）---
 # ハング卓の上限時間。これを超えて走行中ならAIプロセスを強制回収しスロット解放。
@@ -114,7 +127,13 @@ AGENT_LLM_PYTHON = _resolve_python()
 class Session:
     id: str
     display_name: str  # 採番された表示名（user01 等）
-    team: str          # マッチング用の一意チーム名（末尾は非数字）
+    team: str          # 埋めのサンプルAIが使うチーム名（末尾は非数字）
+    # room: room_match マッチングの卓ID。?room=<room> でこの卓に来た接続だけが1卓に集まる。
+    # チーム名ではなく room で束ねるため、人間・サンプルAI・持ち込みエージェントが
+    # それぞれ別チーム名のまま同一卓に入れる（卓は room で他卓と分離）。
+    room: str = ""
+    # human_team: 人間プレイヤーが使う「人間と分かる」チーム名（例 you-user01）。
+    human_team: str = ""
     status: str = "queued"  # queued | running | finished | error
     size: int = 5           # 村の人数（= サーバの agent_count。5 or 9）
     ai_count: int = 0       # この卓で起動するサンプルAI数（= size - external_slots）
@@ -161,6 +180,10 @@ class Lobby:
                 id=sid,
                 display_name=display,
                 team=self._new_team(display),
+                # room はこの卓の一意ID。session.id をそのまま使う（URLセーフ・一意）。
+                room=sid,
+                # 人間と分かるチーム名。末尾を非数字にして team 抽出の衝突を避ける。
+                human_team=f"you-{display}",
                 size=size,
                 ai_count=max(0, size - external_slots),
                 external_slots=external_slots,
@@ -207,7 +230,9 @@ class Lobby:
         import subprocess
 
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
-        cfg = self._build_agent_config(session.team, session.ai_count, internal_url_for(session.size))
+        # サンプルAIは ?room=<session.room> を付けて、この卓(room)にだけ参加する。
+        ai_url = with_room(internal_url_for(session.size), session.room)
+        cfg = self._build_agent_config(session.team, session.ai_count, ai_url)
         cfg_path = GENERATED_DIR / f"{session.id}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -458,10 +483,12 @@ async def join(req: JoinRequest | None = None) -> JoinResponse:
     return JoinResponse(
         session_id=session.id,
         display_name=session.display_name,
-        team=session.team,
+        # 人間は「人間と分かるチーム名」で接続する（room で卓に束ねるので team は識別用）。
+        team=session.human_team,
         status=session.status,
         position=lobby.position_of(session.id),
-        ws_url=public_url_for(session.size),
+        # ws_url に ?room= を付与。フロントはこの URL に接続するだけで正しい卓に入る。
+        ws_url=with_room(public_url_for(session.size), session.room),
         ai_count=session.ai_count,
         size=session.size,
     )
@@ -499,17 +526,19 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
     session = await lobby.create_session(external_slots=external, size=size)
     await lobby._schedule()  # noqa: SLF001
 
-    pub = public_url_for(session.size)
+    # 持ち込みエージェントも人間も ?room=<session.room> を付けて同一卓(room)に入る。
+    pub_room = with_room(public_url_for(session.size), session.room)
     human_url = None
     if human:
-        # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る
+        # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る。
+        # url には room 付き URL を、team には人間と分かるチーム名を渡す。
         from urllib.parse import quote
-        human_url = f"/demo?url={quote(pub, safe='')}&team={quote(session.team, safe='')}"
+        human_url = f"/demo?url={quote(pub_room, safe='')}&team={quote(session.human_team, safe='')}"
 
     return ByoResponse(
         session_id=session.id,
         team=session.team,
-        ws_url=pub,
+        ws_url=pub_room,
         ai_count=session.ai_count,
         agent_slots=agents,
         human_slots=human,
@@ -528,10 +557,10 @@ async def get_session(session_id: str) -> StatusResponse:
     return StatusResponse(
         session_id=session.id,
         display_name=session.display_name,
-        team=session.team,
+        team=session.human_team,
         status=session.status,
         position=lobby.position_of(session.id),
-        ws_url=public_url_for(session.size),
+        ws_url=with_room(public_url_for(session.size), session.room),
         size=session.size,
         error=session.error,
     )

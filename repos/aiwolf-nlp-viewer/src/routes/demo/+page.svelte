@@ -56,6 +56,13 @@
     }
   });
 
+  // 接続チーム名（人間と分かる識別名。ロビーが you-userNN を割り当てる）。
+  // room_match により卓は room で分離され、各参加者は別チーム名のまま同卓に入る。
+  let team = $state<string | null>(null);
+  const unsubSettings = agentSettings.subscribe((v) => {
+    team = v?.team ?? null;
+  });
+
   // 役職の日本語表示
   const ROLE_JP: Record<string, string> = {
     VILLAGER: "村人",
@@ -240,10 +247,16 @@
   }
 
   // 一時停止中はカウントダウン表示を凍結。再開時は実 deadline から再計算。
-  // ※ サーバ側の制限時間は裏で進むため「短い小休止」用（長時間止めると番が飛ぶ）。
   $effect(() => {
     if (deadline !== null && !effectivePaused) startCountdown();
     else stopCountdown();
+  });
+
+  // 一時停止をサーバ側にも反映（自分のターン中は応答待ちタイムアウトの計測を止める）。
+  // effectivePaused は手動の一時停止 or 開始ポップアップ表示中に true。
+  $effect(() => {
+    if (effectivePaused) demoSocketState.pause();
+    else demoSocketState.resume();
   });
 
   const remainSec = $derived(remain !== null ? Math.ceil(remain / 1000) : null);
@@ -384,6 +397,7 @@
       }
       stopCountdown();
       unsub();
+      unsubSettings();
     });
   }
 
@@ -453,6 +467,9 @@
             <div>
               <div class="font-bold">{agent ?? "—"}</div>
               <div class="badge badge-primary badge-sm">役職: {roleJp(role)}</div>
+              {#if team}
+                <div class="text-xs opacity-60 mt-1">接続チーム: {team}</div>
+              {/if}
             </div>
           </div>
           {#if profile}

@@ -182,7 +182,20 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}
-	s.waitingRoom.AddConnection(conn.TeamName, *conn)
+	// room_match マッチング時は接続クエリ ?room=<id> を卓IDとしてグループキーに使う。
+	// TeamName はそのまま識別子として保持する（複数チームが同一卓に入っても区別可能）。
+	groupKey := conn.TeamName
+	if s.config.Matching.RoomMatch {
+		room := r.URL.Query().Get("room")
+		if room == "" {
+			slog.Warn("room_match が有効ですが ?room= が指定されていません。接続を切断します", "team_name", conn.TeamName)
+			conn.Conn.Close()
+			return
+		}
+		conn.Room = room
+		groupKey = room
+	}
+	s.waitingRoom.AddConnection(groupKey, *conn)
 
 	var game *logic.Game
 	if s.config.Matching.IsOptimize {

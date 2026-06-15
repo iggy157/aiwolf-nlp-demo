@@ -12,6 +12,7 @@ import (
 type WaitingRoom struct {
 	agentCount  int
 	selfMatch   bool
+	roomMatch   bool
 	connections sync.Map
 }
 
@@ -19,6 +20,7 @@ func NewWaitingRoom(config model.Config) *WaitingRoom {
 	return &WaitingRoom{
 		agentCount: config.Game.AgentCount,
 		selfMatch:  config.Matching.SelfMatch,
+		roomMatch:  config.Matching.RoomMatch,
 	}
 }
 
@@ -95,7 +97,11 @@ func (wr *WaitingRoom) GetConnections() ([]model.Connection, error) {
 	connections := []model.Connection{}
 	ready := false
 
-	if wr.selfMatch {
+	// roomMatch / selfMatch はどちらも「同一キーで agentCount 接続が揃ったら1卓成立」。
+	// キーは AddConnection 時に決まる（roomMatch=room, selfMatch=team）。
+	// roomMatch では team が異なる接続を同じ room キーに束ねるため、
+	// 「1卓に複数チーム＋人間」を卓ごとに分離して構成できる。
+	if wr.selfMatch || wr.roomMatch {
 		wr.connections.Range(func(key, value any) bool {
 			team := key.(string)
 			conns := value.([]model.Connection)

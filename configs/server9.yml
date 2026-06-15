@@ -88,7 +88,11 @@ logic:
       MEDIUM: 1
 
 matching:
-  self_match: true
+  # room_match: 接続クエリ ?room=<卓ID> で卓を構成する（self_match より優先）。
+  # 1卓に複数の異なるチーム＋人間を入れたまま、卓ごとに分離して同時並行ホストできる。
+  # ロビーが各卓に一意な room を割り当て、人間・外部チーム・埋めのサンプルAIを同じ room へ接続させる。
+  room_match: true
+  self_match: false
   is_optimize: false
   team_count: 9
   game_count: 9
