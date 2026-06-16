@@ -361,7 +361,10 @@
       "startFailed": "会话启动失败",
       "role": "角色",
       "character": "角色形象",
-      "random": "随机"
+      "random": "随机",
+      "useMyAgent": "让 AI 使用我的 AI 人设（{name}）",
+      "useMyAgentNone": "让 AI 使用我的 AI 人设",
+      "noAgentHint": "请先在“创建你的 AI”中写下性格"
     },
     "feed": {
       "waitingStart": "正在等待游戏开始…",
@@ -397,7 +400,9 @@
       "soloDesc": "你 + AI（立即开始）",
       "multi": "多人",
       "multiDesc": "和朋友一起玩（用暗号加入同一桌）",
-      "back": "返回"
+      "back": "返回",
+      "agent": "🤖 创建 / 编辑你的 AI",
+      "spectate": "👁 观看 AI（AI 对战 AI）"
     },
     "multi": {
       "create": "创建房间",
@@ -420,7 +425,43 @@
       "leave": "离开",
       "roomClosed": "房间已关闭",
       "full": "房间已满",
-      "notFound": "未找到房间"
+      "notFound": "未找到房间",
+      "useMyAgent": "如果你离开，你的自制 AI「{name}」将接管你的座位继续游戏",
+      "useMyAgentNone": "如果你离开，你的自制 AI 将接管你的座位（请先在「创建你的 AI」中创建）"
+    },
+    "agent": {
+      "title": "创建你的 AI",
+      "intro": "写下你的 AI 的性格和策略，打造专属于你的 AI。在这里保存的内容只会保留在本设备上。",
+      "nickname": "AI 名称",
+      "nicknamePh": "例如：激进的预言家",
+      "persona": "玩法与性格",
+      "personaPh": "描述这个 AI 的性格、策略和语气。\n例如：经常主动发言并频繁虚张声势；作为村民时，会在前期就怀疑预言家。",
+      "personaHint": "游戏规则和输出格式会自动处理——你只需写性格、策略和语气即可。",
+      "chars": "{count} / {max} 字",
+      "save": "保存",
+      "saved": "已保存",
+      "preview": "预览",
+      "previewTitle": "发送给 AI 的附加指令（变量以示例形式显示）",
+      "clear": "清空",
+      "empty": "尚未填写任何内容",
+      "vars": "插入变量：",
+      "varsHint": "变量会在游戏中替换为真实值（例如你的角色）。",
+      "scaffold": "插入模板",
+      "scaffoldText": "【性格】\n\n【策略】\n\n【语气】\n",
+      "var": {
+        "name": "你的名字",
+        "role": "你的角色",
+        "day": "天数"
+      }
+    },
+    "spectate": {
+      "title": "观看 AI",
+      "intro": "观战 AI 对 AI 的对局。你会入座但不进行操作（自动跳过）。",
+      "myAi": "你的 AI 数量",
+      "composition": "你的 AI {my} 个 ＋ 默认 AI {def} 个",
+      "start": "开始观战",
+      "watching": "👁 观战中（正在观看 AI 之间的对局）",
+      "needAgent": "若要加入你的 AI，请先在“创建你的 AI”中创建"
     }
   }
 }

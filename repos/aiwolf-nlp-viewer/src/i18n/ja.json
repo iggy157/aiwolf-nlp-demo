@@ -260,7 +260,43 @@
       "soloDesc": "あなた1人＋AI（すぐ開始）",
       "multi": "マルチプレイ",
       "multiDesc": "友達と一緒に（合言葉で同じ卓に入る）",
+      "agent": "🤖 自作AIを作る / 編集",
+      "spectate": "👁 AI観戦（AI同士を観る）",
       "back": "戻る"
+    },
+    "spectate": {
+      "title": "AI観戦",
+      "intro": "AI同士の対戦を観戦します。あなたも席に着きますが操作はしません（自動でパス）。",
+      "myAi": "自作AIの数",
+      "composition": "自作AI {my} 体 ＋ 既定AI {def} 体",
+      "start": "観戦を始める",
+      "watching": "👁 観戦中（AI同士の対戦を観ています）",
+      "needAgent": "自作AIを入れるには先に「自作AIを作る」で作成してください"
+    },
+    "agent": {
+      "title": "自作AIを作る",
+      "intro": "AIの性格や戦略を書いて、自分だけのAIを作れます。ここで保存したAIはこの端末に残ります。",
+      "nickname": "AIの名前",
+      "nicknamePh": "例: アグレッシブ占い師",
+      "persona": "プレイスタイル・性格",
+      "personaPh": "このAIの性格・戦略・口調を自由に書いてください。\n例: 積極的に発言し、よくブラフを打つ。村人なら序盤から占い師を疑う。",
+      "personaHint": "ゲームのルールや出力形式は自動で守られます。性格・戦略・口調だけ書けばOKです。",
+      "chars": "{count} / {max} 文字",
+      "save": "保存",
+      "saved": "保存しました",
+      "preview": "プレビュー",
+      "previewTitle": "AIに渡される追加指示（変数は例で表示）",
+      "clear": "クリア",
+      "empty": "まだ何も書かれていません",
+      "vars": "変数を挿入:",
+      "varsHint": "変数はゲーム中に実際の値（あなたの役職など）に置き換わります。",
+      "scaffold": "型を挿入",
+      "scaffoldText": "【性格】\n\n【戦略】\n\n【口調】\n",
+      "var": {
+        "name": "あなたの名前",
+        "role": "役職",
+        "day": "日数"
+      }
     },
     "multi": {
       "create": "部屋を作る",
@@ -283,7 +319,9 @@
       "leave": "退出",
       "roomClosed": "部屋が閉じられました",
       "full": "満員です",
-      "notFound": "合言葉が見つかりません"
+      "notFound": "合言葉が見つかりません",
+      "useMyAgent": "離脱したら自作AI「{name}」が席を引き継ぐ",
+      "useMyAgentNone": "離脱したら自作AIが引き継ぐ（先に「自作AIを作る」で作成）"
     },
     "status": {
       "connected": "接続中",
@@ -371,6 +409,9 @@
       "role": "役職",
       "character": "キャラクター",
       "random": "おまかせ",
+      "useMyAgent": "AIに自作プロンプトを使う（{name}）",
+      "useMyAgentNone": "AIに自作プロンプトを使う",
+      "noAgentHint": "先に「自作AIを作る」で性格を書いてください",
       "village5": "5人村",
       "village9": "9人村",
       "comp5": "村人2・占い師・人狼・狂人（あなた＋AI4体）",

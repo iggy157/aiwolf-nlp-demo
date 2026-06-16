@@ -361,7 +361,10 @@
       "startFailed": "Échec du démarrage de la session",
       "role": "Rôle",
       "character": "Personnage",
-      "random": "Aléatoire"
+      "random": "Aléatoire",
+      "useMyAgent": "Utiliser mon persona d'IA pour les IA ({name})",
+      "useMyAgentNone": "Utiliser mon persona d'IA pour les IA",
+      "noAgentHint": "Écrivez d'abord une personnalité dans « Créez votre IA »"
     },
     "feed": {
       "waitingStart": "En attente du début de la partie…",
@@ -397,7 +400,9 @@
       "soloDesc": "Vous + IA (démarre tout de suite)",
       "multi": "Multijoueur",
       "multiDesc": "Jouez entre amis (rejoignez la même table avec un code)",
-      "back": "Retour"
+      "back": "Retour",
+      "agent": "🤖 Créez / modifiez votre IA",
+      "spectate": "👁 Regarder l’IA (IA contre IA)"
     },
     "multi": {
       "create": "Créer un salon",
@@ -420,7 +425,43 @@
       "leave": "Quitter",
       "roomClosed": "Le salon a été fermé",
       "full": "Le salon est complet",
-      "notFound": "Salon introuvable"
+      "notFound": "Salon introuvable",
+      "useMyAgent": "Si vous partez, votre IA personnalisée «{name}» prendra votre place et continuera à jouer",
+      "useMyAgentNone": "Si vous partez, votre IA personnalisée prendra votre place (créez-la d'abord dans «Créez votre IA»)"
+    },
+    "agent": {
+      "title": "Créez votre IA",
+      "intro": "Décrivez la personnalité et la stratégie de votre IA pour créer la vôtre. Ce que vous enregistrez ici reste sur cet appareil.",
+      "nickname": "Nom de l'IA",
+      "nicknamePh": "p. ex. Voyante agressive",
+      "persona": "Style de jeu et personnalité",
+      "personaPh": "Décrivez la personnalité, la stratégie et le ton de cette IA.\np. ex. Parle beaucoup et bluffe souvent ; en villageois, soupçonne tôt la voyante.",
+      "personaHint": "Les règles du jeu et le format de sortie sont gérés automatiquement — écrivez seulement la personnalité, la stratégie et le ton.",
+      "chars": "{count} / {max} caractères",
+      "save": "Enregistrer",
+      "saved": "Enregistré",
+      "preview": "Aperçu",
+      "previewTitle": "Instructions supplémentaires envoyées à l'IA (les variables sont affichées à titre d'exemple)",
+      "clear": "Effacer",
+      "empty": "Rien n'a encore été écrit",
+      "vars": "Insérer une variable :",
+      "varsHint": "Les variables deviennent les valeurs réelles (comme votre rôle) pendant la partie.",
+      "scaffold": "Insérer un modèle",
+      "scaffoldText": "[Personnalité]\n\n[Stratégie]\n\n[Ton]\n",
+      "var": {
+        "name": "Votre nom",
+        "role": "Votre rôle",
+        "day": "Numéro du jour"
+      }
+    },
+    "spectate": {
+      "title": "Regarder l’IA",
+      "intro": "Observez une partie IA contre IA. Vous prenez place mais n’agissez pas (passe automatique).",
+      "myAi": "Nombre de vos IA",
+      "composition": "{my} de vos IA ＋ {def} IA par défaut",
+      "start": "Commencer à regarder",
+      "watching": "👁 En observation (vous regardez les IA jouer)",
+      "needAgent": "Pour inclure votre IA, créez-la d’abord dans « Créez votre IA »"
     }
   }
 }

@@ -361,7 +361,10 @@
       "startFailed": "Het starten van de sessie is mislukt",
       "role": "Rol",
       "character": "Personage",
-      "random": "Willekeurig"
+      "random": "Willekeurig",
+      "useMyAgent": "Mijn AI-persona voor de AI's gebruiken ({name})",
+      "useMyAgentNone": "Mijn AI-persona voor de AI's gebruiken",
+      "noAgentHint": "Schrijf eerst een persoonlijkheid in “Maak je AI”"
     },
     "feed": {
       "waitingStart": "Wachten tot het spel begint…",
@@ -397,7 +400,9 @@
       "soloDesc": "Jij + AI (begint meteen)",
       "multi": "Multiplayer",
       "multiDesc": "Speel met vrienden (sluit aan bij dezelfde tafel met een code)",
-      "back": "Terug"
+      "back": "Terug",
+      "agent": "🤖 Maak / bewerk je AI",
+      "spectate": "👁 AI bekijken (AI tegen AI)"
     },
     "multi": {
       "create": "Een kamer maken",
@@ -420,7 +425,43 @@
       "leave": "Verlaten",
       "roomClosed": "De kamer is gesloten",
       "full": "De kamer is vol",
-      "notFound": "Kamer niet gevonden"
+      "notFound": "Kamer niet gevonden",
+      "useMyAgent": "Als je het spel verlaat, neemt jouw eigen AI «{name}» je plaats over en blijft spelen",
+      "useMyAgentNone": "Als je weggaat, neemt jouw eigen AI je plaats over (maak er eerst een in «Maak je eigen AI»)"
+    },
+    "agent": {
+      "title": "Maak je AI",
+      "intro": "Beschrijf de persoonlijkheid en strategie van je AI om je eigen AI te maken. Wat je hier opslaat, blijft op dit apparaat.",
+      "nickname": "Naam van de AI",
+      "nicknamePh": "bijv. Agressieve ziener",
+      "persona": "Speelstijl & persoonlijkheid",
+      "personaPh": "Beschrijf de persoonlijkheid, strategie en toon van deze AI.\nbijv. Praat veel en bluft vaak; als dorpeling verdenkt hij de ziener al vroeg.",
+      "personaHint": "De spelregels en het uitvoerformaat worden automatisch afgehandeld — schrijf alleen de persoonlijkheid, strategie en toon.",
+      "chars": "{count} / {max} tekens",
+      "save": "Opslaan",
+      "saved": "Opgeslagen",
+      "preview": "Voorbeeld",
+      "previewTitle": "Aanvullende instructies die naar de AI worden gestuurd (variabelen worden als voorbeeld getoond)",
+      "clear": "Wissen",
+      "empty": "Nog niets geschreven",
+      "vars": "Variabele invoegen:",
+      "varsHint": "Variabelen worden tijdens het spel de echte waarden (zoals jouw rol).",
+      "scaffold": "Sjabloon invoegen",
+      "scaffoldText": "[Persoonlijkheid]\n\n[Strategie]\n\n[Toon]\n",
+      "var": {
+        "name": "Jouw naam",
+        "role": "Jouw rol",
+        "day": "Dagnummer"
+      }
+    },
+    "spectate": {
+      "title": "AI bekijken",
+      "intro": "Bekijk een spel van AI tegen AI. Je neemt plaats maar onderneemt geen actie (automatisch passen).",
+      "myAi": "Aantal van jouw AI’s",
+      "composition": "{my} van jouw AI’s ＋ {def} standaard-AI’s",
+      "start": "Beginnen met kijken",
+      "watching": "👁 Aan het kijken (je kijkt hoe de AI’s spelen)",
+      "needAgent": "Om je AI mee te nemen, maak deze eerst aan bij “Maak je AI”"
     }
   }
 }

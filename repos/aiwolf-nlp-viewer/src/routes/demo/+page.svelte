@@ -11,6 +11,7 @@
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { agentSettings } from "$lib/stores/agent-settings";
   import { language, normalizeLanguage } from "$lib/stores/language";
+  import { MY_AGENT_MAX_CHARS, myAgent } from "$lib/stores/my-agent";
   import { characterList, localizedAvatar, localizedName, localizedPersonality } from "$lib/stores/profiles";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
@@ -138,7 +139,8 @@
   // マルチプレイでは1人の一時停止が全員を止めてしまうため無効化する（isMulti のとき常に false）。
   let paused = $state(false);
   let isMulti = $state(false); // この卓がマルチプレイか（接続時に確定）
-  const effectivePaused = $derived(isMulti ? false : (paused || introOpen));
+  let isSpectate = $state(false); // AI観戦モード（自分は操作せず自動パス）
+  const effectivePaused = $derived(isMulti || isSpectate ? false : (paused || introOpen));
 
   // 自分の live なリクエストが pending（=deadline 有り）のときだけ送信可（誤送信防止：HANDOFF §5-4）
   const isMyTurn = $derived(deadline !== null && request !== null);
@@ -294,13 +296,71 @@
     selectedCharacter >= 0 ? (characters[selectedCharacter]?.avatar ?? null) : null,
   );
 
+  // ---- 自作AI（プロンプトエンジニアリング）----
+  // 編集中の値はローカルに持ち、保存時に myAgent ストア(localStorage)へ書く。
+  let editNickname = $state("");
+  let editPersona = $state("");
+  let agentSaved = $state(false);
+  let previewText = $state<string | null>(null);
+  let useMyAgent = $state(false); // ソロ: AI席に自作プロンプトを使うか
+  function openAgentEditor() {
+    const a = $myAgent;
+    editNickname = a.nickname;
+    editPersona = a.persona;
+    previewText = null;
+    agentSaved = false;
+    screen = "agent";
+  }
+  function saveAgent() {
+    myAgent.set({ nickname: editNickname.trim(), persona: editPersona.trim().slice(0, MY_AGENT_MAX_CHARS) });
+    agentSaved = true;
+    setTimeout(() => (agentSaved = false), 1500);
+  }
+  async function previewAgent() {
+    try {
+      const res = await fetch(`${lobbyBase}/api/prompt/preview`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ language: gameLanguage, persona: editPersona }),
+      });
+      if (res.ok) previewText = (await res.json()).preview ?? "";
+    } catch {
+      /* ignore */
+    }
+  }
+
+  // L2: ピッカーで挿入できる変数（lobby の PROMPT_VARS とトークンを一致させること）。
+  const PROMPT_VARS = [
+    { key: "name", token: "{name}" },
+    { key: "role", token: "{role}" },
+    { key: "day", token: "{day}" },
+  ];
+  let personaTextarea = $state<HTMLTextAreaElement | null>(null);
+  // テキストをカーソル位置に挿入（選択範囲は置換）。生 Jinja は打たせず、トークンだけ挿す。
+  function insertAtCursor(text: string) {
+    const el = personaTextarea;
+    if (!el) {
+      editPersona = editPersona + text;
+      return;
+    }
+    const s = el.selectionStart ?? editPersona.length;
+    const e = el.selectionEnd ?? editPersona.length;
+    editPersona = editPersona.slice(0, s) + text + editPersona.slice(e);
+    requestAnimationFrame(() => {
+      el.focus();
+      const pos = s + text.length;
+      el.setSelectionRange(pos, pos);
+    });
+  }
+
   // ゲーム言語（AIの発話言語）＝開始時のUI言語。言語セレクタはUIとゲームを同時に切り替える
   // （言語を選ぶ＝画面もAIも即座にその言語）。卓開始後はこのゲーム言語が固定される。
   const gameLanguage = $derived(normalizeLanguage($locale, "ja"));
 
   // ---- ソロ/マルチのモード選択（接続前の画面遷移）----
   // mode=最初の選択 / solo=ソロ設定 / multiCreate=部屋作成 / multiJoin=合言葉参加 / waiting=待機部屋
-  let screen = $state<"mode" | "solo" | "multiCreate" | "multiJoin" | "waiting">("mode");
+  let screen = $state<"mode" | "solo" | "multiCreate" | "multiJoin" | "waiting" | "agent" | "spectate">("mode");
+  let myAiCount = $state(1); // 観戦: AI席のうち自作AIにする数
   let deviceToken = ""; // 端末の匿名トークン（localStorage）。アカウント無しの席識別用。
   let humanSlots = $state(2); // マルチの人間席数（1..villageSize）
   let roomCode = $state<string>(""); // 参加中のマルチ部屋の合言葉
@@ -336,7 +396,10 @@
       const res = await fetch(`${lobbyBase}/api/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken }),
+        body: JSON.stringify({
+          mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
+          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
+        }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
       const data = await res.json();
@@ -358,6 +421,60 @@
     }
   }
 
+  // ---- AI観戦: AI同士の対戦を観る（自分は席に着くが自動でパス）----
+  async function startSpectate() {
+    lobbyPhase = "joining";
+    lobbyError = null;
+    introAck = true; // 観戦では役職ポップアップを出さない
+    introOpen = false;
+    isMulti = false;
+    isSpectate = true;
+    try {
+      const res = await fetch(`${lobbyBase}/api/rooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
+          agent_prompt: $myAgent.persona ?? "",
+          my_ai_count: $myAgent.persona ? myAiCount : 0,
+        }),
+      });
+      if (!res.ok) throw new Error(`create failed: ${res.status}`);
+      const data = await res.json();
+      sessionId = data.room_id;
+      myTeam = data.you?.team ?? null;
+      displayName = data.you?.display_name ?? null;
+      if (data.ws_url) {
+        agentSettings.update((value) => ({
+          ...value,
+          connection: { url: data.ws_url, token: "" },
+          team: myTeam ?? value.team,
+        }));
+      }
+      applyLobbyStatus(data.status, data.position);
+      pollSession();
+    } catch (e) {
+      lobbyPhase = "error";
+      lobbyError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  // 観戦中は自分の手番を自動でパスする（発言はOver、投票/夜は生存対象の先頭）。
+  let spectateActedDeadline: number | null = null;
+  $effect(() => {
+    if (!isSpectate || !isMyTurn || deadline === null) return;
+    if (spectateActedDeadline === deadline) return; // この手番は処理済み
+    spectateActedDeadline = deadline;
+    const talkReq = request === Request.TALK || request === Request.WHISPER;
+    const targets = aliveTargets;
+    const t = setTimeout(() => {
+      if (talkReq) demoSocketState.send("Over");
+      else if (targets.length) demoSocketState.send(targets[0]);
+      else demoSocketState.send("");
+    }, 700);
+    return () => clearTimeout(t);
+  });
+
   // ---- マルチ: 部屋を作る（ホスト）----
   async function createRoom() {
     lobbyError = null;
@@ -368,6 +485,7 @@
         body: JSON.stringify({
           mode: "multi", size: villageSize, language: gameLanguage,
           human_slots: humanSlots, token: deviceToken,
+          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -389,7 +507,10 @@
       const res = await fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(code)}/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ token: deviceToken }),
+        body: JSON.stringify({
+          token: deviceToken,
+          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
+        }),
       });
       if (res.status === 404) { lobbyError = $_("demo.multi.notFound"); return; }
       if (res.status === 409) { lobbyError = $_("demo.multi.full"); return; }
@@ -595,6 +716,8 @@
     introAck = false;
     paused = false;
     isMulti = false;
+    isSpectate = false;
+    spectateActedDeadline = null;
     sessionId = null;
     displayName = null;
     queuePos = 0;
@@ -862,6 +985,23 @@
     {/if}
   </div>
 
+  <!-- マルチ作成/参加で共通: 「離脱したら自作AIが引き継ぐ」トグル -->
+  {#snippet takeoverToggle()}
+    <div class="flex flex-col items-center gap-1 w-full max-w-xs">
+      <label class="flex items-center gap-2 cursor-pointer {$myAgent.persona ? '' : 'opacity-50'}">
+        <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!$myAgent.persona} />
+        <span class="text-sm text-left">
+          {$myAgent.persona
+            ? $_("demo.multi.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
+            : $_("demo.multi.useMyAgentNone")}
+        </span>
+      </label>
+      {#if !$myAgent.persona}
+        <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.mode.agent")}</button>
+      {/if}
+    </div>
+  {/snippet}
+
   {#if showStartScreen}
     <!-- スタート/順番待ち画面（ロビー連携）-->
     <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
@@ -884,7 +1024,67 @@
               <span class="text-xs font-normal opacity-80">{$_("demo.mode.multiDesc")}</span>
             </button>
             <button class="btn btn-ghost btn-sm" onclick={() => (screen = "multiJoin")}>{$_("demo.multi.join")}</button>
+            <button class="btn btn-ghost btn-sm" onclick={openAgentEditor}>{$_("demo.mode.agent")}</button>
+            <button class="btn btn-ghost btn-sm" onclick={() => (screen = "spectate")}>{$_("demo.mode.spectate")}</button>
           </div>
+        {:else if screen === "spectate"}
+          <!-- 👁 AI観戦: AI同士の対戦を観る -->
+          <div class="text-lg font-bold">{$_("demo.spectate.title")}</div>
+          <p class="text-xs opacity-60 max-w-xs">{$_("demo.spectate.intro")}</p>
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-sm font-bold opacity-70">{$_("demo.start.villageSize")}</div>
+            <div class="join">
+              <button class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 5)}>{$_("demo.start.village5")}</button>
+              <button class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
+            </div>
+          </div>
+          {#if $myAgent.persona}
+            <div class="flex flex-col items-center gap-1 w-full max-w-xs">
+              <div class="text-sm font-bold opacity-70">{$_("demo.spectate.myAi")}: <span class="text-primary">{Math.min(myAiCount, villageSize - 1)}</span> / {villageSize - 1}</div>
+              <input type="range" min="0" max={villageSize - 1} bind:value={myAiCount} class="range range-primary range-sm w-full" />
+              <div class="text-xs opacity-60">{$_("demo.spectate.composition", { values: { my: Math.min(myAiCount, villageSize - 1), def: villageSize - 1 - Math.min(myAiCount, villageSize - 1) } })}</div>
+            </div>
+          {:else}
+            <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.spectate.needAgent")}</button>
+          {/if}
+          <button class="btn btn-primary btn-lg" onclick={startSpectate}>{$_("demo.spectate.start")}</button>
+          <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
+        {:else if screen === "agent"}
+          <!-- 自作AIエディタ（プロンプトエンジニアリング L1）-->
+          <div class="text-lg font-bold">{$_("demo.agent.title")}</div>
+          <p class="text-xs opacity-60 max-w-sm">{$_("demo.agent.intro")}</p>
+          <div class="flex flex-col items-stretch gap-3 w-full max-w-sm text-left">
+            <label class="flex flex-col gap-1">
+              <span class="text-sm font-bold opacity-70">{$_("demo.agent.nickname")}</span>
+              <input class="input input-bordered input-sm" maxlength="40" placeholder={$_("demo.agent.nicknamePh")} bind:value={editNickname} />
+            </label>
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-bold opacity-70">{$_("demo.agent.persona")}</span>
+              <!-- 変数ピッカー＋型挿入（生 Jinja は打たせない）-->
+              <div class="flex flex-wrap items-center gap-1">
+                <span class="text-[11px] opacity-60">{$_("demo.agent.vars")}</span>
+                {#each PROMPT_VARS as v}
+                  <button type="button" class="btn btn-xs btn-outline" onclick={() => insertAtCursor(v.token)}>{$_(`demo.agent.var.${v.key}`)}</button>
+                {/each}
+                <button type="button" class="btn btn-xs btn-ghost ml-auto" onclick={() => insertAtCursor($_("demo.agent.scaffoldText"))}>{$_("demo.agent.scaffold")}</button>
+              </div>
+              <textarea bind:this={personaTextarea} class="textarea textarea-bordered h-40 text-sm" maxlength={MY_AGENT_MAX_CHARS} placeholder={$_("demo.agent.personaPh")} bind:value={editPersona}></textarea>
+              <span class="text-[11px] opacity-50 text-right">{$_("demo.agent.chars", { values: { count: editPersona.length, max: MY_AGENT_MAX_CHARS } })}</span>
+            </div>
+            <p class="text-[11px] opacity-60">{$_("demo.agent.personaHint")} {$_("demo.agent.varsHint")}</p>
+            <div class="flex gap-2">
+              <button class="btn btn-primary btn-sm grow" onclick={saveAgent}>{agentSaved ? $_("demo.agent.saved") : $_("demo.agent.save")}</button>
+              <button class="btn btn-outline btn-sm" onclick={previewAgent}>{$_("demo.agent.preview")}</button>
+              <button class="btn btn-ghost btn-sm" onclick={() => { editPersona = ""; editNickname = ""; previewText = null; }}>{$_("demo.agent.clear")}</button>
+            </div>
+            {#if previewText !== null}
+              <div class="text-xs">
+                <div class="font-bold opacity-70 mb-1">{$_("demo.agent.previewTitle")}</div>
+                <pre class="bg-base-200 rounded p-2 whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[11px]">{previewText || $_("demo.agent.empty")}</pre>
+              </div>
+            {/if}
+          </div>
+          <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "solo"}
           <!-- ② ソロ: 村サイズ + 役職/キャラ + 開始 -->
           <div class="flex flex-col items-center gap-2">
@@ -916,6 +1116,20 @@
               </select>
             </div>
           </div>
+          <!-- 自作AIをAI席に使う（任意）-->
+          <div class="flex flex-col items-center gap-1">
+            <label class="flex items-center gap-2 cursor-pointer {$myAgent.persona ? '' : 'opacity-50'}">
+              <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!$myAgent.persona} />
+              <span class="text-sm">
+                {$myAgent.persona
+                  ? $_("demo.start.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
+                  : $_("demo.start.useMyAgentNone")}
+              </span>
+            </label>
+            {#if !$myAgent.persona}
+              <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.start.noAgentHint")}</button>
+            {/if}
+          </div>
           <button class="btn btn-primary btn-lg" onclick={startSolo}>{$_("demo.start.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "multiCreate"}
@@ -933,6 +1147,7 @@
             <input type="range" min="1" max={villageSize} bind:value={humanSlots} class="range range-primary range-sm w-full" />
             <div class="text-xs opacity-60">{$_("demo.multi.aiFill", { values: { count: villageSize - humanSlots } })}</div>
           </div>
+          {@render takeoverToggle()}
           <button class="btn btn-primary btn-lg" onclick={createRoom}>{$_("demo.multi.createBtn")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "multiJoin"}
@@ -945,6 +1160,7 @@
             bind:value={joinCodeInput}
             oninput={(e) => (joinCodeInput = (e.target as HTMLInputElement).value.toUpperCase())}
           />
+          {@render takeoverToggle()}
           {#if lobbyError}<div class="alert alert-error py-2"><span>{lobbyError}</span></div>{/if}
           <button class="btn btn-primary btn-lg" disabled={!joinCodeInput.trim()} onclick={joinRoom}>{$_("demo.multi.joinBtn")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => { lobbyError = null; screen = "mode"; }}>← {$_("demo.mode.back")}</button>
@@ -1060,7 +1276,12 @@
 
   <!-- 入力エリア：自分のターンだけ enable（HANDOFF §5-4 誤送信防止）-->
   <footer class="flex-none bg-base-200 p-3">
-    {#if isMyTurn && effectivePaused}
+    {#if isSpectate}
+      <div class="flex items-center justify-center gap-2 py-2 text-sm opacity-70">
+        <span class="loading loading-dots loading-sm"></span>
+        {$_("demo.spectate.watching")}
+      </div>
+    {:else if isMyTurn && effectivePaused}
       <div class="flex items-center justify-center gap-3 py-2">
         <span class="text-sm opacity-70">{$_("demo.footer.pausedYourTurn", { values: { action: actionName } })}</span>
         <button class="btn btn-sm btn-success" onclick={() => (paused = false)}>

@@ -260,7 +260,43 @@
       "soloDesc": "You + AI (starts right away)",
       "multi": "Multiplayer",
       "multiDesc": "Play with friends (join the same table by code)",
+      "agent": "🤖 Create / edit your AI",
+      "spectate": "👁 Watch AI (AI vs AI)",
       "back": "Back"
+    },
+    "spectate": {
+      "title": "Watch AI",
+      "intro": "Spectate an AI-vs-AI game. You take a seat but don't act (auto-pass).",
+      "myAi": "Number of your AIs",
+      "composition": "{my} of your AI + {def} default AI",
+      "start": "Start watching",
+      "watching": "👁 Spectating (watching the AIs play)",
+      "needAgent": "Create your AI first in “Create your AI” to include it"
+    },
+    "agent": {
+      "title": "Create your AI",
+      "intro": "Write your AI's personality and strategy to make your own AI. What you save here stays on this device.",
+      "nickname": "AI name",
+      "nicknamePh": "e.g. Aggressive Seer",
+      "persona": "Play style & personality",
+      "personaPh": "Describe this AI's personality, strategy, and tone.\ne.g. Speaks up a lot and bluffs often; as a villager, suspects the seer early.",
+      "personaHint": "The game rules and output format are handled automatically — just write the personality, strategy, and tone.",
+      "chars": "{count} / {max} chars",
+      "save": "Save",
+      "saved": "Saved",
+      "preview": "Preview",
+      "previewTitle": "Extra instructions sent to the AI (variables shown as examples)",
+      "clear": "Clear",
+      "empty": "Nothing written yet",
+      "vars": "Insert variable:",
+      "varsHint": "Variables become the real values (such as your role) during the game.",
+      "scaffold": "Insert template",
+      "scaffoldText": "[Personality]\n\n[Strategy]\n\n[Tone]\n",
+      "var": {
+        "name": "Your name",
+        "role": "Your role",
+        "day": "Day number"
+      }
     },
     "multi": {
       "create": "Create a room",
@@ -283,7 +319,9 @@
       "leave": "Leave",
       "roomClosed": "The room was closed",
       "full": "Room is full",
-      "notFound": "Room not found"
+      "notFound": "Room not found",
+      "useMyAgent": "If you leave, your AI “{name}” takes over your seat",
+      "useMyAgentNone": "If you leave, your AI takes over (create one first in “Create your AI”)"
     },
     "status": {
       "connected": "Connected",
@@ -371,6 +409,9 @@
       "role": "Role",
       "character": "Character",
       "random": "Random",
+      "useMyAgent": "Use my AI persona for the AIs ({name})",
+      "useMyAgentNone": "Use my AI persona for the AIs",
+      "noAgentHint": "First write a personality in “Create your AI”",
       "village5": "5 players",
       "village9": "9 players",
       "comp5": "2 villagers, seer, werewolf, possessed (you + 4 AI)",

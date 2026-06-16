@@ -361,7 +361,10 @@
       "startFailed": "Die Sitzung konnte nicht gestartet werden",
       "role": "Rolle",
       "character": "Charakter",
-      "random": "Zufällig"
+      "random": "Zufällig",
+      "useMyAgent": "Meine KI-Persona für die KIs verwenden ({name})",
+      "useMyAgentNone": "Meine KI-Persona für die KIs verwenden",
+      "noAgentHint": "Schreibe zuerst eine Persönlichkeit in „Erstelle deine KI“"
     },
     "feed": {
       "waitingStart": "Warte auf den Spielbeginn…",
@@ -397,7 +400,9 @@
       "soloDesc": "Du + KI (startet sofort)",
       "multi": "Mehrspieler",
       "multiDesc": "Spiele mit Freunden (mit einem Code am selben Tisch beitreten)",
-      "back": "Zurück"
+      "back": "Zurück",
+      "agent": "🤖 Erstelle / bearbeite deine KI",
+      "spectate": "👁 KI ansehen (KI gegen KI)"
     },
     "multi": {
       "create": "Raum erstellen",
@@ -420,7 +425,43 @@
       "leave": "Verlassen",
       "roomClosed": "Der Raum wurde geschlossen",
       "full": "Der Raum ist voll",
-      "notFound": "Raum nicht gefunden"
+      "notFound": "Raum nicht gefunden",
+      "useMyAgent": "Wenn du das Spiel verlässt, übernimmt deine eigene KI «{name}» deinen Platz und spielt weiter",
+      "useMyAgentNone": "Wenn du gehst, übernimmt deine eigene KI deinen Platz (erstelle sie zuerst unter «Erstelle deine KI»)"
+    },
+    "agent": {
+      "title": "Erstelle deine KI",
+      "intro": "Beschreibe Persönlichkeit und Strategie deiner KI, um deine eigene zu erstellen. Was du hier speicherst, bleibt auf diesem Gerät.",
+      "nickname": "Name der KI",
+      "nicknamePh": "z. B. Aggressive Seherin",
+      "persona": "Spielstil & Persönlichkeit",
+      "personaPh": "Beschreibe die Persönlichkeit, Strategie und den Ton dieser KI.\nz. B. Redet viel und blufft oft; als Dorfbewohner verdächtigt sie früh die Seherin.",
+      "personaHint": "Spielregeln und Ausgabeformat werden automatisch berücksichtigt – schreibe nur Persönlichkeit, Strategie und Ton.",
+      "chars": "{count} / {max} Zeichen",
+      "save": "Speichern",
+      "saved": "Gespeichert",
+      "preview": "Vorschau",
+      "previewTitle": "Zusätzliche Anweisungen, die an die KI gesendet werden (Variablen werden als Beispiele angezeigt)",
+      "clear": "Löschen",
+      "empty": "Noch nichts geschrieben",
+      "vars": "Variable einfügen:",
+      "varsHint": "Variablen werden während des Spiels zu den echten Werten (z. B. deiner Rolle).",
+      "scaffold": "Vorlage einfügen",
+      "scaffoldText": "[Persönlichkeit]\n\n[Strategie]\n\n[Tonfall]\n",
+      "var": {
+        "name": "Dein Name",
+        "role": "Deine Rolle",
+        "day": "Tagesnummer"
+      }
+    },
+    "spectate": {
+      "title": "KI ansehen",
+      "intro": "Sieh einem KI-gegen-KI-Spiel zu. Du nimmst einen Platz ein, handelst aber nicht (automatisches Passen).",
+      "myAi": "Anzahl deiner KIs",
+      "composition": "{my} deiner KIs ＋ {def} Standard-KIs",
+      "start": "Zuschauen starten",
+      "watching": "👁 Zuschauen (du siehst den KIs beim Spielen zu)",
+      "needAgent": "Um deine KI einzubinden, erstelle sie zuerst unter „Erstelle deine KI“"
     }
   }
 }

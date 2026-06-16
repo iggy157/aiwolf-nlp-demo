@@ -361,7 +361,10 @@
       "startFailed": "Gagal memulai sesi",
       "role": "Peran",
       "character": "Karakter",
-      "random": "Acak"
+      "random": "Acak",
+      "useMyAgent": "Gunakan persona AI saya untuk AI ({name})",
+      "useMyAgentNone": "Gunakan persona AI saya untuk AI",
+      "noAgentHint": "Tulis dulu kepribadian di “Buat AI kamu”"
     },
     "feed": {
       "waitingStart": "Menunggu permainan dimulai…",
@@ -397,7 +400,9 @@
       "soloDesc": "Anda + AI (langsung mulai)",
       "multi": "Multipemain",
       "multiDesc": "Main bersama teman (gabung ke meja yang sama dengan kode)",
-      "back": "Kembali"
+      "back": "Kembali",
+      "agent": "🤖 Buat / edit AI kamu",
+      "spectate": "👁 Tonton AI (AI lawan AI)"
     },
     "multi": {
       "create": "Buat ruangan",
@@ -420,7 +425,43 @@
       "leave": "Keluar",
       "roomClosed": "Ruangan telah ditutup",
       "full": "Ruangan penuh",
-      "notFound": "Ruangan tidak ditemukan"
+      "notFound": "Ruangan tidak ditemukan",
+      "useMyAgent": "Jika kamu keluar, AI buatanmu «{name}» akan mengambil alih kursimu dan terus bermain",
+      "useMyAgentNone": "Jika kamu keluar, AI buatanmu akan mengambil alih kursimu (buat dulu di «Buat AI-mu»)"
+    },
+    "agent": {
+      "title": "Buat AI kamu",
+      "intro": "Tulis kepribadian dan strategi AI-mu untuk membuat AI sendiri. Yang kamu simpan di sini tetap berada di perangkat ini.",
+      "nickname": "Nama AI",
+      "nicknamePh": "mis. Peramal agresif",
+      "persona": "Gaya bermain & kepribadian",
+      "personaPh": "Jelaskan kepribadian, strategi, dan nada bicara AI ini.\nmis. Banyak bicara dan sering menggertak; sebagai warga desa, mencurigai peramal sejak awal.",
+      "personaHint": "Aturan permainan dan format keluaran ditangani otomatis — cukup tulis kepribadian, strategi, dan nada bicaranya.",
+      "chars": "{count} / {max} karakter",
+      "save": "Simpan",
+      "saved": "Tersimpan",
+      "preview": "Pratinjau",
+      "previewTitle": "Instruksi tambahan yang dikirim ke AI (variabel ditampilkan sebagai contoh)",
+      "clear": "Hapus",
+      "empty": "Belum ada yang ditulis",
+      "vars": "Sisipkan variabel:",
+      "varsHint": "Variabel menjadi nilai sebenarnya (seperti peran Anda) selama permainan.",
+      "scaffold": "Sisipkan templat",
+      "scaffoldText": "[Kepribadian]\n\n[Strategi]\n\n[Nada]\n",
+      "var": {
+        "name": "Nama Anda",
+        "role": "Peran Anda",
+        "day": "Nomor hari"
+      }
+    },
+    "spectate": {
+      "title": "Tonton AI",
+      "intro": "Saksikan permainan AI lawan AI. Anda menempati kursi tetapi tidak bertindak (otomatis pass).",
+      "myAi": "Jumlah AI Anda",
+      "composition": "{my} AI Anda ＋ {def} AI bawaan",
+      "start": "Mulai menonton",
+      "watching": "👁 Menonton (menyaksikan AI bermain)",
+      "needAgent": "Untuk menyertakan AI Anda, buat dulu di “Buat AI Anda”"
     }
   }
 }
