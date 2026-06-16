@@ -337,6 +337,9 @@
     },
     "start": {
       "villageSize": "村の人数",
+      "role": "役職",
+      "character": "キャラクター",
+      "random": "おまかせ",
       "village5": "5人村",
       "village9": "9人村",
       "comp5": "村人2・占い師・人狼・狂人（あなた＋AI4体）",

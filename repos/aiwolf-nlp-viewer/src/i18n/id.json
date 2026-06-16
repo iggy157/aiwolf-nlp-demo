@@ -358,7 +358,10 @@
       "retry": "Coba lagi",
       "displayName": "Nama tampilan Anda: {name}",
       "unknownError": "Kesalahan tidak diketahui",
-      "startFailed": "Gagal memulai sesi"
+      "startFailed": "Gagal memulai sesi",
+      "role": "Peran",
+      "character": "Karakter",
+      "random": "Acak"
     },
     "feed": {
       "waitingStart": "Menunggu permainan dimulai…",

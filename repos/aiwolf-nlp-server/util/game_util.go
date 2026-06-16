@@ -66,16 +66,72 @@ func CreateAgents(conns []model.Connection, roles map[model.Role]int) []*model.A
 	return agents
 }
 
+// CreateAgentsWithProfiles は接続に役職とプロフィールを割り当てる。
+// 接続が希望（DesiredRole / DesiredCharacter）を持つ場合はそれを優先し、
+// 残りの接続には残りの役職・プロフィールをランダムに配る（希望なしは従来どおり完全ランダム）。
+// 人間プレイヤー(/demo)だけが希望を付けてくる想定で、AIは希望なし。
 func CreateAgentsWithProfiles(conns []model.Connection, roles map[model.Role]int, profiles []model.Profile, encoding map[string]string) []*model.Agent {
 	rolesCopy := make(map[model.Role]int)
 	maps.Copy(rolesCopy, roles)
-	agents := make([]*model.Agent, 0)
 
-	rand.Shuffle(len(profiles), func(i, j int) { profiles[i], profiles[j] = profiles[j], profiles[i] })
+	// caller の profiles スライスを破壊しないようコピーして扱う。
+	profilesCopy := make([]model.Profile, len(profiles))
+	copy(profilesCopy, profiles)
+	usedProfile := make([]bool, len(profilesCopy))
 
+	// --- 役職割り当て ---
+	assignedRoles := make([]model.Role, len(conns))
+	roleDone := make([]bool, len(conns))
+	// 1) 希望役職を先に確保（capacity がある場合のみ）
 	for i, conn := range conns {
-		role := assignRole(rolesCopy)
-		agent := model.NewAgentWithProfile(i+1, role, conn, profiles[i], encoding)
+		if conn.DesiredRole == "" {
+			continue
+		}
+		if r := model.RoleFromString(conn.DesiredRole); r != model.R_NONE && rolesCopy[r] > 0 {
+			rolesCopy[r]--
+			assignedRoles[i] = r
+			roleDone[i] = true
+		}
+	}
+	// 2) 残りの接続に残りの役職
+	for i := range conns {
+		if !roleDone[i] {
+			assignedRoles[i] = assignRole(rolesCopy)
+		}
+	}
+
+	// --- プロフィール（キャラ）割り当て ---
+	assignedProfile := make([]int, len(conns))
+	profDone := make([]bool, len(conns))
+	// 1) 希望キャラを先に確保（範囲内かつ未使用の場合のみ）
+	for i, conn := range conns {
+		c := conn.DesiredCharacter
+		if c >= 0 && c < len(profilesCopy) && !usedProfile[c] {
+			usedProfile[c] = true
+			assignedProfile[i] = c
+			profDone[i] = true
+		}
+	}
+	// 2) 残りのプロフィールをシャッフルして、希望なしの接続に配る
+	remaining := make([]int, 0, len(profilesCopy))
+	for idx := range profilesCopy {
+		if !usedProfile[idx] {
+			remaining = append(remaining, idx)
+		}
+	}
+	rand.Shuffle(len(remaining), func(a, b int) { remaining[a], remaining[b] = remaining[b], remaining[a] })
+	rp := 0
+	for i := range conns {
+		if !profDone[i] {
+			assignedProfile[i] = remaining[rp]
+			rp++
+		}
+	}
+
+	// --- エージェント生成 ---
+	agents := make([]*model.Agent, 0, len(conns))
+	for i, conn := range conns {
+		agent := model.NewAgentWithProfile(i+1, assignedRoles[i], conn, profilesCopy[assignedProfile[i]], encoding)
 		agents = append(agents, agent)
 	}
 	return agents

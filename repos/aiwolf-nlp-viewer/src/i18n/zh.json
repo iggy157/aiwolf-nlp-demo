@@ -358,7 +358,10 @@
       "retry": "重试",
       "displayName": "你的显示名称：{name}",
       "unknownError": "未知错误",
-      "startFailed": "会话启动失败"
+      "startFailed": "会话启动失败",
+      "role": "角色",
+      "character": "角色形象",
+      "random": "随机"
     },
     "feed": {
       "waitingStart": "正在等待游戏开始…",

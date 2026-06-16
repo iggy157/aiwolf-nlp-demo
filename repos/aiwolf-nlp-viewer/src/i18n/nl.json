@@ -358,7 +358,10 @@
       "retry": "Opnieuw proberen",
       "displayName": "Je weergavenaam: {name}",
       "unknownError": "Onbekende fout",
-      "startFailed": "Het starten van de sessie is mislukt"
+      "startFailed": "Het starten van de sessie is mislukt",
+      "role": "Rol",
+      "character": "Personage",
+      "random": "Willekeurig"
     },
     "feed": {
       "waitingStart": "Wachten tot het spel begint…",

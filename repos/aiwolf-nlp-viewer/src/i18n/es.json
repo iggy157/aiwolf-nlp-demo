@@ -358,7 +358,10 @@
       "retry": "Reintentar",
       "displayName": "Tu nombre visible: {name}",
       "unknownError": "Error desconocido",
-      "startFailed": "No se pudo iniciar la sesión"
+      "startFailed": "No se pudo iniciar la sesión",
+      "role": "Rol",
+      "character": "Personaje",
+      "random": "Aleatorio"
     },
     "feed": {
       "waitingStart": "Esperando a que empiece la partida…",

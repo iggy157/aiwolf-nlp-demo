@@ -358,7 +358,10 @@
       "retry": "Réessayer",
       "displayName": "Votre nom d'affichage : {name}",
       "unknownError": "Erreur inconnue",
-      "startFailed": "Échec du démarrage de la session"
+      "startFailed": "Échec du démarrage de la session",
+      "role": "Rôle",
+      "character": "Personnage",
+      "random": "Aléatoire"
     },
     "feed": {
       "waitingStart": "En attente du début de la partie…",

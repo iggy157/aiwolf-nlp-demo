@@ -32,6 +32,21 @@ const TABLES: Record<string, ProfileTable> = {
   ja, en, zh, hi, es, ar, bn, fr, ru, pt, ur, id, de, nl,
 };
 
+// 原名キーの正本順（= サーバ custom_profile の profiles 並び）。character の index はこの順。
+const CANONICAL_KEYS: string[] = Object.keys(ja);
+
+/** キャラ選択用の一覧。index はサーバの profiles 並びと一致（?character=<index> でそのまま渡せる）。
+ *  name / avatar は指定ロケールの表示用。 */
+export function characterList(
+  locale: string | null | undefined,
+): { index: number; name: string; avatar: string | null }[] {
+  const lang = normalizeLanguage(locale, "ja");
+  return CANONICAL_KEYS.map((jp, index) => {
+    const e = TABLES[lang]?.[jp] ?? TABLES.ja[jp];
+    return { index, name: e?.name ?? jp, avatar: e?.avatar ?? null };
+  });
+}
+
 /** 原名(サーバ名)を、指定言語の表示名に変換する。未登録なら原名をそのまま返す。 */
 export function localizedName(name: string | null | undefined, locale: string | null | undefined): string {
   if (!name) return "—";

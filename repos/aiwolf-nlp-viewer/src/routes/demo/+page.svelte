@@ -11,7 +11,7 @@
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { agentSettings } from "$lib/stores/agent-settings";
   import { language, normalizeLanguage } from "$lib/stores/language";
-  import { localizedAvatar, localizedName, localizedPersonality } from "$lib/stores/profiles";
+  import { characterList, localizedAvatar, localizedName, localizedPersonality } from "$lib/stores/profiles";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
@@ -274,6 +274,24 @@
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let villageSize = $state(5); // 村の人数（5 or 9）。最初のページで選択。
 
+  // 任意の役職・キャラ指定（既定=おまかせ=ランダム。今と同じ挙動）。
+  // 役職は村サイズに存在するものだけ。キャラは characterList の index（サーバの profiles 並びと一致）。
+  let selectedRole = $state<string>(""); // ""=おまかせ
+  let selectedCharacter = $state<number>(-1); // -1=おまかせ
+  const roleChoices = $derived(
+    villageSize === 9
+      ? ["VILLAGER", "SEER", "BODYGUARD", "MEDIUM", "WEREWOLF", "POSSESSED"]
+      : ["VILLAGER", "SEER", "WEREWOLF", "POSSESSED"],
+  );
+  // 村サイズを変えたら、その村に無い役職の選択はおまかせに戻す。
+  $effect(() => {
+    if (selectedRole && !roleChoices.includes(selectedRole)) selectedRole = "";
+  });
+  const characters = $derived(characterList($locale));
+  const selectedCharacterAvatar = $derived(
+    selectedCharacter >= 0 ? (characters[selectedCharacter]?.avatar ?? null) : null,
+  );
+
   // ゲーム言語（AIの発話言語）＝開始時のUI言語。言語セレクタはUIとゲームを同時に切り替える
   // （言語を選ぶ＝画面もAIも即座にその言語）。卓開始後はこのゲーム言語が固定される。
   const gameLanguage = $derived(normalizeLanguage($locale, "ja"));
@@ -293,10 +311,16 @@
       const data = await res.json();
       sessionId = data.session_id;
       displayName = data.display_name;
+      // 役職・キャラの希望を ws URL に付与（サーバが ?role=/?character= を解釈。未指定はランダム）。
+      let wsUrl = data.ws_url as string;
+      const q: string[] = [];
+      if (selectedRole) q.push(`role=${encodeURIComponent(selectedRole)}`);
+      if (selectedCharacter >= 0) q.push(`character=${selectedCharacter}`);
+      if (q.length) wsUrl += (wsUrl.includes("?") ? "&" : "?") + q.join("&");
       // 人間枠の接続設定（チーム名＝一意セッションチーム）
       agentSettings.update((value) => ({
         ...value,
-        connection: { url: data.ws_url, token: "" },
+        connection: { url: wsUrl, token: "" },
         team: data.team,
       }));
       applyLobbyStatus(data.status, data.position);
@@ -629,6 +653,33 @@
             {:else}
               {$_("demo.start.comp9")}
             {/if}
+          </div>
+        </div>
+
+        <!-- 役職の指定（任意。既定=おまかせ=ランダム）-->
+        <div class="flex flex-col items-center gap-2">
+          <div class="text-sm font-bold opacity-70">{$_("demo.start.role")}</div>
+          <select class="select select-bordered select-sm" bind:value={selectedRole}>
+            <option value="">{$_("demo.start.random")}</option>
+            {#each roleChoices as r}
+              <option value={r}>{$_(`game.role.${r}`)}</option>
+            {/each}
+          </select>
+        </div>
+
+        <!-- キャラクターの指定（任意。既定=おまかせ=ランダム）-->
+        <div class="flex flex-col items-center gap-2">
+          <div class="text-sm font-bold opacity-70">{$_("demo.start.character")}</div>
+          <div class="flex items-center gap-2">
+            {#if selectedCharacterAvatar}
+              <div class="avatar"><div class="w-8 rounded-full"><img src={`${base}${selectedCharacterAvatar}`} alt="" /></div></div>
+            {/if}
+            <select class="select select-bordered select-sm" bind:value={selectedCharacter}>
+              <option value={-1}>{$_("demo.start.random")}</option>
+              {#each characters as c}
+                <option value={c.index}>{c.name}</option>
+              {/each}
+            </select>
           </div>
         </div>
 

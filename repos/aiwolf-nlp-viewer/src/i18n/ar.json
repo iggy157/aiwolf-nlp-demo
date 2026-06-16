@@ -358,7 +358,10 @@
       "retry": "إعادة المحاولة",
       "displayName": "اسمك المعروض: {name}",
       "unknownError": "خطأ غير معروف",
-      "startFailed": "فشل بدء الجلسة"
+      "startFailed": "فشل بدء الجلسة",
+      "role": "الدور",
+      "character": "الشخصية",
+      "random": "عشوائي"
     },
     "feed": {
       "waitingStart": "بانتظار بدء اللعبة…",

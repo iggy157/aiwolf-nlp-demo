@@ -358,7 +358,10 @@
       "retry": "Tentar novamente",
       "displayName": "Seu nome de exibição: {name}",
       "unknownError": "Erro desconhecido",
-      "startFailed": "Falha ao iniciar a sessão"
+      "startFailed": "Falha ao iniciar a sessão",
+      "role": "Função",
+      "character": "Personagem",
+      "random": "Aleatório"
     },
     "feed": {
       "waitingStart": "Aguardando o início do jogo…",

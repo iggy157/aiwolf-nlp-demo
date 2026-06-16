@@ -358,7 +358,10 @@
       "retry": "Erneut versuchen",
       "displayName": "Dein Anzeigename: {name}",
       "unknownError": "Unbekannter Fehler",
-      "startFailed": "Die Sitzung konnte nicht gestartet werden"
+      "startFailed": "Die Sitzung konnte nicht gestartet werden",
+      "role": "Rolle",
+      "character": "Charakter",
+      "random": "Zufällig"
     },
     "feed": {
       "waitingStart": "Warte auf den Spielbeginn…",

@@ -195,6 +195,16 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 		conn.Room = room
 		groupKey = room
 	}
+	// 役職・キャラの希望（任意）。?role=<ROLE> / ?character=<idx>。
+	// 指定が無ければ従来どおりランダム割り当て。人間プレイヤー(/demo)だけが付けてくる想定。
+	if role := r.URL.Query().Get("role"); role != "" {
+		conn.DesiredRole = role
+	}
+	if cs := r.URL.Query().Get("character"); cs != "" {
+		if ci, err := strconv.Atoi(cs); err == nil {
+			conn.DesiredCharacter = ci
+		}
+	}
 	s.waitingRoom.AddConnection(groupKey, *conn)
 
 	var game *logic.Game

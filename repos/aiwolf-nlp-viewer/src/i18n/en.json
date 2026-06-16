@@ -337,6 +337,9 @@
     },
     "start": {
       "villageSize": "Village size",
+      "role": "Role",
+      "character": "Character",
+      "random": "Random",
       "village5": "5 players",
       "village9": "9 players",
       "comp5": "2 villagers, seer, werewolf, possessed (you + 4 AI)",
