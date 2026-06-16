@@ -375,7 +375,8 @@
       "night": "🌙 রাত নেমেছে। প্রতিটি ভূমিকা ক্রিয়া করবে",
       "finished": "🏁 গেম শেষ",
       "divineResult": "🔮【ভবিষ্যদ্বাণীর ফলাফল】{name} ছিল {species}",
-      "mediumResult": "🔮【প্রেতমাধ্যমের ফলাফল】{name} ছিল {species}"
+      "mediumResult": "🔮【প্রেতমাধ্যমের ফলাফল】{name} ছিল {species}",
+      "takeover": "👤 {name} খেলা ছেড়ে চলে গেছেন, তাই একটি AI তাঁর হয়ে খেলছে"
     },
     "footer": {
       "skip": "Skip",

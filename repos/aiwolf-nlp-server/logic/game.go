@@ -7,6 +7,7 @@ import (
 	"github.com/aiwolfdial/aiwolf-nlp-server/model"
 	"github.com/aiwolfdial/aiwolf-nlp-server/service"
 	"github.com/aiwolfdial/aiwolf-nlp-server/util"
+	"github.com/gorilla/websocket"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -261,6 +262,17 @@ func (g *Game) executePhase(actions []string) {
 			slog.Warn("不明なアクションです", "action", action)
 		}
 	}
+}
+
+// TryTakeover は OriginalName 一致の席に代替接続を渡す（人間切断時のAI引き継ぎ）。
+// 渡せたら true。応答待ち中の WaitTakeover がこれを受け取って接続を差し替える。
+func (g *Game) TryTakeover(originalName string, conn *websocket.Conn) bool {
+	for _, a := range g.agents {
+		if a.OriginalName == originalName {
+			return a.OfferTakeover(conn)
+		}
+	}
+	return false
 }
 
 func (g *Game) GetID() string {

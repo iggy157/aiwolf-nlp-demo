@@ -375,7 +375,8 @@
       "night": "🌙 رات ہو گئی۔ ہر کردار اپنی کارروائی کرے گا",
       "finished": "🏁 گیم ختم",
       "divineResult": "🔮【کشف کا نتیجہ】{name} {species} تھا",
-      "mediumResult": "🔮【روح بین کا نتیجہ】{name} {species} تھا"
+      "mediumResult": "🔮【روح بین کا نتیجہ】{name} {species} تھا",
+      "takeover": "👤 {name} گیم سے نکل گئے، اس لیے اب ایک AI ان کی جگہ کھیل رہا ہے"
     },
     "footer": {
       "skip": "چھوڑیں",

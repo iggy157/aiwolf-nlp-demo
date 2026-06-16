@@ -28,6 +28,12 @@ type Agent struct {
 	HasError           bool
 	msgChan            chan AgentMessage
 	closed             chan struct{}
+	// takeoverCh: 人間が切断した席に、代替（AI）の接続を引き渡すためのチャネル。
+	// handleConnections が ?takeover= で来た接続を OfferTakeover で投入し、
+	// 応答待ち中の WaitTakeover がそれを受け取って Connection を差し替える。
+	// Connection の読みは reader goroutine がローカルに捕捉した conn を使うため、
+	// a.Connection 自体への並行アクセスは無く（ゲームループ単一 goroutine のみ）、ロック不要。
+	takeoverCh chan *websocket.Conn
 }
 
 func NewAgent(idx int, role Role, conn Connection) *Agent {
@@ -41,6 +47,7 @@ func NewAgent(idx int, role Role, conn Connection) *Agent {
 		Role:               role,
 		Connection:         conn.Conn,
 		HasError:           false,
+		takeoverCh:         make(chan *websocket.Conn, 1),
 	}
 	agent.startReader()
 	slog.Info("エージェントを作成しました", "idx", agent.Idx, "agent", agent.String(), "role", agent.Role, "connection", agent.Connection.RemoteAddr())
@@ -66,6 +73,7 @@ func NewAgentWithProfile(idx int, role Role, conn Connection, profile Profile, e
 		Role:               role,
 		Connection:         conn.Conn,
 		HasError:           false,
+		takeoverCh:         make(chan *websocket.Conn, 1),
 	}
 	agent.startReader()
 	slog.Info("エージェントを作成しました", "idx", agent.Idx, "agent", agent.String(), "profile", agent.ProfileDescription, "role", agent.Role, "connection", agent.Connection.RemoteAddr())
@@ -80,35 +88,42 @@ const (
 )
 
 func (a *Agent) startReader() {
-	a.msgChan = make(chan AgentMessage, 100)
-	a.closed = make(chan struct{})
+	// conn/ch/closed をローカルに確定してから goroutine を起動する。
+	// こうすることで Connection を差し替え（takeover）て startReader を再実行しても、
+	// 旧 reader は旧 conn / 旧 ch を読み続け（やがてエラーで終了）、新 reader は新 conn / 新 ch を
+	// 読むため、両者が混線しない（フィールド参照だと旧 goroutine が新 conn を読んでしまう）。
+	conn := a.Connection
+	ch := make(chan AgentMessage, 100)
+	closed := make(chan struct{})
+	a.msgChan = ch
+	a.closed = closed
 	go func() {
-		defer close(a.closed)
+		defer close(closed)
 		for {
-			_, data, err := a.Connection.ReadMessage()
-			a.msgChan <- AgentMessage{Data: data, Err: err}
+			_, data, err := conn.ReadMessage()
+			ch <- AgentMessage{Data: data, Err: err}
 			if err != nil {
 				return
 			}
 		}
 	}()
-	a.startKeepAlive()
+	a.startKeepAlive(conn, closed)
 }
 
 // startKeepAlive は接続が閉じるまで一定間隔で ping を送り続ける。
 // WriteControl は他の書き込み(WriteMessage)と並行に呼んでも安全（gorilla/websocket仕様）なので
 // 送信用の排他ロックは不要。ブラウザは ping に自動で pong を返すため上り下り双方に通信が流れ、
 // 一時停止中でも中継のアイドルタイムアウトで切断されなくなる。
-func (a *Agent) startKeepAlive() {
+func (a *Agent) startKeepAlive(conn *websocket.Conn, closed chan struct{}) {
 	go func() {
 		ticker := time.NewTicker(keepAliveInterval)
 		defer ticker.Stop()
 		for {
 			select {
-			case <-a.closed:
+			case <-closed:
 				return
 			case <-ticker.C:
-				if err := a.Connection.WriteControl(
+				if err := conn.WriteControl(
 					websocket.PingMessage, nil, time.Now().Add(keepAliveWriteWait),
 				); err != nil {
 					return
@@ -116,6 +131,39 @@ func (a *Agent) startKeepAlive() {
 			}
 		}
 	}()
+}
+
+// OfferTakeover は切断した席へ代替接続を渡す（handleConnections から呼ぶ）。
+// 既に1件待っている等で渡せなければ false（呼び出し側が接続を閉じる）。
+func (a *Agent) OfferTakeover(conn *websocket.Conn) bool {
+	select {
+	case a.takeoverCh <- conn:
+		return true
+	default:
+		return false
+	}
+}
+
+// WaitTakeover は切断検知後、timeout まで代替接続を待つ。来たら Connection を差し替えて
+// reader を貼り直し true を返す（呼び出し側は INITIALIZE 再送→元リクエスト再送する）。
+// 時間切れなら false（呼び出し側は HasError 扱いにする）。
+func (a *Agent) WaitTakeover(timeout time.Duration) bool {
+	timer := time.NewTimer(timeout)
+	defer timer.Stop()
+	select {
+	case conn := <-a.takeoverCh:
+		old := a.Connection
+		a.Connection = conn
+		a.HasError = false
+		a.startReader() // 新 conn 用の reader/keepAlive を起動（旧 reader は旧 conn でやがて終了）
+		if old != nil {
+			_ = old.Close() // 旧接続を閉じる（旧 reader はこれで確実に終了）
+		}
+		slog.Info("席の接続を引き継ぎました", "agent", a.String())
+		return true
+	case <-timer.C:
+		return false
+	}
 }
 
 func (a *Agent) ReadChannel() <-chan AgentMessage {

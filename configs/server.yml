@@ -103,6 +103,14 @@ matching:
   output_path: ./log/match_optimizer.json
   infinite_loop: false
 
+# 人間が切断した席をAIが引き継ぐ（/demo マルチ用）。
+#   enable: true で、OriginalName が prefix で始まる席（=ロビーが配る人間 you-userNN）が切断したら、
+#   timeout の間 ?takeover= の代替接続を待ち、来たら AI が席を履歴ごと引き継いで続行する。
+takeover:
+  enable: true
+  timeout: 30s
+  prefix: "you-"
+
 custom_profile:
   enable: true
   profile_encoding:

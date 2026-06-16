@@ -375,7 +375,8 @@
       "night": "🌙 夜晚降临。各角色开始行动",
       "finished": "🏁 游戏结束",
       "divineResult": "🔮【占卜结果】{name} 是 {species}",
-      "mediumResult": "🔮【通灵结果】{name} 是 {species}"
+      "mediumResult": "🔮【通灵结果】{name} 是 {species}",
+      "takeover": "👤 {name} 已退出，AI 已代替其参与游戏"
     },
     "footer": {
       "skip": "跳过",

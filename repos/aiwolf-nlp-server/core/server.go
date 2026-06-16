@@ -147,6 +147,25 @@ func (s *Server) gracefullyShutdown() {
 	slog.Info("全てのゲームが終了しました")
 }
 
+// handleTakeover は ?takeover=<original_name> の接続を、進行中ゲームの該当席へ引き渡す。
+// 渡せた席（応答待ち中の人間が切断していた席）があれば、その席のAI引き継ぎが始まる。
+func (s *Server) handleTakeover(ws *websocket.Conn, room, name string) {
+	delivered := false
+	s.games.Range(func(_, value any) bool {
+		if g, ok := value.(*logic.Game); ok && g.TryTakeover(name, ws) {
+			delivered = true
+			return false
+		}
+		return true
+	})
+	if delivered {
+		slog.Info("引き継ぎ接続を席へ渡しました", "room", room, "name", name)
+	} else {
+		slog.Warn("引き継ぎ対象の席が見つかりませんでした（既に終了/別席）", "room", room, "name", name)
+		_ = ws.Close()
+	}
+}
+
 func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 	if s.signaled {
 		slog.Warn("シグナルを受信したため、新しい接続を受け付けません")
@@ -156,6 +175,12 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 	ws, err := s.upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		slog.Error("クライアントのアップグレードに失敗しました", "error", err)
+		return
+	}
+	// 引き継ぎ接続(?takeover=<original_name>)は、待機部屋でなく進行中ゲームの該当席へ渡す。
+	// NAME ハンドシェイクは行わない（席は既に確定しており、サーバが INITIALIZE を再送する）。
+	if takeoverName := r.URL.Query().Get("takeover"); takeoverName != "" {
+		s.handleTakeover(ws, r.URL.Query().Get("room"), takeoverName)
 		return
 	}
 	conn, err := model.NewConnection(ws, &header)

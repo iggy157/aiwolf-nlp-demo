@@ -375,7 +375,8 @@
       "night": "🌙 Caiu a noite. Cada papel realiza sua ação",
       "finished": "🏁 Fim do jogo",
       "divineResult": "🔮 [Resultado da adivinhação] {name} era {species}",
-      "mediumResult": "🔮 [Resultado do médium] {name} era {species}"
+      "mediumResult": "🔮 [Resultado do médium] {name} era {species}",
+      "takeover": "👤 {name} saiu do jogo, então uma IA está jogando em seu lugar"
     },
     "footer": {
       "skip": "Pular",

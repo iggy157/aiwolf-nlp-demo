@@ -134,9 +134,11 @@
               : $_("demo.hint.fallback"),
   );
 
-  // 一時停止（開始ポップアップ表示中も実質停止扱い）
+  // 一時停止（開始ポップアップ表示中も実質停止扱い）。
+  // マルチプレイでは1人の一時停止が全員を止めてしまうため無効化する（isMulti のとき常に false）。
   let paused = $state(false);
-  const effectivePaused = $derived(paused || introOpen);
+  let isMulti = $state(false); // この卓がマルチプレイか（接続時に確定）
+  const effectivePaused = $derived(isMulti ? false : (paused || introOpen));
 
   // 自分の live なリクエストが pending（=deadline 有り）のときだけ送信可（誤送信防止：HANDOFF §5-4）
   const isMyTurn = $derived(deadline !== null && request !== null);
@@ -329,6 +331,7 @@
     lobbyError = null;
     introAck = false;
     introOpen = false;
+    isMulti = false;
     try {
       const res = await fetch(`${lobbyBase}/api/rooms`, {
         method: "POST",
@@ -400,6 +403,7 @@
   }
 
   function enterWaiting(data: any) {
+    isMulti = true; // マルチ卓 → 一時停止は無効
     roomCode = data.code;
     sessionId = data.room_id;
     myTeam = data.you?.team ?? null;
@@ -423,11 +427,39 @@
       lobbyPhase = "starting";
       demoSocketState.connect();
       lobbyPhase = "playing";
+      pollRoomNotices(); // プレイ中、離脱→AI引き継ぎの告知を拾ってフィードに出す
     } else if (data.status === "finished" || data.status === "error") {
       // ホスト退出などで部屋が閉じた
       stopRoomPoll();
       lobbyError = $_("demo.multi.roomClosed");
     }
+  }
+
+  // ---- プレイ中の引き継ぎ告知ポーリング（マルチのみ）----
+  // 誰かが離脱すると lobby の takeover_events が増える。それを拾って
+  // 「○○が退出。AIが代わりに参加」をフィードに1回だけ出す。
+  let shownTakeovers = 0;
+  let playPollTimer: ReturnType<typeof setTimeout> | null = null;
+  async function pollRoomNotices() {
+    if (!roomCode || !isMulti) return;
+    try {
+      const res = await fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}?token=${encodeURIComponent(deviceToken)}`);
+      if (res.ok) {
+        const data = await res.json();
+        const events: string[] = data.takeover_events ?? [];
+        for (let i = shownTakeovers; i < events.length; i++) {
+          demoSocketState.pushNotice(`takeover-${i}`, "demo.feed.takeover", { name: events[i] });
+        }
+        shownTakeovers = Math.max(shownTakeovers, events.length);
+        if (data.status === "finished" || data.status === "error") { stopPlayPoll(); return; }
+      } else if (res.status === 404) { stopPlayPoll(); return; }
+    } catch {
+      /* 一時失敗は次で回復 */
+    }
+    if (!finished) playPollTimer = setTimeout(pollRoomNotices, 3000);
+  }
+  function stopPlayPoll() {
+    if (playPollTimer) { clearTimeout(playPollTimer); playPollTimer = null; }
   }
 
   async function pollRoom() {
@@ -479,6 +511,8 @@
         body: JSON.stringify({ token: deviceToken }),
       }).catch(() => {});
     }
+    stopPlayPoll();
+    shownTakeovers = 0;
     roomCode = "";
     isHost = false;
     hostToken = "";
@@ -542,16 +576,25 @@
       clearTimeout(pollTimer);
       pollTimer = null;
     }
-    if (sessionId) {
-      // スロット解放を lobby に通知（AIプロセスも停止される）
+    // マルチ卓は room leave（進行中なら席をAIが引き継ぎ、卓は続行）。ソロは session leave（卓終了）。
+    if (roomCode) {
+      fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: deviceToken }),
+      }).catch(() => {});
+    } else if (sessionId) {
       fetch(`${lobbyBase}/api/session/${sessionId}/leave`, { method: "POST" }).catch(() => {});
     }
     stopRoomPoll();
+    stopPlayPoll();
+    shownTakeovers = 0;
     demoSocketState.reset();
     infoOpen = false;
     introOpen = false;
     introAck = false;
     paused = false;
+    isMulti = false;
     sessionId = null;
     displayName = null;
     queuePos = 0;
@@ -604,8 +647,10 @@
       window.removeEventListener("beforeunload", beforeUnload);
       if (pollTimer) clearTimeout(pollTimer);
       stopRoomPoll();
-      // 離脱を lobby に通知（スロット解放）。マルチ待機中は部屋から離席、それ以外はセッション終了。
-      if (roomCode && lobbyPhase !== "playing") {
+      stopPlayPoll();
+      // 離脱を lobby に通知。マルチ卓は room leave（進行中なら席をAIが引き継ぎ卓は続行）、
+      // ソロは session leave（卓終了）。
+      if (roomCode) {
         navigator.sendBeacon?.(
           `${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}/leave`,
           new Blob([JSON.stringify({ token: deviceToken })], { type: "application/json" }),
@@ -651,7 +696,8 @@
       <span class="badge badge-sm {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
         {status === "connected" ? $_("demo.status.connected") : status === "connecting" ? $_("demo.status.connecting") : $_("demo.status.disconnected")}
       </span>
-      {#if status === "connected" && !finished}
+      {#if status === "connected" && !finished && !isMulti}
+        <!-- 一時停止はソロのみ（マルチでは全員を止めてしまうため非表示）-->
         <button
           class="btn btn-xs {paused ? 'btn-success' : 'btn-ghost'}"
           onclick={() => (paused = !paused)}
@@ -660,6 +706,8 @@
           <iconify-icon icon={paused ? "mdi:play" : "mdi:pause"}></iconify-icon>
           {paused ? $_("demo.header.resume") : $_("demo.header.pause")}
         </button>
+      {/if}
+      {#if status === "connected" && !finished}
         <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.info")}>
           <iconify-icon icon="mdi:information-outline"></iconify-icon>{$_("demo.header.info")}
         </button>

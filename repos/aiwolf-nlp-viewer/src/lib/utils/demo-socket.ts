@@ -423,6 +423,12 @@ function createDemoSocketState() {
         update(() => createInitialState());
     }
 
+    // 外部からフィードにシステム告知を1件追加する（マルチのAI引き継ぎ通知など）。
+    // key で重複排除されるため、同じ key を二度渡しても1回だけ表示される。
+    function pushNotice(key: string, i18nKey: string, extra: { name?: string } = {}) {
+        update((state) => ({ ...state, feed: pushSystem(state.feed, key, i18nKey, 'result', extra) }));
+    }
+
     return {
         subscribe,
         connect,
@@ -431,6 +437,7 @@ function createDemoSocketState() {
         pause,
         resume,
         reset,
+        pushNotice,
     };
 }
 

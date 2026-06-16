@@ -401,7 +401,8 @@
       "night": "🌙 Night falls. Each role takes action",
       "finished": "🏁 Game over",
       "divineResult": "🔮 [Divination] {name} was {species}",
-      "mediumResult": "🔮 [Medium] {name} was {species}"
+      "mediumResult": "🔮 [Medium] {name} was {species}",
+      "takeover": "👤 {name} left — an AI is now playing in their place"
     },
     "footer": {
       "skip": "Skip",

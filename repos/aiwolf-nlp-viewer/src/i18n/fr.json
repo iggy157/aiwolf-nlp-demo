@@ -375,7 +375,8 @@
       "night": "🌙 La nuit est tombée. Chaque rôle entre en action",
       "finished": "🏁 Partie terminée",
       "divineResult": "🔮 [Divination] {name} était {species}",
-      "mediumResult": "🔮 [Médium] {name} était {species}"
+      "mediumResult": "🔮 [Médium] {name} était {species}",
+      "takeover": "👤 {name} a quitté la partie, une IA joue désormais à sa place"
     },
     "footer": {
       "skip": "Passer",

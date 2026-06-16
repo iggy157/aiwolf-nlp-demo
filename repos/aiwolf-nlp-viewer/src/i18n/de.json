@@ -375,7 +375,8 @@
       "night": "🌙 Die Nacht ist hereingebrochen. Jede Rolle handelt",
       "finished": "🏁 Spiel vorbei",
       "divineResult": "🔮 [Weissagung] {name} war {species}",
-      "mediumResult": "🔮 [Medium] {name} war {species}"
+      "mediumResult": "🔮 [Medium] {name} war {species}",
+      "takeover": "👤 {name} hat das Spiel verlassen, daher spielt nun eine KI an seiner Stelle"
     },
     "footer": {
       "skip": "Überspringen",

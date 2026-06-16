@@ -18,6 +18,16 @@ type Config struct {
 	GameLogger          GameLoggerConfig          `yaml:"game_logger"`
 	RealtimeBroadcaster RealtimeBroadcasterConfig `yaml:"realtime_broadcaster"`
 	TTSBroadcaster      TTSBroadcasterConfig      `yaml:"tts_broadcaster"`
+	Takeover            TakeoverConfig            `yaml:"takeover"`
+}
+
+// TakeoverConfig: 人間が切断した席をAIが引き継ぐ設定（/demo マルチ用）。
+// Enable=true のとき、OriginalName が Prefix で始まる席（=ロビーが配る人間 you-userNN）が
+// 切断したら、Timeout の間 ?takeover= の代替接続を待ち、来たら AI が席を引き継ぐ。
+type TakeoverConfig struct {
+	Enable  bool          `yaml:"enable"`
+	Timeout time.Duration `yaml:"timeout"`
+	Prefix  string        `yaml:"prefix"`
 }
 
 type ServerConfig struct {

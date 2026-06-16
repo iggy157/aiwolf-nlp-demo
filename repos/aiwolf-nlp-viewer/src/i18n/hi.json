@@ -375,7 +375,8 @@
       "night": "🌙 रात हो गई। हर भूमिका अपनी कार्रवाई करती है",
       "finished": "🏁 गेम समाप्त",
       "divineResult": "🔮【भविष्यवाणी का परिणाम】{name} {species} था",
-      "mediumResult": "🔮【माध्यम का परिणाम】{name} {species} था"
+      "mediumResult": "🔮【माध्यम का परिणाम】{name} {species} था",
+      "takeover": "👤 {name} खेल से बाहर हो गए, इसलिए अब एक AI उनकी जगह खेल रहा है"
     },
     "footer": {
       "skip": "छोड़ें",

@@ -99,6 +99,12 @@ matching:
   output_path: ./log/match_optimizer.json
   infinite_loop: false
 
+# 人間が切断した席をAIが引き継ぐ（/demo マルチ用）。詳細は configs/server.yml の takeover を参照。
+takeover:
+  enable: true
+  timeout: 30s
+  prefix: "you-"
+
 custom_profile:
   enable: true
   profile_encoding:

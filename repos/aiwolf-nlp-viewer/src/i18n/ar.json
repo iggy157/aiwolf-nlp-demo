@@ -375,7 +375,8 @@
       "night": "🌙 حلّ الليل. ينفّذ كل دور عمله",
       "finished": "🏁 انتهت اللعبة",
       "divineResult": "🔮 [نتيجة التكهّن] {name} كان {species}",
-      "mediumResult": "🔮 [نتيجة الوساطة] {name} كان {species}"
+      "mediumResult": "🔮 [نتيجة الوساطة] {name} كان {species}",
+      "takeover": "👤 غادر {name} اللعبة، لذا انضم ذكاء اصطناعي للعب بدلاً منه"
     },
     "footer": {
       "skip": "تخطّي",

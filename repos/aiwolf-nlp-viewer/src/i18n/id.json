@@ -375,7 +375,8 @@
       "night": "🌙 Malam telah tiba. Setiap peran melakukan aksinya",
       "finished": "🏁 Permainan selesai",
       "divineResult": "🔮【Hasil Ramalan】{name} ternyata {species}",
-      "mediumResult": "🔮【Hasil Cenayang】{name} ternyata {species}"
+      "mediumResult": "🔮【Hasil Cenayang】{name} ternyata {species}",
+      "takeover": "👤 {name} keluar dari permainan, jadi AI kini bermain menggantikannya"
     },
     "footer": {
       "skip": "Lewati",

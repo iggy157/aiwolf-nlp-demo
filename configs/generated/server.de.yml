@@ -93,6 +93,10 @@ matching:
   game_count: 5
   output_path: ./log/match_optimizer.json
   infinite_loop: false
+takeover:
+  enable: true
+  timeout: 30s
+  prefix: you-
 custom_profile:
   enable: true
   profile_encoding:

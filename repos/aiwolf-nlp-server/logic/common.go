@@ -3,6 +3,7 @@ package logic
 import (
 	"errors"
 	"log/slog"
+	"strings"
 	"time"
 
 	"github.com/aiwolfdial/aiwolf-nlp-server/model"
@@ -92,7 +93,41 @@ func (g *Game) buildInfo(agent *model.Agent) model.Info {
 	return info
 }
 
+// requestToAgent は通常のリクエスト送信に「人間切断→AI引き継ぎ」を被せたもの。
+// 切断（HasError）を検知し、対象が人間席かつ takeover 有効なら、代替接続を待って引き継ぐ。
 func (g *Game) requestToAgent(agent *model.Agent, request model.Request) (string, error) {
+	resp, err := g.requestOnce(agent, request)
+	if err == nil || !agent.HasError || !g.takeoverEligible(agent) {
+		return resp, err
+	}
+	timeout := g.config.Takeover.Timeout
+	if timeout <= 0 {
+		timeout = 30 * time.Second
+	}
+	slog.Warn("人間席が切断されました。AIの引き継ぎを待ちます", "agent", agent.String(), "name", agent.OriginalName, "timeout", timeout.String())
+	if !agent.WaitTakeover(timeout) {
+		agent.HasError = true // 引き継ぎが来なかった → 従来どおりエラー席（以降スキップ）
+		return resp, err
+	}
+	// 引き継ぎ成功。新接続に INITIALIZE を再送して LLM/役職を初期化する。
+	// requestOnce(R_INITIALIZE) は resetLastIdxMaps も呼ぶため、次リクエストで全履歴が再送され、
+	// 引き継いだAIは過去ログを引き継いだ状態で続行できる（agent-llm は idx で重複排除）。
+	if _, e := g.requestOnce(agent, model.R_INITIALIZE); e != nil || agent.HasError {
+		agent.HasError = true
+		return resp, err
+	}
+	slog.Info("AIが席を引き継ぎました。元のリクエストを再送します", "agent", agent.String(), "request", request.Type)
+	return g.requestOnce(agent, request)
+}
+
+// takeoverEligible: その席が引き継ぎ対象か（takeover 有効 & 人間席=OriginalName が Prefix で始まる）。
+func (g *Game) takeoverEligible(agent *model.Agent) bool {
+	return g.config.Takeover.Enable &&
+		g.config.Takeover.Prefix != "" &&
+		strings.HasPrefix(agent.OriginalName, g.config.Takeover.Prefix)
+}
+
+func (g *Game) requestOnce(agent *model.Agent, request model.Request) (string, error) {
 	info := g.buildInfo(agent)
 	var packet model.Packet
 	switch request {

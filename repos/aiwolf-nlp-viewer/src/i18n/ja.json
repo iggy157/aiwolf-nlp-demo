@@ -401,7 +401,8 @@
       "night": "🌙 夜になりました。各役職が行動します",
       "finished": "🏁 ゲーム終了",
       "divineResult": "🔮【占い結果】{name} は {species} でした",
-      "mediumResult": "🔮【霊媒結果】{name} は {species} でした"
+      "mediumResult": "🔮【霊媒結果】{name} は {species} でした",
+      "takeover": "👤 {name} が退出したため、AIが代わりに参加しました"
     },
     "footer": {
       "skip": "スキップ",

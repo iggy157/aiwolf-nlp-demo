@@ -212,6 +212,11 @@ class Session:
     host_token: str = ""    # ホスト（部屋作成者）の匿名トークン
     participants: list[Participant] = field(default_factory=list)
     process: Any = None     # subprocess.Popen | None
+    # 人間離脱時にその席を引き継ぐために追加 spawn したAIプロセス（(Popen, config_path) の組）。
+    takeover_processes: list[Any] = field(default_factory=list)
+    # AIが引き継いだ離脱者の表示名（時系列）。プレイ中の各クライアントが room ポーリングで拾い、
+    # 「○○が退出。AIが代わりに参加」をフィードに出すのに使う。
+    takeover_events: list[str] = field(default_factory=list)
     config_path: Path | None = None
     created_at: float = field(default_factory=time.time)
     started_at: float | None = None
@@ -434,27 +439,77 @@ class Lobby:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
         session.config_path = cfg_path
 
-        env = os.environ.copy()
-        # APIキー等は os.environ.copy() で子に引き継がれる（agent.py は os.environ を参照）。
-        #
-        # OPENAI_BASE_URL の扱いが重要: これは vLLM 等の OpenAI 互換エンドポイント用。
-        # LLM_PROVIDER が openai/google/ollama のとき子プロセスに残っていると、openai SDK が
-        # base_url 未指定時に OPENAI_BASE_URL を読み（openai/_client.py）、全API呼び出しが
-        # 誤ったエンドポイント（例: 起動していないローカル vLLM）へ飛んで全AIが応答不能になる。
-        # → vllm のときだけ明示的に渡し、それ以外では子の環境から確実に取り除く。
-        if LLM_PROVIDER == "vllm" and OPENAI_BASE_URL:
-            env["OPENAI_BASE_URL"] = OPENAI_BASE_URL
-        else:
-            env.pop("OPENAI_BASE_URL", None)
-            env.pop("OPENAI_API_BASE", None)  # langchain 系が読む旧名も念のため除去
-
         # start_new_session=True で別プロセスグループにし、終了時に一括 kill 可能にする（M8）
         session.process = subprocess.Popen(  # noqa: S603
             [AGENT_LLM_PYTHON, "src/main.py", "-c", str(cfg_path)],
             cwd=str(AGENT_LLM_DIR),
-            env=env,
+            env=self._child_env(),
             start_new_session=True,
         )
+
+    @staticmethod
+    def _child_env() -> dict[str, str]:
+        # APIキー等は os.environ.copy() で子に引き継がれる（agent.py は os.environ を参照）。
+        # OPENAI_BASE_URL は vLLM のときだけ渡し、それ以外では取り除く（[[openai-base-url-footgun]]）。
+        env = os.environ.copy()
+        if LLM_PROVIDER == "vllm" and OPENAI_BASE_URL:
+            env["OPENAI_BASE_URL"] = OPENAI_BASE_URL
+        else:
+            env.pop("OPENAI_BASE_URL", None)
+            env.pop("OPENAI_API_BASE", None)
+        return env
+
+    def _spawn_takeover_ai(self, session: Session, original_name: str) -> bool:
+        """人間が離脱した席(original_name)を引き継ぐAIを1体 spawn する。
+        サーバが ?takeover=<original_name> を解釈し、進行中ゲームの該当席へ接続を渡す。"""
+        import subprocess
+        from urllib.parse import quote
+
+        if session.status != "running":
+            return False
+        GENERATED_DIR.mkdir(parents=True, exist_ok=True)
+        base_url = with_room(internal_url_for(session.size, session.language), session.room)
+        ai_url = base_url + ("&" if "?" in base_url else "?") + "takeover=" + quote(original_name, safe="")
+        cfg = self._build_agent_config("takeover", 1, ai_url, session.language)
+        cfg_path = GENERATED_DIR / f"{session.id}-takeover-{secrets.token_hex(3)}.yml"
+        with cfg_path.open("w", encoding="utf-8") as f:
+            yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
+        proc = subprocess.Popen(  # noqa: S603
+            [AGENT_LLM_PYTHON, "src/main.py", "-c", str(cfg_path)],
+            cwd=str(AGENT_LLM_DIR),
+            env=self._child_env(),
+            start_new_session=True,
+        )
+        session.takeover_processes.append((proc, cfg_path))
+        return True
+
+    async def handle_leave(self, code: str, token: str) -> str:
+        """部屋からの離脱処理。マルチ進行中の離脱は卓を殺さず、その席をAIに引き継がせる。"""
+        to_kill: Session | None = None
+        async with self._lock:
+            session = self.room_by_code(code)
+            if session is None:
+                return "left"
+            if session.status == "waiting":
+                if token == session.host_token:
+                    to_kill = session  # ホストが待機をやめる → 解散
+                else:
+                    session.participants = [p for p in session.participants if p.token != token]
+                    return "left"
+            elif session.status == "running" and session.mode == "multi":
+                p = self.participant_of(session, token)
+                if p is not None:
+                    spawned = self._spawn_takeover_ai(session, p.team)
+                    if spawned:
+                        session.takeover_events.append(p.display_name)
+                    session.participants = [x for x in session.participants if x.token != token]
+                    return "takeover" if spawned else "left"
+                return "left"
+            else:
+                to_kill = session  # ソロ進行中など → 卓終了
+        if to_kill is not None:
+            self.kill_session(to_kill)
+        return "left"
 
     def _build_agent_config(
         self, team: str, ai_count: int, internal_url: str, language: str = DEFAULT_LANGUAGE
@@ -562,12 +617,17 @@ class Lobby:
                     self._codes.pop(s.code, None)
 
     @staticmethod
-    def _terminate_process(session: Session) -> None:
-        proc = session.process
+    def _kill_proc(proc: Any) -> None:
         if proc is not None and proc.poll() is None:
             with contextlib.suppress(ProcessLookupError, PermissionError):
                 # start_new_session=True で作ったプロセスグループごと停止
                 os.killpg(os.getpgid(proc.pid), signal.SIGTERM)
+
+    @classmethod
+    def _terminate_process(cls, session: Session) -> None:
+        cls._kill_proc(session.process)
+        for proc, _ in session.takeover_processes:
+            cls._kill_proc(proc)
 
     @staticmethod
     def _cleanup_config(session: Session) -> None:
@@ -575,6 +635,10 @@ class Lobby:
             with contextlib.suppress(FileNotFoundError, OSError):
                 session.config_path.unlink()
             session.config_path = None
+        for _, cfg_path in session.takeover_processes:
+            with contextlib.suppress(FileNotFoundError, OSError):
+                cfg_path.unlink()
+        session.takeover_processes = []
 
     def kill_session(self, session: Session) -> None:
         self._terminate_process(session)
@@ -848,6 +912,7 @@ class RoomResponse(BaseModel):
     you: ParticipantInfo | None = None   # 呼び出し元(token)の席
     host_token: str = ""             # 自分がホストのときだけ返す（start 認可用）
     ws_url: str | None = None        # running のとき、あなたの接続先 URL（team は you.team）
+    takeover_events: list[str] = []  # AIが引き継いだ離脱者の表示名（時系列）
     position: int = 0
     error: str | None = None
 
@@ -877,6 +942,7 @@ def _room_response(session: Session, token: str) -> RoomResponse:
         ),
         host_token=session.host_token if token and token == session.host_token else "",
         ws_url=ws,
+        takeover_events=list(session.takeover_events),
         position=lobby.position_of(session.id),
         error=session.error,
     )
@@ -931,14 +997,6 @@ async def start_room(code: str, req: JoinRoomRequest) -> RoomResponse:
 
 @app.post("/api/rooms/{code}/leave")
 async def leave_room(code: str, req: JoinRoomRequest) -> dict[str, str]:
-    session = lobby.room_by_code(code)
-    if session is None:
-        return {"status": "left"}
-    async with lobby._lock:  # noqa: SLF001
-        if session.status == "waiting" and req.token != session.host_token:
-            # 待機中の非ホストが抜ける → 席だけ外す（卓は残る）
-            session.participants = [p for p in session.participants if p.token != req.token]
-            return {"status": "left"}
-    # ホストが抜ける or 進行中 → 卓を終了（全員解散）
-    lobby.kill_session(session)
-    return {"status": "left"}
+    # マルチ進行中の離脱は卓を殺さず、その席をAIに引き継がせる（handle_leave 内で判定）。
+    status = await lobby.handle_leave(code, req.token)
+    return {"status": status}

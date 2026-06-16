@@ -375,7 +375,8 @@
       "night": "🌙 De nacht is gevallen. Elke rol komt in actie",
       "finished": "🏁 Spel afgelopen",
       "divineResult": "🔮【Schouwresultaat】{name} was {species}",
-      "mediumResult": "🔮【Mediumresultaat】{name} was {species}"
+      "mediumResult": "🔮【Mediumresultaat】{name} was {species}",
+      "takeover": "👤 {name} heeft het spel verlaten, dus speelt nu een AI in zijn plaats"
     },
     "footer": {
       "skip": "Skip",

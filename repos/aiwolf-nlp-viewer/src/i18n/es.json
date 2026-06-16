@@ -375,7 +375,8 @@
       "night": "🌙 Ha caído la noche. Cada rol entra en acción",
       "finished": "🏁 Fin de la partida",
       "divineResult": "🔮 [Adivinación] {name} era {species}",
-      "mediumResult": "🔮 [Médium] {name} era {species}"
+      "mediumResult": "🔮 [Médium] {name} era {species}",
+      "takeover": "👤 {name} abandonó la partida, así que una IA juega ahora en su lugar"
     },
     "footer": {
       "skip": "Omitir",
