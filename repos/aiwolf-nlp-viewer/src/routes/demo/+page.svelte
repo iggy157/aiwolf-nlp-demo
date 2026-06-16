@@ -296,39 +296,197 @@
   // （言語を選ぶ＝画面もAIも即座にその言語）。卓開始後はこのゲーム言語が固定される。
   const gameLanguage = $derived(normalizeLanguage($locale, "ja"));
 
-  async function startViaLobby() {
+  // ---- ソロ/マルチのモード選択（接続前の画面遷移）----
+  // mode=最初の選択 / solo=ソロ設定 / multiCreate=部屋作成 / multiJoin=合言葉参加 / waiting=待機部屋
+  let screen = $state<"mode" | "solo" | "multiCreate" | "multiJoin" | "waiting">("mode");
+  let deviceToken = ""; // 端末の匿名トークン（localStorage）。アカウント無しの席識別用。
+  let humanSlots = $state(2); // マルチの人間席数（1..villageSize）
+  let roomCode = $state<string>(""); // 参加中のマルチ部屋の合言葉
+  let hostToken = $state<string>(""); // 自分がホストのときの start 認可トークン
+  let isHost = $state(false);
+  let roomParticipants = $state<{ display_name: string; is_host: boolean }[]>([]);
+  let roomStatus = $state<string>("");
+  let joinCodeInput = $state("");
+  let myTeam: string | null = null; // 接続に使う自分の team（you.team）
+  let codeCopied = $state(false);
+  let roomPollTimer: ReturnType<typeof setTimeout> | null = null;
+  // 村サイズを変えたら人間席数を範囲内に収める。
+  $effect(() => {
+    if (humanSlots > villageSize) humanSlots = villageSize;
+  });
+
+  // role/character の希望を ws URL に付ける（ソロのみ。未指定はランダム）。
+  function withSeatPrefs(wsUrl: string): string {
+    const q: string[] = [];
+    if (selectedRole) q.push(`role=${encodeURIComponent(selectedRole)}`);
+    if (selectedCharacter >= 0) q.push(`character=${selectedCharacter}`);
+    return q.length ? wsUrl + (wsUrl.includes("?") ? "&" : "?") + q.join("&") : wsUrl;
+  }
+
+  // ---- ソロ: 即開始（人間1＋AI）----
+  async function startSolo() {
     lobbyPhase = "joining";
     lobbyError = null;
     introAck = false;
     introOpen = false;
     try {
-      const res = await fetch(`${lobbyBase}/api/join`, {
+      const res = await fetch(`${lobbyBase}/api/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ size: villageSize, language: gameLanguage }),
+        body: JSON.stringify({ mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken }),
       });
-      if (!res.ok) throw new Error(`join failed: ${res.status}`);
+      if (!res.ok) throw new Error(`create failed: ${res.status}`);
       const data = await res.json();
-      sessionId = data.session_id;
-      displayName = data.display_name;
-      // 役職・キャラの希望を ws URL に付与（サーバが ?role=/?character= を解釈。未指定はランダム）。
-      let wsUrl = data.ws_url as string;
-      const q: string[] = [];
-      if (selectedRole) q.push(`role=${encodeURIComponent(selectedRole)}`);
-      if (selectedCharacter >= 0) q.push(`character=${selectedCharacter}`);
-      if (q.length) wsUrl += (wsUrl.includes("?") ? "&" : "?") + q.join("&");
-      // 人間枠の接続設定（チーム名＝一意セッションチーム）
-      agentSettings.update((value) => ({
-        ...value,
-        connection: { url: wsUrl, token: "" },
-        team: data.team,
-      }));
+      sessionId = data.room_id;
+      myTeam = data.you?.team ?? null;
+      displayName = data.you?.display_name ?? null;
+      if (data.ws_url) {
+        agentSettings.update((value) => ({
+          ...value,
+          connection: { url: withSeatPrefs(data.ws_url), token: "" },
+          team: myTeam ?? value.team,
+        }));
+      }
       applyLobbyStatus(data.status, data.position);
       pollSession();
     } catch (e) {
       lobbyPhase = "error";
       lobbyError = e instanceof Error ? e.message : String(e);
     }
+  }
+
+  // ---- マルチ: 部屋を作る（ホスト）----
+  async function createRoom() {
+    lobbyError = null;
+    try {
+      const res = await fetch(`${lobbyBase}/api/rooms`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mode: "multi", size: villageSize, language: gameLanguage,
+          human_slots: humanSlots, token: deviceToken,
+        }),
+      });
+      if (!res.ok) throw new Error(`create failed: ${res.status}`);
+      const data = await res.json();
+      isHost = true;
+      hostToken = data.host_token;
+      enterWaiting(data);
+    } catch (e) {
+      lobbyError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  // ---- マルチ: 合言葉で参加 ----
+  async function joinRoom() {
+    lobbyError = null;
+    const code = joinCodeInput.trim().toUpperCase();
+    if (!code) return;
+    try {
+      const res = await fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(code)}/join`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: deviceToken }),
+      });
+      if (res.status === 404) { lobbyError = $_("demo.multi.notFound"); return; }
+      if (res.status === 409) { lobbyError = $_("demo.multi.full"); return; }
+      if (!res.ok) throw new Error(`join failed: ${res.status}`);
+      const data = await res.json();
+      isHost = false;
+      enterWaiting(data);
+    } catch (e) {
+      lobbyError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  function enterWaiting(data: any) {
+    roomCode = data.code;
+    sessionId = data.room_id;
+    myTeam = data.you?.team ?? null;
+    displayName = data.you?.display_name ?? null;
+    screen = "waiting";
+    applyRoom(data);
+    pollRoom();
+  }
+
+  function applyRoom(data: any) {
+    roomStatus = data.status;
+    roomParticipants = data.participants ?? [];
+    if (data.status === "running" && data.ws_url) {
+      // 卓が立った → 自分の team で接続
+      agentSettings.update((value) => ({
+        ...value,
+        connection: { url: data.ws_url, token: "" },
+        team: myTeam ?? value.team,
+      }));
+      stopRoomPoll();
+      lobbyPhase = "starting";
+      demoSocketState.connect();
+      lobbyPhase = "playing";
+    } else if (data.status === "finished" || data.status === "error") {
+      // ホスト退出などで部屋が閉じた
+      stopRoomPoll();
+      lobbyError = $_("demo.multi.roomClosed");
+    }
+  }
+
+  async function pollRoom() {
+    if (!roomCode) return;
+    try {
+      const res = await fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}?token=${encodeURIComponent(deviceToken)}`);
+      if (res.ok) applyRoom(await res.json());
+      else if (res.status === 404) { roomStatus = "finished"; lobbyError = $_("demo.multi.roomClosed"); stopRoomPoll(); }
+    } catch {
+      /* 一時失敗は次のポーリングで回復 */
+    }
+    if (roomStatus === "waiting") roomPollTimer = setTimeout(pollRoom, 1500);
+  }
+
+  function stopRoomPoll() {
+    if (roomPollTimer) { clearTimeout(roomPollTimer); roomPollTimer = null; }
+  }
+
+  // ---- マルチ: ホストが開始 ----
+  async function startMultiGame() {
+    try {
+      await fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}/start`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: hostToken }),
+      });
+      // 次のポーリングで running を拾って接続する
+    } catch (e) {
+      lobbyError = e instanceof Error ? e.message : String(e);
+    }
+  }
+
+  function copyCode() {
+    if (browser && roomCode) {
+      navigator.clipboard?.writeText(roomCode).then(() => {
+        codeCopied = true;
+        setTimeout(() => (codeCopied = false), 1500);
+      }).catch(() => {});
+    }
+  }
+
+  // 待機部屋から抜ける（ホストなら部屋解散、参加者なら離席）。
+  function leaveRoom() {
+    stopRoomPoll();
+    if (roomCode) {
+      fetch(`${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}/leave`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: deviceToken }),
+      }).catch(() => {});
+    }
+    roomCode = "";
+    isHost = false;
+    hostToken = "";
+    roomParticipants = [];
+    roomStatus = "";
+    sessionId = null;
+    lobbyError = null;
+    screen = "mode";
   }
 
   function applyLobbyStatus(s: string, position: number) {
@@ -353,6 +511,14 @@
       const res = await fetch(`${lobbyBase}/api/session/${sessionId}`);
       if (res.ok) {
         const data = await res.json();
+        // 順番待ち→開始のときに接続URL(役職/キャラ付き)を確定（未接続のときだけ）。
+        if (data.status === "running" && data.ws_url && status !== "connected" && lobbyPhase !== "playing") {
+          agentSettings.update((value) => ({
+            ...value,
+            connection: { url: withSeatPrefs(data.ws_url), token: "" },
+            team: myTeam ?? value.team,
+          }));
+        }
         applyLobbyStatus(data.status, data.position);
         if (data.error) {
           lobbyError = data.error;
@@ -380,6 +546,7 @@
       // スロット解放を lobby に通知（AIプロセスも停止される）
       fetch(`${lobbyBase}/api/session/${sessionId}/leave`, { method: "POST" }).catch(() => {});
     }
+    stopRoomPoll();
     demoSocketState.reset();
     infoOpen = false;
     introOpen = false;
@@ -390,10 +557,24 @@
     queuePos = 0;
     lobbyError = null;
     lobbyPhase = "idle";
+    // モード選択へ戻す＋マルチ部屋の状態をクリア
+    roomCode = "";
+    isHost = false;
+    hostToken = "";
+    roomParticipants = [];
+    roomStatus = "";
+    screen = "mode";
   }
 
   // ---- 接続（?url= 直接接続を優先。無ければロビー画面）----
   if (browser) {
+    // 端末の匿名トークン（席識別用。アカウント機能を足すときはこれをアカウントに紐付ける）。
+    deviceToken = localStorage.getItem("demo_device_token") ?? "";
+    if (!deviceToken) {
+      deviceToken =
+        (crypto?.randomUUID?.() ?? `t-${Date.now()}-${Math.random().toString(36).slice(2)}`);
+      localStorage.setItem("demo_device_token", deviceToken);
+    }
     const params = page.url.searchParams;
     const url = params.get("url");
     const token = params.get("token");
@@ -422,8 +603,14 @@
     onDestroy(() => {
       window.removeEventListener("beforeunload", beforeUnload);
       if (pollTimer) clearTimeout(pollTimer);
-      // 離脱を lobby に通知（スロット解放）
-      if (sessionId) {
+      stopRoomPoll();
+      // 離脱を lobby に通知（スロット解放）。マルチ待機中は部屋から離席、それ以外はセッション終了。
+      if (roomCode && lobbyPhase !== "playing") {
+        navigator.sendBeacon?.(
+          `${lobbyBase}/api/rooms/${encodeURIComponent(roomCode)}/leave`,
+          new Blob([JSON.stringify({ token: deviceToken })], { type: "application/json" }),
+        );
+      } else if (sessionId) {
         navigator.sendBeacon?.(`${lobbyBase}/api/session/${sessionId}/leave`);
       }
       stopCountdown();
@@ -636,54 +823,116 @@
       </p>
 
       {#if lobbyPhase === "idle"}
-        <!-- 村の人数を選択（最初のページで決定。最小/既定は5）-->
-        <div class="flex flex-col items-center gap-2">
-          <div class="text-sm font-bold opacity-70">{$_("demo.start.villageSize")}</div>
-          <div class="join">
-            <button
-              class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}"
-              onclick={() => (villageSize = 5)}>{$_("demo.start.village5")}</button>
-            <button
-              class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}"
-              onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
+        {#if screen === "mode"}
+          <!-- ① モード選択（最初の画面） -->
+          <div class="text-sm font-bold opacity-70">{$_("demo.mode.title")}</div>
+          <div class="flex flex-col gap-3 w-full max-w-xs">
+            <button class="btn btn-primary h-auto py-3 flex-col" onclick={() => (screen = "solo")}>
+              <span class="text-base font-bold">{$_("demo.mode.solo")}</span>
+              <span class="text-xs font-normal opacity-80">{$_("demo.mode.soloDesc")}</span>
+            </button>
+            <button class="btn btn-outline h-auto py-3 flex-col" onclick={() => (screen = "multiCreate")}>
+              <span class="text-base font-bold">{$_("demo.mode.multi")}</span>
+              <span class="text-xs font-normal opacity-80">{$_("demo.mode.multiDesc")}</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick={() => (screen = "multiJoin")}>{$_("demo.multi.join")}</button>
           </div>
-          <div class="text-xs opacity-60 max-w-xs text-center">
-            {#if villageSize === 5}
-              {$_("demo.start.comp5")}
-            {:else}
-              {$_("demo.start.comp9")}
-            {/if}
+        {:else if screen === "solo"}
+          <!-- ② ソロ: 村サイズ + 役職/キャラ + 開始 -->
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-sm font-bold opacity-70">{$_("demo.start.villageSize")}</div>
+            <div class="join">
+              <button class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 5)}>{$_("demo.start.village5")}</button>
+              <button class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
+            </div>
+            <div class="text-xs opacity-60 max-w-xs text-center">
+              {villageSize === 5 ? $_("demo.start.comp5") : $_("demo.start.comp9")}
+            </div>
           </div>
-        </div>
-
-        <!-- 役職の指定（任意。既定=おまかせ=ランダム）-->
-        <div class="flex flex-col items-center gap-2">
-          <div class="text-sm font-bold opacity-70">{$_("demo.start.role")}</div>
-          <select class="select select-bordered select-sm" bind:value={selectedRole}>
-            <option value="">{$_("demo.start.random")}</option>
-            {#each roleChoices as r}
-              <option value={r}>{$_(`game.role.${r}`)}</option>
-            {/each}
-          </select>
-        </div>
-
-        <!-- キャラクターの指定（任意。既定=おまかせ=ランダム）-->
-        <div class="flex flex-col items-center gap-2">
-          <div class="text-sm font-bold opacity-70">{$_("demo.start.character")}</div>
-          <div class="flex items-center gap-2">
-            {#if selectedCharacterAvatar}
-              <div class="avatar"><div class="w-8 rounded-full"><img src={`${base}${selectedCharacterAvatar}`} alt="" /></div></div>
-            {/if}
-            <select class="select select-bordered select-sm" bind:value={selectedCharacter}>
-              <option value={-1}>{$_("demo.start.random")}</option>
-              {#each characters as c}
-                <option value={c.index}>{c.name}</option>
-              {/each}
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-sm font-bold opacity-70">{$_("demo.start.role")}</div>
+            <select class="select select-bordered select-sm" bind:value={selectedRole}>
+              <option value="">{$_("demo.start.random")}</option>
+              {#each roleChoices as r}<option value={r}>{$_(`game.role.${r}`)}</option>{/each}
             </select>
           </div>
-        </div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-sm font-bold opacity-70">{$_("demo.start.character")}</div>
+            <div class="flex items-center gap-2">
+              {#if selectedCharacterAvatar}
+                <div class="avatar"><div class="w-8 rounded-full"><img src={`${base}${selectedCharacterAvatar}`} alt="" /></div></div>
+              {/if}
+              <select class="select select-bordered select-sm" bind:value={selectedCharacter}>
+                <option value={-1}>{$_("demo.start.random")}</option>
+                {#each characters as c}<option value={c.index}>{c.name}</option>{/each}
+              </select>
+            </div>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick={startSolo}>{$_("demo.start.start")}</button>
+          <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
+        {:else if screen === "multiCreate"}
+          <!-- ③ マルチ: 部屋を作る（村サイズ + 人数スライダー） -->
+          <div class="text-lg font-bold">{$_("demo.multi.create")}</div>
+          <div class="flex flex-col items-center gap-2">
+            <div class="text-sm font-bold opacity-70">{$_("demo.start.villageSize")}</div>
+            <div class="join">
+              <button class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 5)}>{$_("demo.start.village5")}</button>
+              <button class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
+            </div>
+          </div>
+          <div class="flex flex-col items-center gap-1 w-full max-w-xs">
+            <div class="text-sm font-bold opacity-70">{$_("demo.multi.humans")}: <span class="text-primary">{humanSlots}</span> / {villageSize}</div>
+            <input type="range" min="1" max={villageSize} bind:value={humanSlots} class="range range-primary range-sm w-full" />
+            <div class="text-xs opacity-60">{$_("demo.multi.aiFill", { values: { count: villageSize - humanSlots } })}</div>
+          </div>
+          <button class="btn btn-primary btn-lg" onclick={createRoom}>{$_("demo.multi.createBtn")}</button>
+          <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
+        {:else if screen === "multiJoin"}
+          <!-- ④ マルチ: 合言葉で参加 -->
+          <div class="text-lg font-bold">{$_("demo.multi.join")}</div>
+          <input
+            class="input input-bordered input-lg text-center tracking-widest uppercase w-48 font-mono"
+            placeholder={$_("demo.multi.enterCode")}
+            maxlength="8"
+            bind:value={joinCodeInput}
+            oninput={(e) => (joinCodeInput = (e.target as HTMLInputElement).value.toUpperCase())}
+          />
+          {#if lobbyError}<div class="alert alert-error py-2"><span>{lobbyError}</span></div>{/if}
+          <button class="btn btn-primary btn-lg" disabled={!joinCodeInput.trim()} onclick={joinRoom}>{$_("demo.multi.joinBtn")}</button>
+          <button class="btn btn-ghost btn-sm" onclick={() => { lobbyError = null; screen = "mode"; }}>← {$_("demo.mode.back")}</button>
+        {:else if screen === "waiting"}
+          <!-- ⑤ 待機部屋（合言葉・参加者・開始） -->
+          <div class="text-sm font-bold opacity-70">{$_("demo.multi.code")}</div>
+          <button class="flex items-center gap-2 btn btn-ghost" onclick={copyCode} aria-label={$_("demo.multi.copy")}>
+            <span class="text-3xl font-bold font-mono tracking-widest">{roomCode}</span>
+            <iconify-icon icon={codeCopied ? "mdi:check" : "mdi:content-copy"} class="text-lg opacity-70"></iconify-icon>
+          </button>
+          <div class="text-xs opacity-60 max-w-xs">{codeCopied ? $_("demo.multi.copied") : $_("demo.multi.codeHint")}</div>
 
-        <button class="btn btn-primary btn-lg" onclick={startViaLobby}>{$_("demo.start.start")}</button>
+          <div class="w-full max-w-xs">
+            <div class="text-sm font-bold opacity-70 mb-1">
+              {$_("demo.multi.participants", { values: { count: roomParticipants.length, max: humanSlots } })}
+            </div>
+            <div class="flex flex-col gap-1">
+              {#each roomParticipants as p}
+                <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
+                  <iconify-icon icon="mdi:account" class="opacity-70"></iconify-icon>
+                  <span class="text-sm font-bold">{p.display_name}{p.display_name === displayName ? `（${$_("demo.multi.you2")}）` : ""}</span>
+                  {#if p.is_host}<span class="ml-auto badge badge-sm badge-primary">{$_("demo.multi.host")}</span>{/if}
+                </div>
+              {/each}
+            </div>
+          </div>
+
+          {#if isHost}
+            <button class="btn btn-primary btn-lg" onclick={startMultiGame}>{$_("demo.multi.startBtn")}</button>
+          {:else}
+            <span class="loading loading-dots loading-md"></span>
+            <div class="text-sm opacity-70">{$_("demo.multi.waitHost")}</div>
+          {/if}
+          {#if lobbyError}<div class="alert alert-error py-2"><span>{lobbyError}</span></div>{/if}
+          <button class="btn btn-ghost btn-sm" onclick={leaveRoom}>{$_("demo.multi.leave")}</button>
+        {/if}
       {:else if lobbyPhase === "joining"}
         <span class="loading loading-spinner loading-lg"></span>
         <div>{$_("demo.start.joining")}</div>
@@ -699,7 +948,7 @@
         <div class="alert alert-error">
           <span>{$_("demo.start.error", { values: { message: lobbyError ?? $_("demo.start.unknownError") } })}</span>
         </div>
-        <button class="btn" onclick={startViaLobby}>{$_("demo.start.retry")}</button>
+        <button class="btn" onclick={() => { lobbyPhase = "idle"; lobbyError = null; screen = "mode"; }}>{$_("demo.start.retry")}</button>
       {/if}
 
       {#if displayName}

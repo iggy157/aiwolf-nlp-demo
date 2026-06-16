@@ -13,6 +13,19 @@
 | GET | `/api/languages` | 選択可能なゲーム言語コード一覧と既定値 `{languages, default}` |
 | GET | `/api/health` | 稼働状況（running/queued/max, provider/model） |
 
+**Room API（ソロ/マルチ）**: /demo の前段。匿名デバイストークン（`token`）で席を識別（アカウント不要）。
+
+| method | path | 役割 |
+|---|---|---|
+| POST | `/api/rooms` | 卓作成。`{mode:solo|multi, size, language, human_slots, token}`。solo=即開始、multi=合言葉発行して待機。`{room_id, code, host_token, you, status, ...}` |
+| POST | `/api/rooms/{code}/join` | マルチ卓に合言葉で参加。`{token}` → `{you, status, participants, ...}`（満員=409, 無い=404） |
+| GET | `/api/rooms/{code}?token=` | 卓状態のポーリング。running時に `ws_url` と自分の `you.team` を返す |
+| POST | `/api/rooms/{code}/start` | ホスト（`host_token`）が開始。空席を AI で補充して spawn |
+| POST | `/api/rooms/{code}/leave` | 退出（ホスト=解散 / 待機中の参加者=離席） |
+
+設計: 卓は `RoomStore`（今はインメモリ、Phase1 で DB 実装に差し替え）で保持。匿名トークンは将来アカウントに紐付け可能。
+旧 `/api/join`・`/api/session/{id}` は後方互換で残置（ソロのポーリングに再利用）。
+
 **ゲーム言語**: `language`（既定 `DEFAULT_LANGUAGE`）で卓ごとにAIの発話言語を決める。
 `prompt_provider.py` が `configs/agents/prompts/<lang>.yml` を解決し、未対応言語は既定言語にフォールバックする。
 UI言語（画面表示）は viewer 側 svelte-i18n の別管理で、`/api/byo` の `human_join_url` には `&lang=` が付き

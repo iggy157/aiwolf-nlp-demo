@@ -389,6 +389,37 @@
       "help": "💡「结束」=结束今天的发言 ／「跳过」=本次跳过。手动输入时请使用首字母大写的 Over / Skip（小写的 over/skip 会被当作普通发言）。",
       "noTarget": "无对象"
     },
-    "leaveConfirm": "要中止游戏并返回首页吗？（此桌将结束。）"
+    "leaveConfirm": "要中止游戏并返回首页吗？（此桌将结束。）",
+    "mode": {
+      "title": "选择游戏方式",
+      "solo": "单人",
+      "soloDesc": "你 + AI（立即开始）",
+      "multi": "多人",
+      "multiDesc": "和朋友一起玩（用暗号加入同一桌）",
+      "back": "返回"
+    },
+    "multi": {
+      "create": "创建房间",
+      "join": "用暗号加入",
+      "humans": "玩家人数",
+      "aiFill": "剩余 {count} 个座位由 AI 填补",
+      "createBtn": "创建房间",
+      "code": "房间暗号",
+      "codeHint": "把这个暗号分享给想一起玩的人",
+      "copy": "复制",
+      "copied": "已复制",
+      "enterCode": "输入房间暗号",
+      "joinBtn": "加入",
+      "participants": "玩家（{count}/{max}）",
+      "host": "房主",
+      "you2": "你",
+      "waiting": "正在等待其他玩家…",
+      "startBtn": "开始游戏",
+      "waitHost": "正在等待房主开始…",
+      "leave": "离开",
+      "roomClosed": "房间已关闭",
+      "full": "房间已满",
+      "notFound": "未找到房间"
+    }
   }
 }

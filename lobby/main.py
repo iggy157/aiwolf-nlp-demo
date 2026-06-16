@@ -147,6 +147,8 @@ MAX_CONCURRENT_GAMES = int(_env("MAX_CONCURRENT_GAMES", "20"))
 MAX_SESSION_SECONDS = int(_env("MAX_SESSION_SECONDS", "1800"))  # 30分
 # 待機列のハートビート猶予。フロントのポーリングが途絶えた待機者は放棄とみなし列から除去。
 QUEUE_HEARTBEAT_TTL = int(_env("QUEUE_HEARTBEAT_TTL", "20"))  # 秒
+# マルチ卓の待機部屋（開始前）のハートビート猶予。ホスト/参加者の誰もポーリングしなくなったら回収。
+WAITING_ROOM_TTL = int(_env("WAITING_ROOM_TTL", "60"))  # 秒
 # 終了/エラー済みセッションを辞書から掃除するまでの保持時間。
 FINISHED_RETENTION_SECONDS = int(_env("FINISHED_RETENTION_SECONDS", "300"))
 
@@ -168,21 +170,47 @@ AGENT_LLM_PYTHON = _resolve_python()
 # セッション管理
 # ---------------------------------------------------------------------------
 @dataclass
+class Participant:
+    """マルチプレイ卓に入った人間1人。
+
+    token は端末ごとの匿名識別子（ブラウザの localStorage 保持）。アカウント機能は無いが、
+    これを「誰が入っているか」の識別に使う。将来アカウントを足すときは、この匿名 token を
+    アカウントに紐付け（claim）するだけで移行できる（[[role-character-choice]] と同じ前方互換方針）。
+    """
+    token: str          # 端末の匿名トークン
+    display_name: str   # 表示名（userNN）
+    team: str           # この人が接続に使う一意の human team（you-...）
+    last_seen: float = field(default_factory=time.time)
+
+
+@dataclass
 class Session:
+    """1卓（Room）。ソロ=人間1＋AI、マルチ=人間N＋AI。
+
+    Phase 1（DB/アカウント）への布石として、卓は RoomStore（今は InMemoryRoomStore）越しに
+    保持する。code は人間が共有して同卓に入るための短い合言葉（マルチのみ）。
+    """
     id: str
-    display_name: str  # 採番された表示名（user01 等）
+    display_name: str  # 採番された表示名（user01 等。代表＝ホスト）
     team: str          # 埋めのサンプルAIが使うチーム名（末尾は非数字）
     # room: room_match マッチングの卓ID。?room=<room> でこの卓に来た接続だけが1卓に集まる。
     # チーム名ではなく room で束ねるため、人間・サンプルAI・持ち込みエージェントが
     # それぞれ別チーム名のまま同一卓に入れる（卓は room で他卓と分離）。
     room: str = ""
     # human_team: 人間プレイヤーが使う「人間と分かる」チーム名（例 you-user01）。
+    # ソロでは代表参加者の team。マルチでは participants 各自の team を使う。
     human_team: str = ""
-    status: str = "queued"  # queued | running | finished | error
+    status: str = "queued"  # waiting | queued | running | finished | error
     size: int = 5           # 村の人数（= サーバの agent_count。5 or 9）
     language: str = "ja"    # ゲーム言語（AIの発話/プロンプト言語。卓作成時に固定）
-    ai_count: int = 0       # この卓で起動するサンプルAI数（= size - external_slots）
+    ai_count: int = 0       # この卓で起動するサンプルAI数（= size - 参加人間数）
     external_slots: int = 1 # 外部接続数（人間 + 持ち込みエージェント）
+    # --- Room（ソロ/マルチ）---
+    mode: str = "solo"      # solo | multi
+    code: str = ""          # マルチの合言葉（共有して同卓に入る）。ソロは空。
+    human_slots: int = 1    # 人間の席数（マルチでホストが指定。残りをAIが埋める）
+    host_token: str = ""    # ホスト（部屋作成者）の匿名トークン
+    participants: list[Participant] = field(default_factory=list)
     process: Any = None     # subprocess.Popen | None
     config_path: Path | None = None
     created_at: float = field(default_factory=time.time)
@@ -191,10 +219,19 @@ class Session:
     last_seen: float = field(default_factory=time.time)  # 最終ポーリング時刻（ハートビート）
     error: str | None = None
 
+    def alive_seen(self) -> float:
+        """卓の最終アクティブ時刻（誰かのポーリング/参加者の last_seen の最大）。"""
+        if self.participants:
+            return max(self.last_seen, max(p.last_seen for p in self.participants))
+        return self.last_seen
+
 
 class Lobby:
     def __init__(self) -> None:
+        # sessions / _codes は「インメモリの RoomStore」。Phase 1 で DB 実装に差し替える際は
+        # ここのアクセサ（room_by_code / sessions 参照）を Store 越しにするだけでロジックは不変。
         self.sessions: dict[str, Session] = {}
+        self._codes: dict[str, str] = {}    # code(大文字) -> session_id（マルチの合言葉索引）
         self.queue: list[str] = []          # session_id の待機列（FIFO）
         self._user_counter = 0
         self._lock = asyncio.Lock()
@@ -203,6 +240,25 @@ class Lobby:
     def _next_display_name(self) -> str:
         self._user_counter += 1
         return f"user{self._user_counter:02d}"
+
+    # 合言葉に紛らわしい文字(0/O,1/I)を避けた英数字。
+    _CODE_ALPHABET = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"
+
+    def _gen_code(self, length: int = 5) -> str:
+        for _ in range(20):
+            code = "".join(secrets.choice(self._CODE_ALPHABET) for _ in range(length))
+            if code not in self._codes:
+                return code
+        # 衝突が続くなら桁を増やす
+        return self._gen_code(length + 1)
+
+    def room_by_code(self, code: str) -> Session | None:
+        sid = self._codes.get((code or "").upper())
+        return self.sessions.get(sid) if sid else None
+
+    def _make_participant(self, token: str) -> Participant:
+        display = self._next_display_name()
+        return Participant(token=token, display_name=display, team=f"you-{display}")
 
     @staticmethod
     def _new_team(display_name: str) -> str:
@@ -243,8 +299,98 @@ class Lobby:
             return session
 
     async def join(self, size: int = 5, language: str = DEFAULT_LANGUAGE) -> Session:
-        # /demo の人間1枠（外部=人間1人、残りをAIが埋める）
+        # /demo の人間1枠（外部=人間1人、残りをAIが埋める）。後方互換用。
         return await self.create_session(external_slots=1, size=size, language=language)
+
+    # --- Room（ソロ/マルチ）---
+    async def create_room(
+        self,
+        mode: str,
+        size: int = 5,
+        language: str = DEFAULT_LANGUAGE,
+        human_slots: int = 1,
+        token: str = "",
+    ) -> Session:
+        """卓を作る。ソロは即開始（AI spawn）、マルチは待機（コード発行・ホスト参加）。"""
+        if size not in VALID_SIZES:
+            size = 5
+        language = PROMPT_PROVIDER.resolve_language(language)
+        mode = "multi" if mode == "multi" else "solo"
+        # 人間席数: ソロは1、マルチは 1..size
+        human_slots = 1 if mode == "solo" else max(1, min(human_slots, size))
+        token = token or secrets.token_urlsafe(9)
+        async with self._lock:
+            sid = secrets.token_urlsafe(9)
+            host = self._make_participant(token)
+            session = Session(
+                id=sid,
+                display_name=host.display_name,
+                team=self._new_team(host.display_name),
+                room=sid,
+                human_team=host.team,
+                size=size,
+                language=language,
+                mode=mode,
+                human_slots=human_slots,
+                host_token=token,
+                participants=[host],
+            )
+            self.sessions[sid] = session
+            if mode == "solo":
+                # ソロは即「順番待ち→spawn」。AIで全席（size-1）埋める。
+                session.external_slots = 1
+                session.ai_count = max(0, size - 1)
+                session.status = "queued"
+                self.queue.append(sid)
+            else:
+                # マルチは合言葉を発行して待機。開始はホストの start_room で。
+                session.code = self._gen_code()
+                self._codes[session.code] = sid
+                session.status = "waiting"
+            return session
+
+    async def join_room(self, code: str, token: str) -> tuple[Session, Participant]:
+        """マルチ卓に合言葉で参加する。空席が無ければ例外。既参加(同token)なら既存席を返す。"""
+        token = token or secrets.token_urlsafe(9)
+        async with self._lock:
+            session = self.room_by_code(code)
+            if session is None or session.mode != "multi":
+                raise KeyError("room not found")
+            if session.status != "waiting":
+                raise ValueError("room already started")
+            for p in session.participants:
+                if p.token == token:  # 再入（リロード等）は既存席をそのまま
+                    p.last_seen = time.time()
+                    return session, p
+            if len(session.participants) >= session.human_slots:
+                raise ValueError("room full")
+            p = self._make_participant(token)
+            session.participants.append(p)
+            return session, p
+
+    async def start_room(self, code: str, host_token: str) -> Session:
+        """ホストがマルチ卓を開始する。参加人間以外の席をAIで埋めて spawn。"""
+        async with self._lock:
+            session = self.room_by_code(code)
+            if session is None or session.mode != "multi":
+                raise KeyError("room not found")
+            if session.host_token != host_token:
+                raise PermissionError("only the host can start")
+            if session.status != "waiting":
+                return session  # 二重開始は無視
+            humans = len(session.participants)
+            session.external_slots = humans
+            session.ai_count = max(0, session.size - humans)
+            session.status = "queued"
+            self.queue.append(session.id)
+        await self._schedule()  # noqa: SLF001
+        return session
+
+    def participant_of(self, session: Session, token: str) -> Participant | None:
+        for p in session.participants:
+            if p.token == token:
+                return p
+        return None
 
     def running_count(self) -> int:
         return sum(1 for s in self.sessions.values() if s.status == "running")
@@ -391,12 +537,18 @@ class Lobby:
                 if session is None:
                     self.queue.remove(sid)
                     continue
-                if (now - session.last_seen) > QUEUE_HEARTBEAT_TTL:
+                if (now - session.alive_seen()) > QUEUE_HEARTBEAT_TTL:
                     self.queue.remove(sid)
                     session.status = "finished"
                     session.finished_at = now
 
-            # 終了済みセッションの掃除（辞書の肥大化防止）
+            # 放棄された待機部屋（マルチ・開始前）を回収（誰もポーリングしなくなった）
+            for session in self.sessions.values():
+                if session.status == "waiting" and (now - session.alive_seen()) > WAITING_ROOM_TTL:
+                    session.status = "finished"
+                    session.finished_at = now
+
+            # 終了済みセッションの掃除（辞書の肥大化防止）。合言葉索引も外す。
             stale = [
                 sid
                 for sid, s in self.sessions.items()
@@ -405,7 +557,9 @@ class Lobby:
                 and (now - s.finished_at) > FINISHED_RETENTION_SECONDS
             ]
             for sid in stale:
-                self.sessions.pop(sid, None)
+                s = self.sessions.pop(sid, None)
+                if s and s.code:
+                    self._codes.pop(s.code, None)
 
     @staticmethod
     def _terminate_process(session: Session) -> None:
@@ -424,11 +578,13 @@ class Lobby:
 
     def kill_session(self, session: Session) -> None:
         self._terminate_process(session)
-        if session.status in ("queued", "running"):
+        if session.status in ("waiting", "queued", "running"):
             session.status = "finished"
             session.finished_at = time.time()
         if session.id in self.queue:
             self.queue.remove(session.id)
+        if session.code:
+            self._codes.pop(session.code, None)
         self._cleanup_config(session)
 
 
@@ -654,5 +810,135 @@ async def leave(session_id: str) -> dict[str, str]:
     session = lobby.sessions.get(session_id)
     if session is None:
         raise HTTPException(status_code=404, detail="session not found")
+    lobby.kill_session(session)
+    return {"status": "left"}
+
+
+# ---------------------------------------------------------------------------
+# Room API（ソロ/マルチ）。/demo の前段。匿名トークンで席を識別（アカウント不要）。
+# ---------------------------------------------------------------------------
+class CreateRoomRequest(BaseModel):
+    mode: str = "solo"               # solo | multi
+    size: int = 5                    # 村の人数（5 or 9）
+    language: str = DEFAULT_LANGUAGE
+    human_slots: int = 1             # マルチの人間席数（1..size、残りをAIが埋める）
+    token: str = ""                  # 端末の匿名トークン（localStorage）
+
+
+class JoinRoomRequest(BaseModel):
+    token: str = ""                  # 端末の匿名トークン
+
+
+class ParticipantInfo(BaseModel):
+    display_name: str
+    team: str
+    is_host: bool = False
+
+
+class RoomResponse(BaseModel):
+    room_id: str
+    code: str
+    mode: str
+    status: str                      # waiting | queued | running | finished | error
+    size: int
+    language: str
+    human_slots: int
+    ai_count: int
+    participants: list[ParticipantInfo]
+    you: ParticipantInfo | None = None   # 呼び出し元(token)の席
+    host_token: str = ""             # 自分がホストのときだけ返す（start 認可用）
+    ws_url: str | None = None        # running のとき、あなたの接続先 URL（team は you.team）
+    position: int = 0
+    error: str | None = None
+
+
+def _room_response(session: Session, token: str) -> RoomResponse:
+    you = lobby.participant_of(session, token)
+    ws = None
+    if session.status == "running" and you is not None:
+        ws = with_room(public_url_for(session.size, session.language), session.room)
+    parts = [
+        ParticipantInfo(display_name=p.display_name, team=p.team, is_host=(p.token == session.host_token))
+        for p in session.participants
+    ]
+    return RoomResponse(
+        room_id=session.id,
+        code=session.code,
+        mode=session.mode,
+        status=session.status,
+        size=session.size,
+        language=session.language,
+        human_slots=session.human_slots,
+        ai_count=session.ai_count,
+        participants=parts,
+        you=(
+            ParticipantInfo(display_name=you.display_name, team=you.team, is_host=(you.token == session.host_token))
+            if you else None
+        ),
+        host_token=session.host_token if token and token == session.host_token else "",
+        ws_url=ws,
+        position=lobby.position_of(session.id),
+        error=session.error,
+    )
+
+
+@app.post("/api/rooms", response_model=RoomResponse)
+async def create_room(req: CreateRoomRequest) -> RoomResponse:
+    token = req.token or secrets.token_urlsafe(9)
+    session = await lobby.create_room(
+        mode=req.mode, size=req.size, language=req.language, human_slots=req.human_slots, token=token,
+    )
+    if session.mode == "solo":
+        await lobby._schedule()  # noqa: SLF001  ソロは即開始
+    return _room_response(session, token)
+
+
+@app.post("/api/rooms/{code}/join", response_model=RoomResponse)
+async def join_room(code: str, req: JoinRoomRequest) -> RoomResponse:
+    token = req.token or secrets.token_urlsafe(9)
+    try:
+        session, _ = await lobby.join_room(code, token)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="room not found")
+    except ValueError as ex:
+        raise HTTPException(status_code=409, detail=str(ex))
+    return _room_response(session, token)
+
+
+@app.get("/api/rooms/{code}", response_model=RoomResponse)
+async def get_room(code: str, token: str = "") -> RoomResponse:
+    session = lobby.room_by_code(code)
+    if session is None:
+        raise HTTPException(status_code=404, detail="room not found")
+    # ハートビート更新（放棄検出用）。自分の席があればそれも更新。
+    session.last_seen = time.time()
+    you = lobby.participant_of(session, token)
+    if you is not None:
+        you.last_seen = time.time()
+    return _room_response(session, token)
+
+
+@app.post("/api/rooms/{code}/start", response_model=RoomResponse)
+async def start_room(code: str, req: JoinRoomRequest) -> RoomResponse:
+    try:
+        session = await lobby.start_room(code, req.token)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="room not found")
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="only the host can start")
+    return _room_response(session, req.token)
+
+
+@app.post("/api/rooms/{code}/leave")
+async def leave_room(code: str, req: JoinRoomRequest) -> dict[str, str]:
+    session = lobby.room_by_code(code)
+    if session is None:
+        return {"status": "left"}
+    async with lobby._lock:  # noqa: SLF001
+        if session.status == "waiting" and req.token != session.host_token:
+            # 待機中の非ホストが抜ける → 席だけ外す（卓は残る）
+            session.participants = [p for p in session.participants if p.token != req.token]
+            return {"status": "left"}
+    # ホストが抜ける or 進行中 → 卓を終了（全員解散）
     lobby.kill_session(session)
     return {"status": "left"}

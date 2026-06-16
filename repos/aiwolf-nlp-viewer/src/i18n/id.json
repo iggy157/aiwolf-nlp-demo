@@ -389,6 +389,37 @@
       "help": "💡 \"Over\" = selesai berbicara untuk hari ini / \"Skip\" = lewati kali ini. Jika mengetik manual, gunakan Over / Skip dengan huruf kapital di awal (over/skip huruf kecil akan menjadi pesan biasa).",
       "noTarget": "Tanpa sasaran"
     },
-    "leaveConfirm": "Keluar dari permainan dan kembali ke beranda? (Meja ini akan berakhir.)"
+    "leaveConfirm": "Keluar dari permainan dan kembali ke beranda? (Meja ini akan berakhir.)",
+    "mode": {
+      "title": "Pilih cara bermain",
+      "solo": "Solo",
+      "soloDesc": "Anda + AI (langsung mulai)",
+      "multi": "Multipemain",
+      "multiDesc": "Main bersama teman (gabung ke meja yang sama dengan kode)",
+      "back": "Kembali"
+    },
+    "multi": {
+      "create": "Buat ruangan",
+      "join": "Gabung dengan kode",
+      "humans": "Jumlah pemain",
+      "aiFill": "AI akan mengisi {count} kursi yang tersisa",
+      "createBtn": "Buat ruangan",
+      "code": "Kode ruangan",
+      "codeHint": "Bagikan kode ini kepada orang yang ingin Anda ajak bermain",
+      "copy": "Salin",
+      "copied": "Tersalin",
+      "enterCode": "Masukkan kode ruangan",
+      "joinBtn": "Gabung",
+      "participants": "Pemain ({count}/{max})",
+      "host": "Tuan rumah",
+      "you2": "Anda",
+      "waiting": "Menunggu pemain lain…",
+      "startBtn": "Mulai permainan",
+      "waitHost": "Menunggu tuan rumah memulai…",
+      "leave": "Keluar",
+      "roomClosed": "Ruangan telah ditutup",
+      "full": "Ruangan penuh",
+      "notFound": "Ruangan tidak ditemukan"
+    }
   }
 }

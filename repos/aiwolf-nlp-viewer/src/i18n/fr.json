@@ -389,6 +389,37 @@
       "help": "💡 « Over » = terminer votre prise de parole pour aujourd'hui / « Skip » = passer cette fois. Si vous les saisissez manuellement, utilisez Over / Skip avec une majuscule initiale (over/skip en minuscules deviennent des messages normaux).",
       "noTarget": "Aucune cible"
     },
-    "leaveConfirm": "Quitter la partie et revenir à l'accueil ? (Cette table prendra fin.)"
+    "leaveConfirm": "Quitter la partie et revenir à l'accueil ? (Cette table prendra fin.)",
+    "mode": {
+      "title": "Choisissez comment jouer",
+      "solo": "Solo",
+      "soloDesc": "Vous + IA (démarre tout de suite)",
+      "multi": "Multijoueur",
+      "multiDesc": "Jouez entre amis (rejoignez la même table avec un code)",
+      "back": "Retour"
+    },
+    "multi": {
+      "create": "Créer un salon",
+      "join": "Rejoindre avec un code",
+      "humans": "Nombre de joueurs",
+      "aiFill": "L'IA occupera les {count} places restantes",
+      "createBtn": "Créer le salon",
+      "code": "Code du salon",
+      "codeHint": "Partagez ce code avec les personnes avec qui vous voulez jouer",
+      "copy": "Copier",
+      "copied": "Copié",
+      "enterCode": "Saisissez le code du salon",
+      "joinBtn": "Rejoindre",
+      "participants": "Joueurs ({count}/{max})",
+      "host": "Hôte",
+      "you2": "Vous",
+      "waiting": "En attente d'autres joueurs…",
+      "startBtn": "Démarrer la partie",
+      "waitHost": "En attente du démarrage par l'hôte…",
+      "leave": "Quitter",
+      "roomClosed": "Le salon a été fermé",
+      "full": "Le salon est complet",
+      "notFound": "Salon introuvable"
+    }
   }
 }

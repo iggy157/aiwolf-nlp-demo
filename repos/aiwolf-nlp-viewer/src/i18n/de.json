@@ -389,6 +389,37 @@
       "help": "💡 \"Over\" = das heutige Reden beenden / \"Skip\" = diesmal passen. Bei manueller Eingabe groß geschriebenes Over / Skip verwenden (kleingeschriebenes over/skip wird zu normalen Nachrichten).",
       "noTarget": "Kein Ziel"
     },
-    "leaveConfirm": "Das Spiel beenden und zur Startseite zurückkehren? (Dieser Tisch wird beendet.)"
+    "leaveConfirm": "Das Spiel beenden und zur Startseite zurückkehren? (Dieser Tisch wird beendet.)",
+    "mode": {
+      "title": "Wähle, wie du spielen willst",
+      "solo": "Einzelspieler",
+      "soloDesc": "Du + KI (startet sofort)",
+      "multi": "Mehrspieler",
+      "multiDesc": "Spiele mit Freunden (mit einem Code am selben Tisch beitreten)",
+      "back": "Zurück"
+    },
+    "multi": {
+      "create": "Raum erstellen",
+      "join": "Mit Code beitreten",
+      "humans": "Anzahl der Spieler",
+      "aiFill": "Die KI besetzt die restlichen {count} Plätze",
+      "createBtn": "Raum erstellen",
+      "code": "Raumcode",
+      "codeHint": "Teile diesen Code mit den Personen, mit denen du spielen möchtest",
+      "copy": "Kopieren",
+      "copied": "Kopiert",
+      "enterCode": "Raumcode eingeben",
+      "joinBtn": "Beitreten",
+      "participants": "Spieler ({count}/{max})",
+      "host": "Host",
+      "you2": "Du",
+      "waiting": "Warte auf weitere Spieler…",
+      "startBtn": "Spiel starten",
+      "waitHost": "Warte, bis der Host startet…",
+      "leave": "Verlassen",
+      "roomClosed": "Der Raum wurde geschlossen",
+      "full": "Der Raum ist voll",
+      "notFound": "Raum nicht gefunden"
+    }
   }
 }

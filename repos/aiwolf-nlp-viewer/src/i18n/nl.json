@@ -389,6 +389,37 @@
       "help": "💡 \"Over\" = klaar met spreken voor vandaag / \"Skip\" = sla deze beurt over. Als je handmatig typt, gebruik dan Over / Skip met een hoofdletter (kleine letters over/skip worden gewone berichten).",
       "noTarget": "Geen doelwit"
     },
-    "leaveConfirm": "Het spel stoppen en terugkeren naar home? (Deze tafel wordt beëindigd.)"
+    "leaveConfirm": "Het spel stoppen en terugkeren naar home? (Deze tafel wordt beëindigd.)",
+    "mode": {
+      "title": "Kies hoe je wilt spelen",
+      "solo": "Solo",
+      "soloDesc": "Jij + AI (begint meteen)",
+      "multi": "Multiplayer",
+      "multiDesc": "Speel met vrienden (sluit aan bij dezelfde tafel met een code)",
+      "back": "Terug"
+    },
+    "multi": {
+      "create": "Een kamer maken",
+      "join": "Deelnemen met een code",
+      "humans": "Aantal spelers",
+      "aiFill": "AI vult de resterende {count} plaatsen op",
+      "createBtn": "Kamer maken",
+      "code": "Kamercode",
+      "codeHint": "Deel deze code met de mensen met wie je wilt spelen",
+      "copy": "Kopiëren",
+      "copied": "Gekopieerd",
+      "enterCode": "Voer de kamercode in",
+      "joinBtn": "Deelnemen",
+      "participants": "Spelers ({count}/{max})",
+      "host": "Host",
+      "you2": "Jij",
+      "waiting": "Wachten op andere spelers…",
+      "startBtn": "Spel starten",
+      "waitHost": "Wachten tot de host start…",
+      "leave": "Verlaten",
+      "roomClosed": "De kamer is gesloten",
+      "full": "De kamer is vol",
+      "notFound": "Kamer niet gevonden"
+    }
   }
 }

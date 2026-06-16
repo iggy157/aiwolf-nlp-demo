@@ -389,6 +389,37 @@
       "help": "💡 \"Over\" = encerrar a fala de hoje / \"Skip\" = passar a vez desta vez. Se digitar manualmente, use Over / Skip com inicial maiúscula (over/skip em minúsculas viram mensagens normais).",
       "noTarget": "Sem alvo"
     },
-    "leaveConfirm": "Sair do jogo e voltar ao início? (Esta mesa será encerrada.)"
+    "leaveConfirm": "Sair do jogo e voltar ao início? (Esta mesa será encerrada.)",
+    "mode": {
+      "title": "Escolha como jogar",
+      "solo": "Individual",
+      "soloDesc": "Você + IA (começa na hora)",
+      "multi": "Multijogador",
+      "multiDesc": "Jogue com amigos (entrem na mesma mesa com um código)",
+      "back": "Voltar"
+    },
+    "multi": {
+      "create": "Criar uma sala",
+      "join": "Entrar com um código",
+      "humans": "Número de jogadores",
+      "aiFill": "A IA preencherá os {count} lugares restantes",
+      "createBtn": "Criar sala",
+      "code": "Código da sala",
+      "codeHint": "Compartilhe este código com as pessoas com quem quer jogar",
+      "copy": "Copiar",
+      "copied": "Copiado",
+      "enterCode": "Digite o código da sala",
+      "joinBtn": "Entrar",
+      "participants": "Jogadores ({count}/{max})",
+      "host": "Anfitrião",
+      "you2": "Você",
+      "waiting": "Aguardando outros jogadores…",
+      "startBtn": "Iniciar jogo",
+      "waitHost": "Aguardando o anfitrião iniciar…",
+      "leave": "Sair",
+      "roomClosed": "A sala foi fechada",
+      "full": "A sala está cheia",
+      "notFound": "Sala não encontrada"
+    }
   }
 }
