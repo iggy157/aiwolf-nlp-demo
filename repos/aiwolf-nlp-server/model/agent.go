@@ -27,6 +27,7 @@ type Agent struct {
 	Connection         *websocket.Conn
 	HasError           bool
 	msgChan            chan AgentMessage
+	closed             chan struct{}
 }
 
 func NewAgent(idx int, role Role, conn Connection) *Agent {
@@ -71,14 +72,47 @@ func NewAgentWithProfile(idx int, role Role, conn Connection, profile Profile, e
 	return agent
 }
 
+// keepAlive 関連: 一時停止中など無通信が続くと、中継(cloudflaredトンネル/Caddy/NAT)が
+// アイドル接続を勝手に切ってしまう。定期的に ping フレームを送って接続を生かし続ける。
+const (
+	keepAliveInterval  = 20 * time.Second // cloudflared等のアイドル上限(~100s)より十分短く
+	keepAliveWriteWait = 10 * time.Second
+)
+
 func (a *Agent) startReader() {
 	a.msgChan = make(chan AgentMessage, 100)
+	a.closed = make(chan struct{})
 	go func() {
+		defer close(a.closed)
 		for {
 			_, data, err := a.Connection.ReadMessage()
 			a.msgChan <- AgentMessage{Data: data, Err: err}
 			if err != nil {
 				return
+			}
+		}
+	}()
+	a.startKeepAlive()
+}
+
+// startKeepAlive は接続が閉じるまで一定間隔で ping を送り続ける。
+// WriteControl は他の書き込み(WriteMessage)と並行に呼んでも安全（gorilla/websocket仕様）なので
+// 送信用の排他ロックは不要。ブラウザは ping に自動で pong を返すため上り下り双方に通信が流れ、
+// 一時停止中でも中継のアイドルタイムアウトで切断されなくなる。
+func (a *Agent) startKeepAlive() {
+	go func() {
+		ticker := time.NewTicker(keepAliveInterval)
+		defer ticker.Stop()
+		for {
+			select {
+			case <-a.closed:
+				return
+			case <-ticker.C:
+				if err := a.Connection.WriteControl(
+					websocket.PingMessage, nil, time.Now().Add(keepAliveWriteWait),
+				); err != nil {
+					return
+				}
 			}
 		}
 	}()
@@ -94,7 +128,7 @@ func (a *Agent) ReadChannel() <-chan AgentMessage {
 // この時間で自動再開し、卓が無限にハングするのを防ぐ。
 // 接続断時は reader が msgChan にエラーを流すため、それより先に解消される。
 // 累積上限はロビーのセッション回収(MAX_SESSION_SECONDS)が別途担保する。
-const maxPauseBudget = 5 * time.Minute
+const maxPauseBudget = 10 * time.Minute
 
 func (a *Agent) receive(timeout time.Duration) ([]byte, error) {
 	// チャネルからタイムアウト付きでメッセージを受信する。
