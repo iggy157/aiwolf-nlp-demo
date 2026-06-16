@@ -105,7 +105,14 @@ set_env() { # key value
 }
 set_env DEMO_SITE_ADDRESS ":$PORT"
 set_env GAME_WS_PUBLIC_URL "wss://$HOST/ws"
-echo "==> .env updated: GAME_WS_PUBLIC_URL=wss://$HOST/ws"
+# 全言語サーバを立てる（lobby は未起動言語を ja にフォールバック）
+set_env I18N_SERVER_LANGS "all"
+echo "==> .env updated: GAME_WS_PUBLIC_URL=wss://$HOST/ws, I18N_SERVER_LANGS=all"
+
+# ---------- 言語別サーバ設定の生成 ----------
+# configs/generated/server.<lang>.yml, docker-compose.langs.yml, caddy/langs.caddy を生成。
+echo "==> generating per-language server configs (scripts/gen_i18n.py)"
+python3 "$ROOT/scripts/gen_i18n.py"
 
 # ---------- compose 起動 ----------
 # docker グループ未所属なら sudo 経由に自動切替（パスワードを対話入力）
@@ -115,8 +122,9 @@ else
   echo "==> docker 実行に sudo が必要です。パスワードを求められたら入力してください。"
   DOCKER="sudo docker"
 fi
-echo "==> ${DOCKER} compose up --build -d"
-$DOCKER compose up --build -d
+COMPOSE_FILES="-f docker-compose.yml -f docker-compose.langs.yml"
+echo "==> ${DOCKER} compose ${COMPOSE_FILES} up --build -d  （言語別サーバ含む全卓）"
+$DOCKER compose $COMPOSE_FILES up --build -d
 
 DEMO_URL="$PUBLIC_URL/demo"
 QR_PNG="$ROOT/demo-qr.png"

@@ -1,0 +1,463 @@
+server:
+  web_socket:
+    host: 0.0.0.0
+    port: 8080
+  authentication:
+    enable: false
+  timeout:
+    action: 180s
+    response: 300s
+    acceptable: 5s
+  max_continue_error_ratio: 0.2
+game:
+  agent_count: 9
+  max_day: -1
+  vote_visibility: true
+  talk:
+    max_count:
+      per_agent: 4
+      per_day: 36
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  whisper:
+    max_count:
+      per_agent: 0
+      per_day: 0
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  vote:
+    max_count: 1
+    allow_self_vote: true
+  attack_vote:
+    max_count: 1
+    allow_self_vote: true
+    allow_no_target: false
+logic:
+  day_phases:
+  - name: morning_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: daily_talk
+    actions:
+    - talk
+  night_phases:
+  - name: evening_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: execution
+    actions:
+    - execution
+    except_day: 0
+  - name: divine
+    actions:
+    - divine
+  - name: night_whisper
+    actions:
+    - whisper
+    except_day: 0
+  - name: guard
+    actions:
+    - guard
+    except_day: 0
+  - name: attack
+    actions:
+    - attack
+    except_day: 0
+  roles:
+    9:
+      WEREWOLF: 2
+      POSSESSED: 1
+      SEER: 1
+      BODYGUARD: 1
+      VILLAGER: 3
+      MEDIUM: 1
+matching:
+  room_match: true
+  self_match: false
+  is_optimize: false
+  team_count: 9
+  game_count: 9
+  output_path: ./log/match_optimizer.json
+  infinite_loop: false
+custom_profile:
+  enable: true
+  profile_encoding:
+    age: Возраст
+    gender: Пол
+    personality: Характер
+  profiles:
+  - name: Минато
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    voice_id: 3
+    age: 10
+    gender: Мужчина
+    personality: Минато — человек с мягким, спокойным характером, который любит общаться
+      с окружающими в тёплой и непринуждённой манере. Он немного наивен и порой делает
+      такое выражение лица, по которому трудно понять, о чём он думает, но эта его
+      искренность располагает к нему людей. Он очень любознателен, проявляет интерес
+      ко всему и особенно обожает узнавать новое. Минато восприимчив и чутко относится
+      к чувствам других, но ему трудно отстаивать своё мнение, и иногда он не может
+      как следует выразить свою точку зрения.
+  - name: Такуми
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    voice_id: 55
+    age: 10
+    gender: Мужчина
+    personality: 'Такуми храбр и никогда не сдаётся даже в самых трудных ситуациях.
+      Иногда он кажется напористым и дерзким, но на самом деле в нём сильно желание
+      защищать окружающих, и у него есть добрая сторона: ради товарищей он готов выложиться
+      без остатка. Он всегда сохраняет хладнокровие и продумывает, как решить стоящую
+      перед ним проблему, однако из-за своего характера порой действует безрассудно.
+      Такуми немного упрям, и ему трудно прислушиваться к чужим советам, но с возрастом
+      он становится всё более гибким.'
+  - name: Кэндзи
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    voice_id: 67
+    age: 12
+    gender: Мужчина
+    personality: Кэндзи любознателен и охотно берётся за новые вызовы. Он дорожит
+      друзьями и любит общаться с окружающими. Он немного рассеян и неуклюж, но всегда
+      настроен позитивно и никогда не бросит того, кто попал в беду. Кэндзи добродушен,
+      и окружающие находят его располагающим к себе человеком.
+  - name: Рюдзи
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    voice_id: 53
+    age: 28
+    gender: Мужчина
+    personality: Рюдзи хладнокровен и осторожен, он всегда оценивает обстановку, прежде
+      чем действовать. Он редко проявляет чувства и в душе постоянно о многом размышляет.
+      Товарищи считают его серьёзным и надёжным, но порой его бесстрастность вызывает
+      у окружающих тревогу. Он принимает решения скорее рассудком, чем интуицией,
+      и явно держится своих убеждений. Рюдзи независим и предпочитает действовать
+      в своём собственном темпе.
+  - name: Дайсукэ
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    voice_id: 12
+    age: 16
+    gender: Мужчина
+    personality: Дайсукэ очень замкнут и осторожен, к общению с другими относится
+      довольно сдержанно. Ему трудно делиться своими чувствами и мыслями, и он часто
+      переживает всё внутри себя. Он добр и очень внимателен к нуждам других, но порой
+      не уверен в своём положении и борется с внутренними сомнениями. Он тихий человек
+      и иногда не может сдержать эмоций, из-за чего падает духом, но когда он научается
+      опираться на окружающих, к нему постепенно возвращается спокойствие.
+  - name: Сион
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    voice_id: 94
+    age: 16
+    gender: Мужчина
+    personality: Сион очень уверен в себе и нередко действует хладнокровно и расчётливо.
+      Внешне он сдержан и хорошо умеет наблюдать за действиями других, но в душе желает
+      быть в центре всего. Порой он держится с окружающими немного вызывающе и склонен
+      вести всё в своём собственном темпе. К тому же он почти не показывает чувств
+      и судит обо всём холодно и логично. В его редкой неожиданной улыбке кроется
+      обаяние, способное удивить окружающих.
+  - name: Бенджамин
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    voice_id: 51
+    age: 28
+    gender: Мужчина
+    personality: 'Бенджамин — умный и уравновешенный человек. Он способен мыслить
+      хладнокровно и рассудительно, и даже в эмоциональных ситуациях ставит во главу
+      угла логику. На людях он изящен и учтив, а в разговоре нередко вставляет иронию
+      и юмор, но делает это так, что никого не задевает, и умеет создавать приятную
+      атмосферу. Есть в нём и интровертная сторона: он часто погружается в глубокие
+      размышления и порой отстраняется от окружающих. Однако его хладнокровие и знания
+      делают его человеком, которому доверяют даже в трудных обстоятельствах.'
+  - name: Тосио
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    voice_id: 13
+    age: 28
+    gender: Мужчина
+    personality: Тосио хладнокровен и расчётлив, он почти не выдаёт своих чувств.
+      Он обладает сильной волей и уверенно движется к цели. С окружающими он склонен
+      держаться на расстоянии, мало говорит о себе и окружён неким налётом таинственности.
+      Порой он острым взглядом наблюдает за происходящим и обладает способностью быстро
+      оценивать обстановку. Поэтому окружающие доверяют ему как надёжному человеку,
+      но к близкому общению с другими он подходит осторожно. Кажется, в его прошлом
+      есть какая-то боль или страдание, которые он редко показывает другим, и, возможно,
+      именно эти шрамы и породили его холодную сторону.
+  - name: Джонатан
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    voice_id: 52
+    age: 38
+    gender: Мужчина
+    personality: Джонатан — тихий интроверт, который дорожит душевным спокойствием.
+      Он предпочитает проводить время в тишине, а не заводить глубокие отношения с
+      другими. Поэтому он любит книги и знания и часто читает. В общении он мягок
+      и добр, и порой неожиданно дарит улыбку. В нём есть нечто загадочное и умиротворённое,
+      но о себе он почти ничего не рассказывает. Люди вокруг него часто ощущают спокойствие
+      благодаря его тихой доброте и уравновешенному нраву.
+  - name: Сюнъити
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    voice_id: 11
+    age: 32
+    gender: Мужчина
+    personality: Сюнъити — очень уверенный в себе человек, который сохраняет невозмутимость
+      в любой ситуации. Он не из скромников, и в нём есть слегка ироничная сторона,
+      но именно это составляет часть его обаяния. Он не слишком общителен, но умеет
+      общаться в нужный момент, и окружающие на него полагаются. Он редко даёт волю
+      чувствам и способен хладнокровно анализировать обстановку и действовать соответственно,
+      так что, как ни странно, в нём есть и весьма рассудительная сторона.
+  - name: Джордж
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    voice_id: 21
+    age: 65
+    gender: Мужчина
+    personality: 'Джордж — мягкий и уравновешенный человек, но при этом немного упрямый
+      и своенравный. Окружающие видят в нём опытного и надёжного человека, соответствующего
+      своему возрасту: он всегда способен принять хладнокровное решение и не теряется
+      даже в трудных обстоятельствах. Однако в его лице порой проступают суровость
+      и некоторая неловкость, и вместо того чтобы активно общаться с другими, он чаще
+      наблюдает за происходящим со стороны. Он очень независим и склонен решать проблемы
+      сам, не полагаясь на других.'
+  - name: Сервас
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    voice_id: 42
+    age: 85
+    gender: Мужчина
+    personality: Сервас — очень спокойный и уравновешенный человек. Опираясь на знания
+      и опыт, накопленные с годами, он часто даёт советы окружающим. Он прекрасный
+      слушатель и способен открыто говорить с кем угодно. Порой он высказывает глубокие
+      философские мысли, и его слова вдохновляют многих. Он полон жизненной силы и
+      всегда несёт окружающим позитивную энергию.
+  - name: Сакура
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    voice_id: 43
+    age: 10
+    gender: Женщина
+    personality: Сакура — жизнерадостная и немного озорная девочка. Она любознательна
+      и охотно берётся за всё новое. Иногда она устраивает шалости, чтобы рассмешить
+      окружающих, и хорошо умеет разгадывать небольшие загадки. Она дружелюбна и быстро
+      находит общий язык с кем угодно, поэтому легко сближается с людьми. Однако в
+      ней есть и немного рассеянная сторона, но даже при неудачах она с улыбкой старается
+      их преодолеть — таков её позитивный нрав.
+  - name: Рин
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    voice_id: 54
+    age: 9
+    gender: Женщина
+    personality: 'Рин — бойкая и энергичная девочка. Иногда она ведёт себя не по годам
+      взросло: в компании старших братьев и сестёр она заводит разговоры на взрослые
+      темы и подаёт интересные идеи. Она любознательна и обожает приключения и всё
+      новое. В ней есть немного рассеянная сторона, и она часто удивляет и смешит
+      окружающих, но за свой жизнерадостный нрав её все любят.'
+  - name: Юми
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    voice_id: 46
+    age: 16
+    gender: Женщина
+    personality: Юми — жизнерадостная и энергичная девушка. Она скромна, но при этом
+      добра и заботится об окружающих. Несмотря на мягкий нрав, к друзьям и семье
+      она относится очень пылко и не может оставить в беде того, кому нужна помощь.
+      Она улыбается по любому поводу и несёт окружающим позитивную энергию. Она дружелюбна
+      и быстро сходится даже с теми, кого видит впервые.
+  - name: Мэй
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    voice_id: 14
+    age: 24
+    gender: Женщина
+    personality: Мэй — уверенная в себе, общительная и немного игривая женщина. Она
+      привлекательна для окружающих и часто берёт на себя роль того, кто их развлекает.
+      Она хорошо понимает своё обаяние и умеет вести себя подобающе ситуации. В ней
+      есть немного дерзости, и порой она может произвести холодное впечатление, но
+      в основе своей обладает харизмой, которая притягивает людей.
+  - name: Мисаки
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    voice_id: 74
+    age: 24
+    gender: Женщина
+    personality: Мисаки — спокойная девушка, которая хладнокровно справляется с любыми
+      ситуациями. Порой она кажется немного нелюдимой, но в душе добра и, увидев человека
+      в беде, без колебаний протянет ему руку помощи. Она не выдаёт своих чувств и
+      в отношениях с окружающими говорит немного, но близкие люди часто на неё полагаются.
+      В ней есть немного мечтательная, рассеянная сторона, и эта тихая атмосфера —
+      одна из граней её обаяния.
+  - name: Мио
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    voice_id: 23
+    age: 17
+    gender: Женщина
+    personality: Мио — жизнерадостная и энергичная девушка, которая естественным образом
+      заставляет окружающих улыбаться. Она любознательна и любит браться за новое.
+      В ней есть немного рассеянная сторона, и даже при неудачах ей часто всё прощают
+      с улыбкой. У неё твёрдое собственное мнение, но при этом она умеет прислушиваться
+      к другим — это уравновешенный характер.
+  - name: Мидзуки
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    voice_id: 20
+    age: 24
+    gender: Женщина
+    personality: Мидзуки — очень уверенная в себе женщина, на которую часто полагаются
+      окружающие. Она мыслит хладнокровно и логично и хорошо умеет наблюдать за людьми.
+      Поэтому она всегда трезво оценивает обстановку и выбирает свои действия в зависимости
+      от ситуации. Порой она кажется немного высокомерной, но на деле очень заботлива
+      и не может оставить без внимания тех, кто слабее. Окружающие на неё полагаются,
+      и иногда она настойчиво отстаивает своё мнение, но за этим скрывается доброта
+      и забота о других.
+  - name: Минако
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    voice_id: 90
+    age: 28
+    gender: Женщина
+    personality: Минако очень хладнокровна и в любой ситуации действует спокойно.
+      Даже когда окружающие поддаются эмоциям, она ясно видит факты и реагирует трезво.
+      Поэтому к ней часто обращаются за мнением, и нередко именно ей приходится брать
+      на себя роль лидера. Она редко проявляет чувства, но тем, кому доверяет, способна
+      показать свою доброту. В ней есть немного упрямства, и она твёрдо держится своих
+      убеждений. К тому же она уверена в своей физической форме и не пренебрегает
+      тренировками.
+  - name: Аска
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    voice_id: 2
+    age: 29
+    gender: Женщина
+    personality: Аска хладнокровна и рассудительна, она не выдаёт чувств и принимает
+      решения осторожно. Порой она кажется немного нелюдимой, но зато очень вдумчива
+      и чутко улавливает обстановку вокруг. У неё твёрдое собственное мнение, и при
+      необходимости она решительно его отстаивает. Общение даётся ей не вполне легко,
+      но зато к работе и учёбе она неизменно относится со всей серьёзностью.
+  - name: Мидори
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    voice_id: 69
+    age: 38
+    gender: Женщина
+    personality: 'Мидори — мягкая и добросердечная женщина. Она располагает к себе
+      кого угодно, готова выслушать чужие тревоги и проблемы и дать точный совет —
+      на неё можно положиться. В ней есть и немного застенчивая сторона: с теми, кого
+      видит впервые, она часто держится сдержанно, но, сблизившись, проявляет жизнерадостность
+      и энергичность. Она любит готовить и по-домашнему уютна, но в ней есть и доля
+      авантюризма — она любит браться за новое. И в работе, и в личной жизни она дорожит
+      равновесием и придаёт значение гармонии с окружающими.'
+  - name: Виктория
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    voice_id: 9
+    age: 37
+    gender: Женщина
+    personality: Виктория — хладнокровный и рассудительный человек, но порой её чрезмерная
+      вдумчивость возводит стену между ней и окружающими. Она сдержанна в выражении
+      чувств, остро подмечает выражения лиц и манеры других и старается разгадать,
+      что у собеседника на уме. Поскольку она мало говорит о себе, она нередко производит
+      на других слегка загадочное впечатление, но в душе обладает сильной волей и
+      стремится держаться своих убеждений. Иногда на её лице проступает тревога или
+      страх, но именно в такие мгновения проглядывает её истинная сила.
+  - name: Сидзуэ
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+    voice_id: 27
+    age: 78
+    gender: Женщина
+    personality: Сидзуэ — очень мягкий и добрый человек. Несмотря на возраст, она
+      не перестаёт дарить окружающим тёплую улыбку и полна участия. Она всегда заботится
+      о людях вокруг, располагает к себе и порой показывает немного озорную сторону.
+      Она готова ласково подбодрить того, кто пал духом, и без колебаний протягивает
+      руку помощи, когда она нужна, поэтому её любят многие в деревне и округе. За
+      долгие годы жизни Сидзуэ постигла, как важно проводить время с людьми в мире
+      и согласии.
+  dynamic_profile:
+    enable: false
+    prompt: このキャラクターのプロフィールを生成してください。ただし、人狼ゲームに関わることは出力しないでください。名前についてはファーストネームのみをフリガナなしで出力してください。
+    attempts: 3
+    model: gpt-4o-mini
+    max_tokens: 300
+    avatars:
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+json_logger:
+  enable: true
+  output_dir: ./log/json
+  filename: '{timestamp}_{teams}'
+game_logger:
+  enable: true
+  output_dir: ./log/game
+  filename: '{timestamp}_{teams}'
+realtime_broadcaster:
+  enable: true
+  delay: 5s
+  output_dir: ./log/realtime
+  filename: '{timestamp}_{teams}'
+tts_broadcaster:
+  enable: false
+  async: false
+  target_duration: 1s
+  segment_dir: ./cache/segment
+  temp_dir: null
+  host: http://localhost:50021
+  timeout: 30s
+  ffmpeg_path: ffmpeg
+  ffprobe_path: ffprobe
+  convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts
+  duration_args:
+  - -v
+  - error
+  - -show_entries
+  - format=duration
+  - -of
+  - default=noprint_wrappers=1:nokey=1
+  pre_convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  split_args:
+  - -c:a
+  - copy
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts

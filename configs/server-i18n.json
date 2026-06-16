@@ -1,0 +1,100 @@
+{
+  "ja": {
+    "male": "男性",
+    "female": "女性",
+    "label_age": "年齢",
+    "label_gender": "性別",
+    "label_personality": "性格"
+  },
+  "en": {
+    "male": "Male",
+    "female": "Female",
+    "label_age": "Age",
+    "label_gender": "Gender",
+    "label_personality": "Personality"
+  },
+  "zh": {
+    "male": "男",
+    "female": "女",
+    "label_age": "年龄",
+    "label_gender": "性别",
+    "label_personality": "性格"
+  },
+  "hi": {
+    "male": "पुरुष",
+    "female": "महिला",
+    "label_age": "आयु",
+    "label_gender": "लिंग",
+    "label_personality": "व्यक्तित्व"
+  },
+  "es": {
+    "male": "Hombre",
+    "female": "Mujer",
+    "label_age": "Edad",
+    "label_gender": "Género",
+    "label_personality": "Personalidad"
+  },
+  "ar": {
+    "male": "ذكر",
+    "female": "أنثى",
+    "label_age": "العمر",
+    "label_gender": "الجنس",
+    "label_personality": "الشخصية"
+  },
+  "bn": {
+    "male": "পুরুষ",
+    "female": "মহিলা",
+    "label_age": "বয়স",
+    "label_gender": "লিঙ্গ",
+    "label_personality": "ব্যক্তিত্ব"
+  },
+  "fr": {
+    "male": "Homme",
+    "female": "Femme",
+    "label_age": "Âge",
+    "label_gender": "Genre",
+    "label_personality": "Personnalité"
+  },
+  "ru": {
+    "male": "Мужчина",
+    "female": "Женщина",
+    "label_age": "Возраст",
+    "label_gender": "Пол",
+    "label_personality": "Характер"
+  },
+  "pt": {
+    "male": "Homem",
+    "female": "Mulher",
+    "label_age": "Idade",
+    "label_gender": "Gênero",
+    "label_personality": "Personalidade"
+  },
+  "ur": {
+    "male": "مرد",
+    "female": "عورت",
+    "label_age": "عمر",
+    "label_gender": "جنس",
+    "label_personality": "شخصیت"
+  },
+  "id": {
+    "male": "Laki-laki",
+    "female": "Perempuan",
+    "label_age": "Usia",
+    "label_gender": "Jenis Kelamin",
+    "label_personality": "Kepribadian"
+  },
+  "de": {
+    "male": "Männlich",
+    "female": "Weiblich",
+    "label_age": "Alter",
+    "label_gender": "Geschlecht",
+    "label_personality": "Persönlichkeit"
+  },
+  "nl": {
+    "male": "Man",
+    "female": "Vrouw",
+    "label_age": "Leeftijd",
+    "label_gender": "Geslacht",
+    "label_personality": "Persoonlijkheid"
+  }
+}

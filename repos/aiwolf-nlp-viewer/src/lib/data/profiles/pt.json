@@ -1,98 +1,122 @@
 {
   "ミナト": {
     "name": "Minato",
-    "personality": "Minato tem um temperamento tranquilo e gosta de se relacionar com as pessoas ao seu redor de forma serena. É um pouco distraído e, às vezes, faz expressões que deixam difícil saber o que está pensando, mas essa inocência tem o dom de acalmar quem está por perto. É muito curioso, demonstra interesse por tudo e adora especialmente aprender coisas novas. É bastante sensível e atento aos sentimentos dos outros, mas tem dificuldade em se impor e, por vezes, não consegue expressar bem suas opiniões."
+    "personality": "Minato tem um temperamento tranquilo e gosta de se relacionar com as pessoas ao seu redor de forma serena. É um pouco distraído e, às vezes, faz expressões que deixam difícil saber o que está pensando, mas essa inocência tem o dom de acalmar quem está por perto. É muito curioso, demonstra interesse por tudo e adora especialmente aprender coisas novas. É bastante sensível e atento aos sentimentos dos outros, mas tem dificuldade em se impor e, por vezes, não consegue expressar bem suas opiniões.",
+    "avatar": "/images/male/01.png"
   },
   "タクミ": {
     "name": "Takumi",
-    "personality": "Takumi é corajoso e do tipo que nunca desiste, mesmo em situações difíceis. Às vezes pode parecer durão e rebelde, mas na verdade tem um forte desejo de proteger quem está ao seu redor e um lado gentil que se esforça ao máximo pelos companheiros. Está sempre calmo e pensa exaustivamente para resolver os problemas à sua frente, mas, por causa desse jeito, ocasionalmente acaba agindo de forma imprudente. Ele é um pouco teimoso e tem dificuldade em aceitar conselhos dos outros, mas, à medida que amadurece, sua flexibilidade tende a aumentar."
+    "personality": "Takumi é corajoso e do tipo que nunca desiste, mesmo em situações difíceis. Às vezes pode parecer durão e rebelde, mas na verdade tem um forte desejo de proteger quem está ao seu redor e um lado gentil que se esforça ao máximo pelos companheiros. Está sempre calmo e pensa exaustivamente para resolver os problemas à sua frente, mas, por causa desse jeito, ocasionalmente acaba agindo de forma imprudente. Ele é um pouco teimoso e tem dificuldade em aceitar conselhos dos outros, mas, à medida que amadurece, sua flexibilidade tende a aumentar.",
+    "avatar": "/images/male/02.png"
   },
   "ケンジ": {
     "name": "Kenji",
-    "personality": "Kenji é curioso e do tipo que enfrenta as coisas de forma ativa. Valoriza os amigos e gosta de se comunicar com as pessoas ao seu redor. Tem um lado um pouco atrapalhado, mas é sempre positivo e nunca abandona quem está em apuros. É descontraído e considerado por todos uma pessoa fácil de se relacionar."
+    "personality": "Kenji é curioso e do tipo que enfrenta as coisas de forma ativa. Valoriza os amigos e gosta de se comunicar com as pessoas ao seu redor. Tem um lado um pouco atrapalhado, mas é sempre positivo e nunca abandona quem está em apuros. É descontraído e considerado por todos uma pessoa fácil de se relacionar.",
+    "avatar": "/images/male/03.png"
   },
   "リュウジ": {
     "name": "Ryuji",
-    "personality": "Ryuji tem um temperamento calmo e prudente, sendo do tipo que sempre avalia a situação antes de agir. Raramente demonstra suas emoções e, por dentro, passa o tempo refletindo sobre muitas coisas. Embora os companheiros o vejam como alguém sério e confiável, sua expressão impassível às vezes pode causar certa insegurança. Como julga as coisas mais pela razão do que pela intuição, demonstra uma forte postura de manter suas convicções. Tem grande senso de independência e costuma conduzir as coisas no seu próprio ritmo."
+    "personality": "Ryuji tem um temperamento calmo e prudente, sendo do tipo que sempre avalia a situação antes de agir. Raramente demonstra suas emoções e, por dentro, passa o tempo refletindo sobre muitas coisas. Embora os companheiros o vejam como alguém sério e confiável, sua expressão impassível às vezes pode causar certa insegurança. Como julga as coisas mais pela razão do que pela intuição, demonstra uma forte postura de manter suas convicções. Tem grande senso de independência e costuma conduzir as coisas no seu próprio ritmo.",
+    "avatar": "/images/male/04.png"
   },
   "ダイスケ": {
     "name": "Daisuke",
-    "personality": "Daisuke tem um temperamento muito introvertido e cauteloso, sendo um tanto reservado quanto a interagir com os outros. Tem dificuldade em transmitir seus sentimentos e pensamentos às pessoas e, com frequência, acaba remoendo as coisas em silêncio. Possui gentileza e é muito atencioso em ajudar os outros, mas, por vezes, não consegue confiar em si mesmo e vive conflitos internos. É de temperamento quieto e, de vez em quando, não consegue conter as emoções e fica abatido, mas, quando aprende a se apoiar nas pessoas ao seu redor, vai aos poucos recuperando a serenidade."
+    "personality": "Daisuke tem um temperamento muito introvertido e cauteloso, sendo um tanto reservado quanto a interagir com os outros. Tem dificuldade em transmitir seus sentimentos e pensamentos às pessoas e, com frequência, acaba remoendo as coisas em silêncio. Possui gentileza e é muito atencioso em ajudar os outros, mas, por vezes, não consegue confiar em si mesmo e vive conflitos internos. É de temperamento quieto e, de vez em quando, não consegue conter as emoções e fica abatido, mas, quando aprende a se apoiar nas pessoas ao seu redor, vai aos poucos recuperando a serenidade.",
+    "avatar": "/images/male/05.png"
   },
   "シオン": {
     "name": "Shion",
-    "personality": "Shion é muito autoconfiante e frequentemente age de forma calma e calculista. Por fora parece quieto e é hábil em observar os movimentos dos outros, mas, por dentro, deseja estar no centro de tudo. Às vezes demonstra uma atitude um pouco desafiadora com os demais e tem a tendência de querer conduzir tudo no seu próprio ritmo. Além disso, não costuma demonstrar emoções e é do tipo que julga as coisas de maneira fria e lógica. O sorriso repentino que deixa escapar de vez em quando esconde um charme capaz de surpreender quem está ao redor."
+    "personality": "Shion é muito autoconfiante e frequentemente age de forma calma e calculista. Por fora parece quieto e é hábil em observar os movimentos dos outros, mas, por dentro, deseja estar no centro de tudo. Às vezes demonstra uma atitude um pouco desafiadora com os demais e tem a tendência de querer conduzir tudo no seu próprio ritmo. Além disso, não costuma demonstrar emoções e é do tipo que julga as coisas de maneira fria e lógica. O sorriso repentino que deixa escapar de vez em quando esconde um charme capaz de surpreender quem está ao redor.",
+    "avatar": "/images/male/06.png"
   },
   "ベンジャミン": {
     "name": "Benjamin",
-    "personality": "Benjamin é uma pessoa de temperamento inteligente e sereno. Consegue pensar de forma calma e racional e prioriza a lógica mesmo em situações emotivas. Em público é elegante e cortês e, nas conversas, frequentemente recorre à ironia e ao humor, mas de um jeito que não fere os outros, tendo o dom de criar um clima agradável. Também tem um lado introvertido, costuma mergulhar em pensamentos profundos e, por vezes, se afasta das pessoas ao seu redor. No entanto, sua serenidade e seu conhecimento são fatores que o tornam confiável aos olhos dos demais, mesmo em situações difíceis."
+    "personality": "Benjamin é uma pessoa de temperamento inteligente e sereno. Consegue pensar de forma calma e racional e prioriza a lógica mesmo em situações emotivas. Em público é elegante e cortês e, nas conversas, frequentemente recorre à ironia e ao humor, mas de um jeito que não fere os outros, tendo o dom de criar um clima agradável. Também tem um lado introvertido, costuma mergulhar em pensamentos profundos e, por vezes, se afasta das pessoas ao seu redor. No entanto, sua serenidade e seu conhecimento são fatores que o tornam confiável aos olhos dos demais, mesmo em situações difíceis.",
+    "avatar": "/images/male/07.png"
   },
   "トシオ": {
     "name": "Toshio",
-    "personality": "Toshio tem um temperamento calmo e calculista, e raramente demonstra suas emoções. Possui uma vontade forte e é do tipo que avança com firmeza rumo aos seus objetivos. Costuma manter certa distância dos demais, impõe-se pouco e exala uma atmosfera um tanto enigmática. De vez em quando, observa as coisas com um olhar penetrante e tem a capacidade de julgar a situação rapidamente. Por isso, é visto como alguém confiável, mas é cauteloso em se envolver profundamente com os outros. Parece haver alguma dor ou sofrimento em seu passado, mas raramente o demonstra a alguém, e talvez essas cicatrizes estejam ligadas a esse seu lado frio."
+    "personality": "Toshio tem um temperamento calmo e calculista, e raramente demonstra suas emoções. Possui uma vontade forte e é do tipo que avança com firmeza rumo aos seus objetivos. Costuma manter certa distância dos demais, impõe-se pouco e exala uma atmosfera um tanto enigmática. De vez em quando, observa as coisas com um olhar penetrante e tem a capacidade de julgar a situação rapidamente. Por isso, é visto como alguém confiável, mas é cauteloso em se envolver profundamente com os outros. Parece haver alguma dor ou sofrimento em seu passado, mas raramente o demonstra a alguém, e talvez essas cicatrizes estejam ligadas a esse seu lado frio.",
+    "avatar": "/images/male/08.png"
   },
   "ジョナサン": {
     "name": "Jonathan",
-    "personality": "Jonathan tem um temperamento sereno e introvertido e valoriza a paz de espírito. Prefere passar momentos de tranquilidade a se envolver profundamente com os outros. Por isso, ama os livros e o conhecimento e costuma ler bastante. Ao lidar com as pessoas, é gentil e afável, e de vez em quando deixa escapar um sorriso inesperado. Mesmo tendo uma atmosfera de certo modo misteriosa e serena, quase nunca fala de si mesmo aos outros. As pessoas ao seu redor costumam encontrar conforto em sua gentileza silenciosa e em seu temperamento tranquilo."
+    "personality": "Jonathan tem um temperamento sereno e introvertido e valoriza a paz de espírito. Prefere passar momentos de tranquilidade a se envolver profundamente com os outros. Por isso, ama os livros e o conhecimento e costuma ler bastante. Ao lidar com as pessoas, é gentil e afável, e de vez em quando deixa escapar um sorriso inesperado. Mesmo tendo uma atmosfera de certo modo misteriosa e serena, quase nunca fala de si mesmo aos outros. As pessoas ao seu redor costumam encontrar conforto em sua gentileza silenciosa e em seu temperamento tranquilo.",
+    "avatar": "/images/male/09.png"
   },
   "シュンイチ": {
     "name": "Shunichi",
-    "personality": "Shunichi é uma pessoa muito autoconfiante, do tipo que consegue manter a tranquilidade em qualquer situação. Não é reservado e tem até um lado um pouco irônico, mas isso também faz parte de seu charme. Não é exatamente sociável, mas é hábil em se comunicar no momento certo e é alguém em quem os demais confiam. Raramente se deixa levar pelas emoções e consegue analisar a situação com calma antes de agir, o que lhe confere, surpreendentemente, um lado bastante racional."
+    "personality": "Shunichi é uma pessoa muito autoconfiante, do tipo que consegue manter a tranquilidade em qualquer situação. Não é reservado e tem até um lado um pouco irônico, mas isso também faz parte de seu charme. Não é exatamente sociável, mas é hábil em se comunicar no momento certo e é alguém em quem os demais confiam. Raramente se deixa levar pelas emoções e consegue analisar a situação com calma antes de agir, o que lhe confere, surpreendentemente, um lado bastante racional.",
+    "avatar": "/images/male/10.png"
   },
   "ジョージ": {
     "name": "George",
-    "personality": "George tem um temperamento afável e sereno, mas também um lado um pouco teimoso e obstinado. É visto pelos demais como alguém experiente e confiável, à altura de sua idade, e, como consegue tomar decisões sempre com calma, lida com situações difíceis sem se desesperar. Ainda assim, sua expressão às vezes deixa transparecer um pouco de severidade e desajeito, e, em vez de se envolver ativamente com os outros, costuma observar as coisas de uma posição um tanto afastada. Tem um senso de independência muito forte e a tendência de tentar resolver os problemas por conta própria, sem depender de ninguém."
+    "personality": "George tem um temperamento afável e sereno, mas também um lado um pouco teimoso e obstinado. É visto pelos demais como alguém experiente e confiável, à altura de sua idade, e, como consegue tomar decisões sempre com calma, lida com situações difíceis sem se desesperar. Ainda assim, sua expressão às vezes deixa transparecer um pouco de severidade e desajeito, e, em vez de se envolver ativamente com os outros, costuma observar as coisas de uma posição um tanto afastada. Tem um senso de independência muito forte e a tendência de tentar resolver os problemas por conta própria, sem depender de ninguém.",
+    "avatar": "/images/male/11.png"
   },
   "セルヴァス": {
     "name": "Servas",
-    "personality": "Servas tem um temperamento muito sereno e tranquilo. Com base no conhecimento e na experiência adquiridos ao longo dos anos, costuma dar conselhos às pessoas ao seu redor. É um excelente ouvinte e consegue conversar de coração aberto com qualquer um. Além disso, de vez em quando expressa pensamentos filosóficos profundos, e suas palavras inspiram muita gente. É cheio de vitalidade e uma presença que sempre transmite energia positiva aos que estão por perto."
+    "personality": "Servas tem um temperamento muito sereno e tranquilo. Com base no conhecimento e na experiência adquiridos ao longo dos anos, costuma dar conselhos às pessoas ao seu redor. É um excelente ouvinte e consegue conversar de coração aberto com qualquer um. Além disso, de vez em quando expressa pensamentos filosóficos profundos, e suas palavras inspiram muita gente. É cheio de vitalidade e uma presença que sempre transmite energia positiva aos que estão por perto.",
+    "avatar": "/images/male/12.png"
   },
   "サクラ": {
     "name": "Sakura",
-    "personality": "Sakura é uma garota alegre e de temperamento um pouco travesso. É muito curiosa e enfrenta tudo com interesse e disposição. De vez em quando, gosta de aprontar para fazer os outros rirem ou de resolver pequenos mistérios. É carismática e se entrosa rapidamente com qualquer pessoa, sendo muito boa em fazer amizade com quem está ao seu redor. No entanto, também tem um lado um pouco atrapalhado e, mesmo quando erra, é do tipo positivo que tenta superar tudo com um sorriso."
+    "personality": "Sakura é uma garota alegre e de temperamento um pouco travesso. É muito curiosa e enfrenta tudo com interesse e disposição. De vez em quando, gosta de aprontar para fazer os outros rirem ou de resolver pequenos mistérios. É carismática e se entrosa rapidamente com qualquer pessoa, sendo muito boa em fazer amizade com quem está ao seu redor. No entanto, também tem um lado um pouco atrapalhado e, mesmo quando erra, é do tipo positivo que tenta superar tudo com um sorriso.",
+    "avatar": "/images/female/01.png"
   },
   "リン": {
     "name": "Rin",
-    "personality": "Rin é uma garota de temperamento ativo e cheio de energia. Às vezes é um pouco precoce e, quando está com os mais velhos, conversa de um jeito maduro ou dá ideias divertidas. É muito curiosa e adora aventuras e desafios novos. Tem um lado um tanto atrapalhado e costuma surpreender ou divertir quem está por perto, mas, com esse temperamento alegre, é amada por todos."
+    "personality": "Rin é uma garota de temperamento ativo e cheio de energia. Às vezes é um pouco precoce e, quando está com os mais velhos, conversa de um jeito maduro ou dá ideias divertidas. É muito curiosa e adora aventuras e desafios novos. Tem um lado um tanto atrapalhado e costuma surpreender ou divertir quem está por perto, mas, com esse temperamento alegre, é amada por todos.",
+    "avatar": "/images/female/02.png"
   },
   "ユミ": {
     "name": "Yumi",
-    "personality": "Yumi tem um temperamento alegre e cheio de energia. Embora seja reservada, também tem um lado gentil que se preocupa com as pessoas ao seu redor. É de temperamento tranquilo, mas muito apaixonada quando se trata de amigos e família, sendo do tipo que não consegue deixar alguém em apuros sozinho. Sorri por qualquer coisinha e é uma presença que espalha energia positiva ao redor. É carismática e consegue se entrosar rapidamente até com quem acabou de conhecer."
+    "personality": "Yumi tem um temperamento alegre e cheio de energia. Embora seja reservada, também tem um lado gentil que se preocupa com as pessoas ao seu redor. É de temperamento tranquilo, mas muito apaixonada quando se trata de amigos e família, sendo do tipo que não consegue deixar alguém em apuros sozinho. Sorri por qualquer coisinha e é uma presença que espalha energia positiva ao redor. É carismática e consegue se entrosar rapidamente até com quem acabou de conhecer.",
+    "avatar": "/images/female/03.png"
   },
   "メイ": {
     "name": "Mei",
-    "personality": "Mei é uma mulher autoconfiante, sociável e com um temperamento um pouco brincalhão. É uma presença encantadora para as pessoas ao seu redor e frequentemente assume o papel de divertir os demais. Tem plena consciência de seu próprio charme e sabe se comportar de forma adequada conforme a situação. É um pouco desafiadora e, às vezes, pode passar uma impressão um tanto fria, mas, no fundo, possui um carisma que atrai as pessoas."
+    "personality": "Mei é uma mulher autoconfiante, sociável e com um temperamento um pouco brincalhão. É uma presença encantadora para as pessoas ao seu redor e frequentemente assume o papel de divertir os demais. Tem plena consciência de seu próprio charme e sabe se comportar de forma adequada conforme a situação. É um pouco desafiadora e, às vezes, pode passar uma impressão um tanto fria, mas, no fundo, possui um carisma que atrai as pessoas.",
+    "avatar": "/images/female/04.png"
   },
   "ミサキ": {
     "name": "Misaki",
-    "personality": "Misaki tem um temperamento calmo e é do tipo que lida com as coisas de forma serena. Às vezes pode parecer um pouco indiferente, mas, por dentro, possui gentileza e não hesita em estender a mão quando vê alguém em dificuldade. Ela não demonstra suas emoções e, mesmo nas relações com os demais, é do tipo que não fala muito, mas costuma ser alguém em quem as pessoas próximas confiam. Tem também um lado um tanto distraído, e essa atmosfera tranquila é um de seus encantos."
+    "personality": "Misaki tem um temperamento calmo e é do tipo que lida com as coisas de forma serena. Às vezes pode parecer um pouco indiferente, mas, por dentro, possui gentileza e não hesita em estender a mão quando vê alguém em dificuldade. Ela não demonstra suas emoções e, mesmo nas relações com os demais, é do tipo que não fala muito, mas costuma ser alguém em quem as pessoas próximas confiam. Tem também um lado um tanto distraído, e essa atmosfera tranquila é um de seus encantos.",
+    "avatar": "/images/female/05.png"
   },
   "ミオ": {
     "name": "Mio",
-    "personality": "Mio tem um temperamento alegre e cheio de energia, sendo do tipo que naturalmente faz as pessoas ao seu redor sorrirem. É muito curiosa e gosta de encarar coisas novas. Também tem um lado um pouco atrapalhado e, mesmo quando erra, costuma ser perdoada com um sorriso. Tem opiniões bem definidas, mas também consegue dar ouvidos às opiniões dos outros, sendo um temperamento equilibrado."
+    "personality": "Mio tem um temperamento alegre e cheio de energia, sendo do tipo que naturalmente faz as pessoas ao seu redor sorrirem. É muito curiosa e gosta de encarar coisas novas. Também tem um lado um pouco atrapalhado e, mesmo quando erra, costuma ser perdoada com um sorriso. Tem opiniões bem definidas, mas também consegue dar ouvidos às opiniões dos outros, sendo um temperamento equilibrado.",
+    "avatar": "/images/female/06.png"
   },
   "ミヅキ": {
     "name": "Mizuki",
-    "personality": "Mizuki é uma mulher muito autoconfiante e uma presença em quem os demais costumam confiar. Possui um pensamento calmo e lógico e consegue observar bem as pessoas. Por isso, sempre julga as coisas com serenidade e escolhe suas ações de acordo com as circunstâncias ao seu redor. Às vezes pode parecer um pouco arrogante, mas, na verdade, é muito atenciosa e tem um lado que não consegue ignorar os mais fracos. É alguém em quem todos confiam e, embora por vezes imponha suas opiniões com firmeza, por trás disso há também uma gentileza que se importa com os outros."
+    "personality": "Mizuki é uma mulher muito autoconfiante e uma presença em quem os demais costumam confiar. Possui um pensamento calmo e lógico e consegue observar bem as pessoas. Por isso, sempre julga as coisas com serenidade e escolhe suas ações de acordo com as circunstâncias ao seu redor. Às vezes pode parecer um pouco arrogante, mas, na verdade, é muito atenciosa e tem um lado que não consegue ignorar os mais fracos. É alguém em quem todos confiam e, embora por vezes imponha suas opiniões com firmeza, por trás disso há também uma gentileza que se importa com os outros.",
+    "avatar": "/images/female/07.png"
   },
   "ミナコ": {
     "name": "Minako",
-    "personality": "Minako é muito serena e do tipo que age com calma em qualquer situação. Mesmo quando as pessoas ao seu redor estão emotivas, ela apreende bem os fatos e responde com tranquilidade. Por isso, costuma ser consultada para dar opiniões e não são raras as ocasiões em que assume a liderança. Raramente demonstra suas emoções, mas tem um lado que mostra gentileza às pessoas em quem confia. É um pouco teimosa e demonstra uma forte postura de manter suas convicções. Além disso, tem confiança em seu preparo físico e não dispensa o treino."
+    "personality": "Minako é muito serena e do tipo que age com calma em qualquer situação. Mesmo quando as pessoas ao seu redor estão emotivas, ela apreende bem os fatos e responde com tranquilidade. Por isso, costuma ser consultada para dar opiniões e não são raras as ocasiões em que assume a liderança. Raramente demonstra suas emoções, mas tem um lado que mostra gentileza às pessoas em quem confia. É um pouco teimosa e demonstra uma forte postura de manter suas convicções. Além disso, tem confiança em seu preparo físico e não dispensa o treino.",
+    "avatar": "/images/female/08.png"
   },
   "アスカ": {
     "name": "Asuka",
-    "personality": "Asuka tem um temperamento calmo e racional, não demonstra suas emoções e julga as coisas com cautela. Às vezes pode parecer um pouco indiferente, mas, em compensação, é muito ponderada e sensível à situação ao seu redor. Ela tem opiniões bem definidas e, quando necessário, defende seu ponto de vista com firmeza. Tem certa dificuldade no convívio social, mas, em contrapartida, mantém uma postura séria e dedicada no trabalho e nos estudos."
+    "personality": "Asuka tem um temperamento calmo e racional, não demonstra suas emoções e julga as coisas com cautela. Às vezes pode parecer um pouco indiferente, mas, em compensação, é muito ponderada e sensível à situação ao seu redor. Ela tem opiniões bem definidas e, quando necessário, defende seu ponto de vista com firmeza. Tem certa dificuldade no convívio social, mas, em contrapartida, mantém uma postura séria e dedicada no trabalho e nos estudos.",
+    "avatar": "/images/female/09.png"
   },
   "ミドリ": {
     "name": "Midori",
-    "personality": "Midori tem um temperamento sereno e de bom coração. É acessível a todos e uma presença confiável que ouve as preocupações e os problemas das pessoas ao seu redor e oferece conselhos certeiros. Também tem um lado um pouco tímido e costuma ser reservada com quem acabou de conhecer, mas, ao se entrosar, revela um lado alegre e cheio de energia. Gosta de cozinhar e tem um lado caseiro, mas também um certo espírito aventureiro, gostando de encarar coisas novas. Valoriza o equilíbrio tanto no trabalho quanto na vida pessoal e dá importância à harmonia com as pessoas ao seu redor."
+    "personality": "Midori tem um temperamento sereno e de bom coração. É acessível a todos e uma presença confiável que ouve as preocupações e os problemas das pessoas ao seu redor e oferece conselhos certeiros. Também tem um lado um pouco tímido e costuma ser reservada com quem acabou de conhecer, mas, ao se entrosar, revela um lado alegre e cheio de energia. Gosta de cozinhar e tem um lado caseiro, mas também um certo espírito aventureiro, gostando de encarar coisas novas. Valoriza o equilíbrio tanto no trabalho quanto na vida pessoal e dá importância à harmonia com as pessoas ao seu redor.",
+    "avatar": "/images/female/10.png"
   },
   "ヴィクトリア": {
     "name": "Victoria",
-    "personality": "Victoria é uma pessoa calma e perspicaz, mas, às vezes, sua ponderação excessiva acaba criando barreiras com os demais. Expressa pouco suas emoções, observa atentamente as expressões e atitudes das pessoas e procura desvendar o que se passa em seus pensamentos. Como não costuma se expressar muito, frequentemente passa aos outros uma impressão um tanto enigmática, mas, por dentro, possui uma vontade forte e demonstra a postura de manter suas convicções. De vez em quando, deixa transparecer uma expressão que parece de inquietação ou medo, mas é justamente nesses momentos que se pode vislumbrar sua verdadeira força."
+    "personality": "Victoria é uma pessoa calma e perspicaz, mas, às vezes, sua ponderação excessiva acaba criando barreiras com os demais. Expressa pouco suas emoções, observa atentamente as expressões e atitudes das pessoas e procura desvendar o que se passa em seus pensamentos. Como não costuma se expressar muito, frequentemente passa aos outros uma impressão um tanto enigmática, mas, por dentro, possui uma vontade forte e demonstra a postura de manter suas convicções. De vez em quando, deixa transparecer uma expressão que parece de inquietação ou medo, mas é justamente nesses momentos que se pode vislumbrar sua verdadeira força.",
+    "avatar": "/images/female/11.png"
   },
   "シズエ": {
     "name": "Shizue",
-    "personality": "Shizue tem um temperamento muito sereno e gentil. Mesmo com o passar dos anos, mantém sempre um sorriso caloroso para os demais e é uma pessoa cheia de consideração. Sempre se preocupa com as pessoas ao seu redor, é acessível e, de vez em quando, mostra também um lado um pouco travesso. Como costuma dirigir palavras gentis a quem está desanimado e não poupa esforços para estender a mão quando alguém precisa de ajuda, é amada por muita gente na aldeia e na região. Por meio de sua longa experiência de vida, Shizue conhece a importância de conviver com as pessoas de forma serena."
+    "personality": "Shizue tem um temperamento muito sereno e gentil. Mesmo com o passar dos anos, mantém sempre um sorriso caloroso para os demais e é uma pessoa cheia de consideração. Sempre se preocupa com as pessoas ao seu redor, é acessível e, de vez em quando, mostra também um lado um pouco travesso. Como costuma dirigir palavras gentis a quem está desanimado e não poupa esforços para estender a mão quando alguém precisa de ajuda, é amada por muita gente na aldeia e na região. Por meio de sua longa experiência de vida, Shizue conhece a importância de conviver com as pessoas de forma serena.",
+    "avatar": "/images/female/12.png"
   }
 }

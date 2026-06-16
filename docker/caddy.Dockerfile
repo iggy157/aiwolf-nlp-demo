@@ -12,3 +12,5 @@ RUN pnpm run build
 FROM caddy:2
 COPY --from=build /viewer/build /srv
 COPY Caddyfile /etc/caddy/Caddyfile
+# 言語別サーバへの WebSocket ルート（scripts/gen_i18n.py が生成）。Caddyfile が import する。
+COPY caddy/langs.caddy /etc/caddy/langs.caddy

@@ -1,0 +1,105 @@
+# 自動生成: scripts/gen_i18n.py。言語別サーバへの WebSocket ルート。Caddyfile が import する。
+handle /ws-en {
+	rewrite * /ws
+	reverse_proxy game-server-en:8080
+}
+handle /ws9-en {
+	rewrite * /ws
+	reverse_proxy game-server-9-en:8080
+}
+handle /ws-zh {
+	rewrite * /ws
+	reverse_proxy game-server-zh:8080
+}
+handle /ws9-zh {
+	rewrite * /ws
+	reverse_proxy game-server-9-zh:8080
+}
+handle /ws-hi {
+	rewrite * /ws
+	reverse_proxy game-server-hi:8080
+}
+handle /ws9-hi {
+	rewrite * /ws
+	reverse_proxy game-server-9-hi:8080
+}
+handle /ws-es {
+	rewrite * /ws
+	reverse_proxy game-server-es:8080
+}
+handle /ws9-es {
+	rewrite * /ws
+	reverse_proxy game-server-9-es:8080
+}
+handle /ws-ar {
+	rewrite * /ws
+	reverse_proxy game-server-ar:8080
+}
+handle /ws9-ar {
+	rewrite * /ws
+	reverse_proxy game-server-9-ar:8080
+}
+handle /ws-bn {
+	rewrite * /ws
+	reverse_proxy game-server-bn:8080
+}
+handle /ws9-bn {
+	rewrite * /ws
+	reverse_proxy game-server-9-bn:8080
+}
+handle /ws-fr {
+	rewrite * /ws
+	reverse_proxy game-server-fr:8080
+}
+handle /ws9-fr {
+	rewrite * /ws
+	reverse_proxy game-server-9-fr:8080
+}
+handle /ws-ru {
+	rewrite * /ws
+	reverse_proxy game-server-ru:8080
+}
+handle /ws9-ru {
+	rewrite * /ws
+	reverse_proxy game-server-9-ru:8080
+}
+handle /ws-pt {
+	rewrite * /ws
+	reverse_proxy game-server-pt:8080
+}
+handle /ws9-pt {
+	rewrite * /ws
+	reverse_proxy game-server-9-pt:8080
+}
+handle /ws-ur {
+	rewrite * /ws
+	reverse_proxy game-server-ur:8080
+}
+handle /ws9-ur {
+	rewrite * /ws
+	reverse_proxy game-server-9-ur:8080
+}
+handle /ws-id {
+	rewrite * /ws
+	reverse_proxy game-server-id:8080
+}
+handle /ws9-id {
+	rewrite * /ws
+	reverse_proxy game-server-9-id:8080
+}
+handle /ws-de {
+	rewrite * /ws
+	reverse_proxy game-server-de:8080
+}
+handle /ws9-de {
+	rewrite * /ws
+	reverse_proxy game-server-9-de:8080
+}
+handle /ws-nl {
+	rewrite * /ws
+	reverse_proxy game-server-nl:8080
+}
+handle /ws9-nl {
+	rewrite * /ws
+	reverse_proxy game-server-9-nl:8080
+}

@@ -21,9 +21,12 @@ aiwolf-nlp-demo/
 │   └── cloudflared     # 同梱トンネルバイナリ（make public が自動検出）
 ├── configs/
 │   ├── server.yml      # ゲームサーバ設定（room_match, agent_count:5, turn-based, TTS無効）
+│   ├── server-i18n.json # 言語別の性別語/ラベル（言語別サーバ生成器が使う）
+│   ├── generated/      # scripts/gen_i18n.py 生成: server.<lang>.yml ほか（自動生成・編集不可）
 │   └── agents/         # AI設定（lobby が動的生成のベース）
 │       ├── base.yml    #   言語非依存（接続/num/team/LLM/ログ）
 │       └── prompts/    #   言語別プロンプト（<lang>.yml × 14言語。ja/en は本物）
+├── scripts/gen_i18n.py # 言語別ゲームサーバ設定 + compose/Caddy ルートを生成（make gen）
 ├── lobby/              # 採番・キュー・AI spawn（FastAPI, agent-llm 同梱）
 └── repos/
     ├── aiwolf-nlp-server/     # ゲーム本体（Go）★逐次push+ターンマーカー追加

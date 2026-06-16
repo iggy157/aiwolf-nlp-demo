@@ -10,6 +10,21 @@
 > lobby は `base.yml` ＋ `prompts/<lang>.yml` ＋ 実行時上書き(URL/team/num/LLM) をマージして各卓の config を生成する
 > （`lobby/prompt_provider.py: FilePromptProvider`）。ゲーム言語は `/api/join` の `language` で選ぶ。
 
+## 言語別ゲームサーバ（サーバ側の名前・プロフィールのローカライズ）
+
+ゲームサーバは `custom_profile`（名前・プロフィール）を起動時に1回読み、その1セットを全 room に適用する
+（room ごとに言語を切り替える機構はない）。そのため卓の言語ごとに**別サーバプロセス**を立てる。
+
+| file | 用途 |
+|---|---|
+| `server-i18n.json` | 言語別の性別語(Male/Female)とラベル(Age/Gender/Personality)。生成器が使う。 |
+| `generated/server.<lang>.yml` / `server9.<lang>.yml` | `scripts/gen_i18n.py` が生成（ja以外13言語）。base + ローカライズ `custom_profile`（現地名 GameName・性格・性別・ラベル）。**自動生成・編集しない**。 |
+
+- 生成器: `make gen`（= `python3 scripts/gen_i18n.py`）。`docker-compose.langs.yml` と `caddy/langs.caddy` も同時生成。
+- 起動: `make public` / `make demo` が gen→`-f docker-compose.yml -f docker-compose.langs.yml` で 28 サーバ（言語×サイズ）を起動。
+- ルーティング: lobby が卓の言語に応じて `game-server-<lang>` / `/ws-<lang>` へ振り分け（`I18N_SERVER_LANGS=all`、未対応は ja サーバへフォールバック）。
+- 翻訳の出所: 名前・性格は viewer の `repos/aiwolf-nlp-viewer/src/lib/data/profiles/<lang>.json` を再利用。
+
 ## マイルストン2（コア検証）の手動起動手順 ※起動は運営（人間）が実施
 
 土台の証明：パッチ無しの server に AI4体＋人間1枠が自動マッチして開始するか確認する。

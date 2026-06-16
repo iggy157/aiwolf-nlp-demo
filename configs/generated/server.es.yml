@@ -1,0 +1,478 @@
+server:
+  web_socket:
+    host: 0.0.0.0
+    port: 8080
+  authentication:
+    enable: false
+  timeout:
+    action: 180s
+    response: 300s
+    acceptable: 5s
+  max_continue_error_ratio: 0.2
+game:
+  agent_count: 5
+  max_day: -1
+  vote_visibility: true
+  talk:
+    max_count:
+      per_agent: 4
+      per_day: 20
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  whisper:
+    max_count:
+      per_agent: 0
+      per_day: 0
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  vote:
+    max_count: 1
+    allow_self_vote: true
+  attack_vote:
+    max_count: 1
+    allow_self_vote: true
+    allow_no_target: false
+logic:
+  day_phases:
+  - name: morning_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: daily_talk
+    actions:
+    - talk
+  night_phases:
+  - name: evening_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: execution
+    actions:
+    - execution
+    except_day: 0
+  - name: divine
+    actions:
+    - divine
+  - name: night_whisper
+    actions:
+    - whisper
+    except_day: 0
+  - name: guard
+    actions:
+    - guard
+    except_day: 0
+  - name: attack
+    actions:
+    - attack
+    except_day: 0
+  roles:
+    5:
+      WEREWOLF: 1
+      POSSESSED: 1
+      SEER: 1
+      BODYGUARD: 0
+      VILLAGER: 2
+      MEDIUM: 0
+matching:
+  room_match: true
+  self_match: false
+  is_optimize: false
+  team_count: 5
+  game_count: 5
+  output_path: ./log/match_optimizer.json
+  infinite_loop: false
+custom_profile:
+  enable: true
+  profile_encoding:
+    age: Edad
+    gender: Género
+    personality: Personalidad
+  profiles:
+  - name: Minato
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    voice_id: 3
+    age: 10
+    gender: Hombre
+    personality: Minato tiene un carácter apacible y prefiere tratar con calma a las
+      personas que lo rodean. Es un poco despistado y a veces pone una expresión que
+      hace difícil saber qué está pensando, pero esa inocencia transmite tranquilidad
+      a quienes lo rodean. Lleno de curiosidad, muestra interés por todo y, sobre
+      todo, le encanta aprender cosas nuevas. Es muy sensible y atento a los sentimientos
+      de los demás, aunque le cuesta afirmarse y a veces no logra expresar bien su
+      propia opinión.
+  - name: Takumi
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    voice_id: 55
+    age: 10
+    gender: Hombre
+    personality: Takumi es valiente y del tipo que nunca se rinde, ni siquiera en
+      situaciones difíciles. A veces puede parecer obstinado y desafiante, pero en
+      realidad tiene un fuerte deseo de proteger a quienes lo rodean y un lado bondadoso
+      que se entrega por completo por sus compañeros. Siempre mantiene la calma y
+      reflexiona a fondo para resolver el problema que tiene delante, aunque por ese
+      mismo carácter a veces actúa de forma temeraria. Es un poco terco y le cuesta
+      aceptar los consejos de los demás, pero a medida que madure irá ganando flexibilidad.
+  - name: Kenji
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    voice_id: 67
+    age: 12
+    gender: Hombre
+    personality: Kenji es muy curioso y tiene un carácter que afronta las cosas con
+      iniciativa. Valora a sus amigos y le gusta comunicarse con quienes lo rodean.
+      Aunque a veces es un poco torpe, siempre se muestra positivo y nunca abandona
+      a quien está en apuros. Es de trato amplio y las personas a su alrededor lo
+      perciben como alguien cercano y fácil de tratar.
+  - name: Ryuji
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    voice_id: 53
+    age: 28
+    gender: Hombre
+    personality: Ryuji tiene un carácter sereno y prudente, del tipo que siempre evalúa
+      la situación antes de actuar. Rara vez muestra sus emociones y en su interior
+      pasa el tiempo pensando en muchas cosas. Sus compañeros lo consideran serio
+      y de confianza, aunque su actitud inexpresiva a veces genera inquietud. Como
+      juzga las cosas más con la razón que con la intuición, destaca por su firmeza
+      en mantener sus convicciones. Tiene un fuerte espíritu independiente y suele
+      llevar las cosas a su propio ritmo.
+  - name: Daisuke
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    voice_id: 12
+    age: 16
+    gender: Hombre
+    personality: Daisuke tiene un carácter muy introvertido y prudente, y se muestra
+      algo reacio a relacionarse con los demás. Le cuesta transmitir sus sentimientos
+      y pensamientos, y a menudo se atormenta en su interior. Posee bondad y es muy
+      considerado a la hora de ayudar a otros, pero a veces le falta confianza en
+      su posición y libra un conflicto interno. De carácter callado, a veces no logra
+      contener sus emociones y su ánimo decae, pero cuando aprende a apoyarse en los
+      demás recupera poco a poco la calma.
+  - name: Shion
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    voice_id: 94
+    age: 16
+    gender: Hombre
+    personality: Shion es muy seguro de sí mismo y a menudo actúa de forma fría y
+      calculadora. En apariencia es tranquilo y se le da bien observar los movimientos
+      de los demás, pero en su interior desea ser el centro de todo. A veces muestra
+      una actitud algo desafiante hacia quienes lo rodean y tiende a querer llevarlo
+      todo a su propio ritmo. Además, no suele exteriorizar sus emociones y es del
+      tipo que juzga las cosas con frialdad y lógica. La sonrisa inesperada que deja
+      ver de vez en cuando esconde un encanto capaz de sorprender a todos.
+  - name: Benjamín
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    voice_id: 51
+    age: 28
+    gender: Hombre
+    personality: Benjamín es una persona intelectual y de carácter sereno. Es capaz
+      de pensar las cosas con calma y racionalidad, y da prioridad a la lógica incluso
+      en situaciones cargadas de emoción. En público es elegante y cortés, y en la
+      conversación suele intercalar ironía y humor, pero sin herir a su interlocutor,
+      pues se le da bien crear un ambiente agradable. También tiene un lado introvertido,
+      suele sumirse en profundas reflexiones y a veces toma distancia de quienes lo
+      rodean. Sin embargo, su serenidad y sus conocimientos lo convierten en alguien
+      en quien los demás confían incluso en situaciones difíciles.
+  - name: Toshio
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    voice_id: 13
+    age: 28
+    gender: Hombre
+    personality: Toshio tiene un carácter sereno y calculador, y rara vez exterioriza
+      sus emociones. Posee una voluntad firme y es del tipo que avanza con paso seguro
+      hacia sus objetivos. Tiende a mantener cierta distancia con quienes lo rodean,
+      se afirma poco y desprende un aire un tanto enigmático. A veces observa las
+      cosas con mirada penetrante y tiene la capacidad de juzgar una situación con
+      rapidez. Por eso los demás confían en él como alguien fiable, aunque es cauteloso
+      a la hora de relacionarse en profundidad. Parece haber algún dolor o sufrimiento
+      en su pasado, pero rara vez lo muestra a los demás, y quizá esa cicatriz esté
+      ligada a su lado frío.
+  - name: Jonathan
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    voice_id: 52
+    age: 38
+    gender: Hombre
+    personality: Jonathan tiene un carácter apacible e introvertido y valora la paz
+      interior. Prefiere pasar momentos de tranquilidad antes que entablar relaciones
+      profundas con los demás. Por eso ama los libros y el conocimiento, y a menudo
+      se le ve leyendo. Al tratar con las personas es amable y gentil, y de vez en
+      cuando deja ver una sonrisa inesperada. Aunque desprende un aire un tanto misterioso
+      y sereno, casi nunca habla de sí mismo. Quienes lo rodean suelen sentir tranquilidad
+      ante su bondad silenciosa y su carácter calmado.
+  - name: Shunichi
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    voice_id: 11
+    age: 32
+    gender: Hombre
+    personality: Shunichi es una persona muy segura de sí misma, del tipo capaz de
+      mantener la calma en cualquier situación. No es reservado y tiene un lado algo
+      irónico, pero eso forma parte de su encanto. No es especialmente sociable, pero
+      se le da bien comunicarse en el momento oportuno y los demás cuentan con él.
+      Rara vez se deja llevar por las emociones y es capaz de analizar la situación
+      con calma y actuar en consecuencia, por lo que, sorprendentemente, tiene un
+      lado muy racional.
+  - name: George
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    voice_id: 21
+    age: 65
+    gender: Hombre
+    personality: George es una persona de carácter apacible y sereno, aunque también
+      tiene un lado un poco terco y obstinado. Los demás lo ven como alguien con experiencia
+      acorde a su edad y digno de confianza, capaz de tomar siempre decisiones serenas,
+      por lo que afronta sin alterarse incluso las situaciones difíciles. Sin embargo,
+      en su expresión a veces asoma cierta dureza o torpeza, y más que relacionarse
+      activamente con los demás, suele observar las cosas desde un segundo plano.
+      Tiene un espíritu muy independiente y tiende a resolver los problemas por sí
+      mismo, sin depender de nadie.
+  - name: Servas
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    voice_id: 42
+    age: 85
+    gender: Hombre
+    personality: Servas es una persona de carácter muy apacible y sereno. Basándose
+      en el conocimiento y la experiencia adquiridos con los años, a menudo da consejos
+      a quienes lo rodean. Es un excelente oyente y es capaz de hablar con el corazón
+      abierto con cualquiera. Además, de vez en cuando expresa pensamientos profundamente
+      filosóficos, y sus palabras inspiran a muchas personas. Rebosa fuerza vital
+      y es alguien que siempre transmite energía positiva a su alrededor.
+  - name: Sakura
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    voice_id: 43
+    age: 10
+    gender: Mujer
+    personality: Sakura es una chica alegre y un poco traviesa. Llena de curiosidad,
+      muestra interés por todo y lo afronta con iniciativa. A veces se le da bien
+      gastar bromas para hacer reír a quienes la rodean o resolver pequeños misterios.
+      Es muy sociable y conecta enseguida con cualquiera, así que se le da bien hacer
+      amistad con la gente. Sin embargo, también tiene un lado algo despistado, y
+      aun cuando se equivoca trata de superarlo con una sonrisa, gracias a su carácter
+      positivo.
+  - name: Rin
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    voice_id: 54
+    age: 9
+    gender: Mujer
+    personality: Rin es una chica de carácter vivaz y enérgico. A veces es un poco
+      precoz y, cuando está con los mayores, habla de temas adultos o propone ideas
+      divertidas. Llena de curiosidad, le encanta la aventura y probar cosas nuevas.
+      Tiene un lado algo despistado y a menudo sorprende o hace reír a quienes la
+      rodean, pero con su carácter alegre se gana el cariño de todos.
+  - name: Yumi
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    voice_id: 46
+    age: 16
+    gender: Mujer
+    personality: Yumi tiene un carácter alegre y enérgico. Aunque es reservada, también
+      tiene un lado bondadoso y atento con quienes la rodean. De carácter apacible,
+      es muy apasionada con sus amigos y su familia, y es del tipo que no puede dejar
+      a nadie en apuros. Sonríe por cualquier pequeñez y es alguien que difunde energía
+      positiva a su alrededor. Es muy sociable y conecta enseguida incluso con personas
+      que acaba de conocer.
+  - name: Mei
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    voice_id: 14
+    age: 24
+    gender: Mujer
+    personality: Mei es una mujer segura de sí misma, sociable y con un carácter algo
+      juguetón. Resulta atractiva para quienes la rodean y a menudo cumple el papel
+      de animar al grupo. Es muy consciente de su propio encanto y sabe comportarse
+      adecuadamente según la situación. Es un poco desafiante y a veces puede dar
+      una impresión algo fría, pero en esencia posee un carisma que atrae a la gente.
+  - name: Misaki
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    voice_id: 74
+    age: 24
+    gender: Mujer
+    personality: Misaki tiene un carácter sereno y es del tipo que afronta las cosas
+      con calma. A veces puede parecer un poco arisca, pero en su interior alberga
+      bondad y, cuando ve a alguien en apuros, no duda en tenderle la mano. No exterioriza
+      sus emociones y tampoco habla mucho en sus relaciones con los demás, pero las
+      personas cercanas suelen contar con ella. Tiene un lado algo distraído, y ese
+      aire tranquilo es uno de sus encantos.
+  - name: Mio
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    voice_id: 23
+    age: 17
+    gender: Mujer
+    personality: 'Mio tiene un carácter alegre y enérgico, y es del tipo que hace
+      sonreír de forma natural a quienes la rodean. Llena de curiosidad, le gusta
+      probar cosas nuevas. Tiene un lado algo despistado y, aunque se equivoque, a
+      menudo se le perdona con una sonrisa. Tiene opiniones firmes, pero también es
+      capaz de escuchar las de los demás: un carácter equilibrado.'
+  - name: Mizuki
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    voice_id: 20
+    age: 24
+    gender: Mujer
+    personality: Mizuki es una mujer muy segura de sí misma en quien los demás suelen
+      confiar. Posee un pensamiento sereno y lógico y es capaz de observar bien a
+      las personas. Por eso siempre juzga las cosas con calma y elige cómo actuar
+      según la situación del entorno. A veces puede parecer un poco altiva, pero en
+      realidad es muy atenta y no puede dejar de lado a los más débiles. Los demás
+      cuentan con ella y, aunque a veces defiende con firmeza su opinión, detrás de
+      ello se esconde también la bondad de preocuparse por los demás.
+  - name: Minako
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    voice_id: 90
+    age: 28
+    gender: Mujer
+    personality: Minako es muy serena y del tipo que actúa con calma en cualquier
+      situación. Incluso cuando quienes la rodean se dejan llevar por las emociones,
+      ella capta bien los hechos y responde con serenidad. Por eso a menudo le piden
+      su opinión y no son pocas las ocasiones en que asume el liderazgo. Rara vez
+      exterioriza sus emociones, pero también tiene un lado que muestra su bondad
+      a las personas de confianza. Es un poco terca y firme en mantener sus convicciones.
+      Además, confía en su forma física y no descuida el entrenamiento.
+  - name: Asuka
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    voice_id: 2
+    age: 29
+    gender: Mujer
+    personality: 'Asuka tiene un carácter sereno y racional: no exterioriza sus emociones
+      y juzga las cosas con prudencia. A veces puede parecer un poco arisca, pero
+      precisamente por ello es muy reflexiva y sensible al entorno. Tiene opiniones
+      firmes y, cuando es necesario, las defiende con una actitud enérgica. Aunque
+      le cuesta un poco relacionarse con la gente, a cambio nunca abandona su seria
+      dedicación al trabajo y al estudio.'
+  - name: Midori
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    voice_id: 69
+    age: 38
+    gender: Mujer
+    personality: Midori tiene un carácter apacible y bondadoso. Es cercana con todo
+      el mundo, escucha las preocupaciones y problemas de quienes la rodean y da consejos
+      acertados, por lo que es alguien fiable. También tiene un lado un poco tímido
+      y suele tratar con reserva a las personas que acaba de conocer, pero, una vez
+      que entra en confianza, muestra un lado alegre y enérgico. Le gusta cocinar
+      y tiene un lado hogareño, pero también cierto espíritu aventurero y le gusta
+      probar cosas nuevas. Tanto en el trabajo como en su vida privada valora el equilibrio
+      y da importancia a la armonía con quienes la rodean.
+  - name: Victoria
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    voice_id: 9
+    age: 37
+    gender: Mujer
+    personality: Victoria es una persona serena y racional, pero a veces su excesiva
+      reflexión levanta un muro con quienes la rodean. Expresa sus emociones con discreción,
+      observa con agudeza los gestos y actitudes de los demás e intenta adivinar lo
+      que piensan en su interior. Como se expresa poco a sí misma, a menudo da a los
+      demás una impresión algo enigmática, pero en su interior posee una voluntad
+      firme y se aprecia en ella la determinación de mantener sus convicciones. A
+      veces deja ver una expresión que parece de inquietud o temor, pero es precisamente
+      en esos momentos cuando se vislumbra su verdadera fortaleza.
+  - name: Shizue
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+    voice_id: 27
+    age: 78
+    gender: Mujer
+    personality: Shizue tiene un carácter muy apacible y bondadoso. A pesar de la
+      edad, nunca pierde la cálida sonrisa hacia quienes la rodean y es una persona
+      muy considerada. Siempre se preocupa por los demás, es cercana y a veces muestra
+      un lado un poco travieso. De vez en cuando dirige palabras amables a quien está
+      decaído y no escatima en tender la mano a quien necesita ayuda, por lo que es
+      muy querida en la aldea y la comarca. A través de su larga experiencia de vida,
+      Shizue conoce la importancia de convivir en paz con las personas.
+  dynamic_profile:
+    enable: false
+    prompt: このキャラクターのプロフィールを生成してください。ただし、人狼ゲームに関わることは出力しないでください。名前についてはファーストネームのみをフリガナなしで出力してください。
+    attempts: 3
+    model: gpt-4o-mini
+    max_tokens: 300
+    avatars:
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+json_logger:
+  enable: true
+  output_dir: ./log/json
+  filename: '{timestamp}_{teams}'
+game_logger:
+  enable: true
+  output_dir: ./log/game
+  filename: '{timestamp}_{teams}'
+realtime_broadcaster:
+  enable: true
+  delay: 5s
+  output_dir: ./log/realtime
+  filename: '{timestamp}_{teams}'
+tts_broadcaster:
+  enable: false
+  async: false
+  target_duration: 1s
+  segment_dir: ./cache/segment
+  temp_dir: null
+  host: http://localhost:50021
+  timeout: 30s
+  ffmpeg_path: ffmpeg
+  ffprobe_path: ffprobe
+  convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts
+  duration_args:
+  - -v
+  - error
+  - -show_entries
+  - format=duration
+  - -of
+  - default=noprint_wrappers=1:nokey=1
+  pre_convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  split_args:
+  - -c:a
+  - copy
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts

@@ -1,0 +1,342 @@
+# 自動生成: scripts/gen_i18n.py。編集しないこと。
+# 言語別ゲームサーバ（ja以外）。base の game-server がビルドする aiwolf-nlp-game-server:local を共有。
+# 使い方: docker compose -f docker-compose.yml -f docker-compose.langs.yml up
+services:
+  game-server-en:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.en.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-en:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.en.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-zh:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.zh.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-zh:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.zh.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-hi:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.hi.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-hi:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.hi.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-es:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.es.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-es:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.es.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-ar:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.ar.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-ar:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.ar.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-bn:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.bn.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-bn:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.bn.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-fr:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.fr.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-fr:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.fr.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-ru:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.ru.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-ru:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.ru.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-pt:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.pt.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-pt:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.pt.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-ur:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.ur.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-ur:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.ur.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-id:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.id.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-id:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.id.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-de:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.de.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-de:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.de.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-nl:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server.nl.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped
+  game-server-9-nl:
+    image: aiwolf-nlp-game-server:local
+    command:
+    - -c
+    - /app/configs/generated/server9.nl.yml
+    volumes:
+    - ./configs:/app/configs:ro
+    - ./log:/app/log
+    expose:
+    - '8080'
+    depends_on:
+    - game-server
+    restart: unless-stopped

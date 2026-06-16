@@ -6,11 +6,13 @@
 # 起動: make demo（= docker compose up --build）。LLMキー/モデルは .env で設定。
 
 services:
-  # 5人村サーバ（agent_count:5）
+  # 5人村サーバ（agent_count:5, 日本語=既定）。共有イメージ aiwolf-nlp-game-server:local を
+  # ここでビルドし、9人村サーバと全言語別サーバ(docker-compose.langs.yml)が同じイメージを使う。
   game-server:
     build:
       context: .
       dockerfile: docker/game-server.Dockerfile
+    image: aiwolf-nlp-game-server:local
     command: ["-c", "/app/configs/server.yml"]
     volumes:
       - ./configs:/app/configs:ro
@@ -20,12 +22,13 @@ services:
       - "8080"
     restart: unless-stopped
 
-  # 9人村サーバ（agent_count:9, 村人3/狂人/占い/騎士/霊媒/人狼2）
+  # 9人村サーバ（agent_count:9, 村人3/狂人/占い/騎士/霊媒/人狼2, 日本語=既定）。
+  # game-server がビルドした共有イメージを再利用（build 不要）。
   game-server-9:
-    build:
-      context: .
-      dockerfile: docker/game-server.Dockerfile
+    image: aiwolf-nlp-game-server:local
     command: ["-c", "/app/configs/server9.yml"]
+    depends_on:
+      - game-server
     volumes:
       - ./configs:/app/configs:ro
       - ./log:/app/log
@@ -53,6 +56,10 @@ services:
       # 実上限は LLM スループット（vLLMのGPU/商用APIレート）次第。環境に合わせて .env で調整。
       MAX_CONCURRENT_GAMES: ${MAX_CONCURRENT_GAMES:-20}
       AI_COUNT: ${AI_COUNT:-4}
+      # 言語別サーバへの振り分け。"all"=ja以外の全言語に専用サーバがある前提で
+      # 卓の言語に応じて game-server-<lang>/ ws-<lang> へルーティング（未対応は ja へフォールバック）。
+      I18N_SERVER_LANGS: ${I18N_SERVER_LANGS:-all}
+      DEFAULT_LANGUAGE: ${DEFAULT_LANGUAGE:-ja}
     depends_on:
       - game-server
       - game-server-9

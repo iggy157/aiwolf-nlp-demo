@@ -23,6 +23,7 @@ import nl from "$lib/data/profiles/nl.json";
 export interface ProfileEntry {
   name: string;
   personality: string;
+  avatar?: string; // ローカルアバターパス(例 /images/male/01.png)。gen_i18n.py が埋め込む。
 }
 
 type ProfileTable = Record<string, ProfileEntry>;
@@ -47,4 +48,26 @@ export function localizedPersonality(
   if (!name) return fallback;
   const lang = normalizeLanguage(locale, "ja");
   return TABLES[lang]?.[name]?.personality ?? TABLES.ja?.[name]?.personality ?? fallback;
+}
+
+/** 受け取った名前(サーバの GameName=現地名 or 原名)から avatar(ローカルパス)を解決する。
+ *  言語別サーバは現地名を送るので、現ロケールのテーブルを「表示名→avatar」で逆引きする。
+ *  見つからなければ ja テーブル(原名キー)も試し、それも無ければ null。 */
+export function localizedAvatar(
+  name: string | null | undefined,
+  locale: string | null | undefined,
+): string | null {
+  if (!name) return null;
+  const lang = normalizeLanguage(locale, "ja");
+  const find = (t: ProfileTable | undefined): string | null => {
+    if (!t) return null;
+    // 原名キー直引き（ja サーバや原名がそのまま来た場合）
+    if (t[name]?.avatar) return t[name].avatar ?? null;
+    // 表示名で逆引き（言語別サーバの現地名）
+    for (const e of Object.values(t)) {
+      if (e.name === name && e.avatar) return e.avatar;
+    }
+    return null;
+  };
+  return find(TABLES[lang]) ?? find(TABLES.ja) ?? null;
 }

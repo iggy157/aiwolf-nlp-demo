@@ -25,6 +25,10 @@
 		reverse_proxy game-server:8080
 	}
 
+	# 言語別サーバへの WebSocket ルート（/ws-<lang>, /ws9-<lang>）。
+	# scripts/gen_i18n.py が caddy/langs.caddy を生成し、caddy イメージへ COPY される。
+	import /etc/caddy/langs.caddy
+
 	# 静的ビューア（SvelteKit adapter-static の出力。/demo -> demo.html）
 	handle {
 		root * /srv

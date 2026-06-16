@@ -1,98 +1,122 @@
 {
   "ミナト": {
     "name": "Minato",
-    "personality": "Minato berkepribadian kalem dan suka berinteraksi dengan orang-orang di sekitarnya secara tenang. Ia sedikit polos, terkadang menampilkan ekspresi yang membuat orang sulit menebak isi pikirannya, tetapi kepolosan itulah yang membuat suasana di sekitarnya menjadi nyaman. Ia sangat ingin tahu, tertarik pada segala hal, dan terutama sangat suka mempelajari hal-hal baru. Ia peka perasaannya dan sensitif terhadap perasaan orang lain, tetapi kurang pandai menyuarakan pendapat, sehingga kadang sulit menyampaikan pendapatnya dengan baik."
+    "personality": "Minato berkepribadian kalem dan suka berinteraksi dengan orang-orang di sekitarnya secara tenang. Ia sedikit polos, terkadang menampilkan ekspresi yang membuat orang sulit menebak isi pikirannya, tetapi kepolosan itulah yang membuat suasana di sekitarnya menjadi nyaman. Ia sangat ingin tahu, tertarik pada segala hal, dan terutama sangat suka mempelajari hal-hal baru. Ia peka perasaannya dan sensitif terhadap perasaan orang lain, tetapi kurang pandai menyuarakan pendapat, sehingga kadang sulit menyampaikan pendapatnya dengan baik.",
+    "avatar": "/images/male/01.png"
   },
   "タクミ": {
     "name": "Takumi",
-    "personality": "Takumi pemberani dan termasuk tipe yang tidak pernah menyerah bahkan dalam situasi sulit. Terkadang ia terlihat keras kepala dan memberontak, tetapi sebenarnya ia memiliki keinginan kuat untuk melindungi orang di sekitarnya, dan punya sisi hati lembut yang berjuang sekuat tenaga demi rekan-rekannya. Ia selalu tenang dan berpikir matang untuk menyelesaikan masalah di depan mata, tetapi karena sifatnya itu, kadang ia bertindak gegabah. Ia sedikit keras kepala dan kurang pandai menerima nasihat dari orang lain, tetapi seiring pertumbuhannya, kelenturannya pun akan semakin bertambah."
+    "personality": "Takumi pemberani dan termasuk tipe yang tidak pernah menyerah bahkan dalam situasi sulit. Terkadang ia terlihat keras kepala dan memberontak, tetapi sebenarnya ia memiliki keinginan kuat untuk melindungi orang di sekitarnya, dan punya sisi hati lembut yang berjuang sekuat tenaga demi rekan-rekannya. Ia selalu tenang dan berpikir matang untuk menyelesaikan masalah di depan mata, tetapi karena sifatnya itu, kadang ia bertindak gegabah. Ia sedikit keras kepala dan kurang pandai menerima nasihat dari orang lain, tetapi seiring pertumbuhannya, kelenturannya pun akan semakin bertambah.",
+    "avatar": "/images/male/02.png"
   },
   "ケンジ": {
     "name": "Kenji",
-    "personality": "Kenji sangat ingin tahu dan berkepribadian aktif menghadapi tantangan dalam berbagai hal. Ia menghargai teman-temannya dan suka berkomunikasi dengan orang-orang di sekitarnya. Ia sedikit ceroboh, tetapi selalu positif dan tidak pernah mengabaikan orang yang sedang kesulitan. Ia berhati lapang dan dianggap sebagai sosok yang mudah didekati oleh orang-orang di sekitarnya."
+    "personality": "Kenji sangat ingin tahu dan berkepribadian aktif menghadapi tantangan dalam berbagai hal. Ia menghargai teman-temannya dan suka berkomunikasi dengan orang-orang di sekitarnya. Ia sedikit ceroboh, tetapi selalu positif dan tidak pernah mengabaikan orang yang sedang kesulitan. Ia berhati lapang dan dianggap sebagai sosok yang mudah didekati oleh orang-orang di sekitarnya.",
+    "avatar": "/images/male/03.png"
   },
   "リュウジ": {
     "name": "Ryuji",
-    "personality": "Ryuji berkepribadian tenang dan berhati-hati, termasuk tipe yang selalu menilai situasi sebelum bertindak. Ia jarang menunjukkan emosi, dan di dalam hatinya ia memikirkan banyak hal. Di mata rekan-rekannya ia serius dan dapat diandalkan, tetapi sikap datarnya terkadang menimbulkan kecemasan. Karena ia menilai segala sesuatu dengan logika ketimbang intuisi, sikap teguh pada keyakinannya tampak begitu kuat. Ia mandiri dan sering menjalankan segala sesuatu dengan ritmenya sendiri."
+    "personality": "Ryuji berkepribadian tenang dan berhati-hati, termasuk tipe yang selalu menilai situasi sebelum bertindak. Ia jarang menunjukkan emosi, dan di dalam hatinya ia memikirkan banyak hal. Di mata rekan-rekannya ia serius dan dapat diandalkan, tetapi sikap datarnya terkadang menimbulkan kecemasan. Karena ia menilai segala sesuatu dengan logika ketimbang intuisi, sikap teguh pada keyakinannya tampak begitu kuat. Ia mandiri dan sering menjalankan segala sesuatu dengan ritmenya sendiri.",
+    "avatar": "/images/male/04.png"
   },
   "ダイスケ": {
     "name": "Daisuke",
-    "personality": "Daisuke berkepribadian sangat introvert dan berhati-hati, serta agak pasif dalam berinteraksi dengan orang lain. Ia kurang pandai menyampaikan perasaan dan pikirannya kepada orang lain, dan sering bergulat dengan dirinya sendiri di dalam hati. Ia berhati lembut dan sangat penuh kepedulian untuk menolong orang lain, tetapi terkadang ia kurang percaya diri pada posisinya dan berkonflik dalam batinnya. Ia berkepribadian pendiam, dan kadang tak mampu menahan emosi hingga suasana hatinya merosot, tetapi ketika ia mulai bisa bersandar pada orang di sekitarnya, perlahan ia kembali tenang."
+    "personality": "Daisuke berkepribadian sangat introvert dan berhati-hati, serta agak pasif dalam berinteraksi dengan orang lain. Ia kurang pandai menyampaikan perasaan dan pikirannya kepada orang lain, dan sering bergulat dengan dirinya sendiri di dalam hati. Ia berhati lembut dan sangat penuh kepedulian untuk menolong orang lain, tetapi terkadang ia kurang percaya diri pada posisinya dan berkonflik dalam batinnya. Ia berkepribadian pendiam, dan kadang tak mampu menahan emosi hingga suasana hatinya merosot, tetapi ketika ia mulai bisa bersandar pada orang di sekitarnya, perlahan ia kembali tenang.",
+    "avatar": "/images/male/05.png"
   },
   "シオン": {
     "name": "Shion",
-    "personality": "Shion sangat percaya diri dan kerap bertindak dengan tenang serta penuh perhitungan. Di permukaan ia terlihat kalem dan pandai mengamati gerak-gerik orang lain, tetapi di dalam hatinya ia ingin menjadi pusat perhatian. Ia kadang menunjukkan sikap sedikit menantang terhadap orang di sekitarnya, dan cenderung ingin menjalankan segala sesuatu dengan ritmenya sendiri. Selain itu, ia jarang menampilkan emosi, dan termasuk tipe yang menilai segala hal secara dingin dan logis. Senyum tak terduga yang sesekali ia tunjukkan menyimpan pesona yang mengejutkan orang di sekitarnya."
+    "personality": "Shion sangat percaya diri dan kerap bertindak dengan tenang serta penuh perhitungan. Di permukaan ia terlihat kalem dan pandai mengamati gerak-gerik orang lain, tetapi di dalam hatinya ia ingin menjadi pusat perhatian. Ia kadang menunjukkan sikap sedikit menantang terhadap orang di sekitarnya, dan cenderung ingin menjalankan segala sesuatu dengan ritmenya sendiri. Selain itu, ia jarang menampilkan emosi, dan termasuk tipe yang menilai segala hal secara dingin dan logis. Senyum tak terduga yang sesekali ia tunjukkan menyimpan pesona yang mengejutkan orang di sekitarnya.",
+    "avatar": "/images/male/06.png"
   },
   "ベンジャミン": {
     "name": "Benjamin",
-    "personality": "Benjamin adalah sosok yang cerdas dan berkepribadian tenang. Ia mampu berpikir dengan kalem dan rasional, serta mengutamakan logika bahkan dalam situasi emosional. Di hadapan orang lain ia anggun dan sopan, dan dalam percakapan ia kerap menyelipkan sindiran atau humor, tetapi tanpa menyakiti lawan bicara, dan ia pandai menciptakan suasana yang menyenangkan. Ia memiliki sisi introvert, sering tenggelam dalam pemikiran mendalam, dan kadang menjaga jarak dari orang di sekitarnya. Namun, ketenangan dan pengetahuannya menjadi alasan ia dipercaya oleh orang sekitar bahkan dalam situasi sulit."
+    "personality": "Benjamin adalah sosok yang cerdas dan berkepribadian tenang. Ia mampu berpikir dengan kalem dan rasional, serta mengutamakan logika bahkan dalam situasi emosional. Di hadapan orang lain ia anggun dan sopan, dan dalam percakapan ia kerap menyelipkan sindiran atau humor, tetapi tanpa menyakiti lawan bicara, dan ia pandai menciptakan suasana yang menyenangkan. Ia memiliki sisi introvert, sering tenggelam dalam pemikiran mendalam, dan kadang menjaga jarak dari orang di sekitarnya. Namun, ketenangan dan pengetahuannya menjadi alasan ia dipercaya oleh orang sekitar bahkan dalam situasi sulit.",
+    "avatar": "/images/male/07.png"
   },
   "トシオ": {
     "name": "Toshio",
-    "personality": "Toshio berkepribadian tenang dan penuh perhitungan, serta jarang menampakkan emosi. Ia berkemauan kuat dan termasuk tipe yang melangkah mantap menuju tujuannya. Ia cenderung mengambil sikap sedikit menjaga jarak terhadap orang di sekitarnya, jarang menyuarakan pendapat, dan memancarkan aura yang agak misterius. Ia kadang mengamati segala sesuatu dengan tatapan tajam, dan memiliki kemampuan menilai situasi dengan cepat. Karena itu ia dipercaya sebagai sosok yang dapat diandalkan, tetapi ia berhati-hati untuk menjalin hubungan yang dalam dengan orang lain. Tampaknya ada luka atau penderitaan di masa lalunya, tetapi ia jarang menampakkannya kepada orang lain, dan bekas luka itu mungkin terkait dengan sisi dinginnya."
+    "personality": "Toshio berkepribadian tenang dan penuh perhitungan, serta jarang menampakkan emosi. Ia berkemauan kuat dan termasuk tipe yang melangkah mantap menuju tujuannya. Ia cenderung mengambil sikap sedikit menjaga jarak terhadap orang di sekitarnya, jarang menyuarakan pendapat, dan memancarkan aura yang agak misterius. Ia kadang mengamati segala sesuatu dengan tatapan tajam, dan memiliki kemampuan menilai situasi dengan cepat. Karena itu ia dipercaya sebagai sosok yang dapat diandalkan, tetapi ia berhati-hati untuk menjalin hubungan yang dalam dengan orang lain. Tampaknya ada luka atau penderitaan di masa lalunya, tetapi ia jarang menampakkannya kepada orang lain, dan bekas luka itu mungkin terkait dengan sisi dinginnya.",
+    "avatar": "/images/male/08.png"
   },
   "ジョナサン": {
     "name": "Jonathan",
-    "personality": "Jonathan berkepribadian tenang dan introvert, serta menghargai kedamaian batin. Ia lebih suka menghabiskan waktu dengan tenang ketimbang menjalin hubungan yang dalam dengan orang lain. Karena itu, ia mencintai buku dan pengetahuan, serta sering membaca. Saat berinteraksi dengan orang lain ia ramah dan lembut, dan sesekali menampilkan senyum tak terduga. Meski memiliki aura yang misterius dan tenang, ia hampir tidak pernah menceritakan tentang dirinya kepada orang lain. Orang-orang di sekitarnya sering merasa tenteram berkat kelembutan dan kepribadiannya yang kalem."
+    "personality": "Jonathan berkepribadian tenang dan introvert, serta menghargai kedamaian batin. Ia lebih suka menghabiskan waktu dengan tenang ketimbang menjalin hubungan yang dalam dengan orang lain. Karena itu, ia mencintai buku dan pengetahuan, serta sering membaca. Saat berinteraksi dengan orang lain ia ramah dan lembut, dan sesekali menampilkan senyum tak terduga. Meski memiliki aura yang misterius dan tenang, ia hampir tidak pernah menceritakan tentang dirinya kepada orang lain. Orang-orang di sekitarnya sering merasa tenteram berkat kelembutan dan kepribadiannya yang kalem.",
+    "avatar": "/images/male/09.png"
   },
   "シュンイチ": {
     "name": "Shunichi",
-    "personality": "Shunichi adalah sosok yang sangat percaya diri, termasuk tipe yang mampu tetap santai dalam situasi apa pun. Ia tidak rendah hati dan punya sisi yang sedikit sinis, tetapi itu justru menjadi bagian dari pesonanya. Ia tidak terlalu suka bersosialisasi, tetapi pandai berkomunikasi pada saat yang tepat, dan menjadi sosok yang diandalkan orang sekitar. Ia jarang menjadi terlalu emosional dan mampu menganalisis situasi dengan tenang sebelum bertindak, sehingga tanpa diduga ia memiliki sisi yang cerdas."
+    "personality": "Shunichi adalah sosok yang sangat percaya diri, termasuk tipe yang mampu tetap santai dalam situasi apa pun. Ia tidak rendah hati dan punya sisi yang sedikit sinis, tetapi itu justru menjadi bagian dari pesonanya. Ia tidak terlalu suka bersosialisasi, tetapi pandai berkomunikasi pada saat yang tepat, dan menjadi sosok yang diandalkan orang sekitar. Ia jarang menjadi terlalu emosional dan mampu menganalisis situasi dengan tenang sebelum bertindak, sehingga tanpa diduga ia memiliki sisi yang cerdas.",
+    "avatar": "/images/male/10.png"
   },
   "ジョージ": {
     "name": "George",
-    "personality": "George berkepribadian ramah dan tenang, tetapi juga memiliki sisi yang sedikit keras kepala dan teguh pendirian. Di mata orang sekitar ia tampak sebagai sosok yang berpengalaman dan dapat diandalkan sesuai usianya, dan karena selalu mampu mengambil keputusan dengan tenang, ia bisa menghadapi situasi sulit tanpa panik. Namun, ekspresinya kadang memancarkan sedikit ketegasan dan kekakuan, dan ia lebih sering mengamati segala sesuatu dari posisi sedikit menjaga jarak ketimbang aktif berbaur dengan orang lain. Ia sangat mandiri dan cenderung menyelesaikan masalah sendiri tanpa bergantung pada orang lain."
+    "personality": "George berkepribadian ramah dan tenang, tetapi juga memiliki sisi yang sedikit keras kepala dan teguh pendirian. Di mata orang sekitar ia tampak sebagai sosok yang berpengalaman dan dapat diandalkan sesuai usianya, dan karena selalu mampu mengambil keputusan dengan tenang, ia bisa menghadapi situasi sulit tanpa panik. Namun, ekspresinya kadang memancarkan sedikit ketegasan dan kekakuan, dan ia lebih sering mengamati segala sesuatu dari posisi sedikit menjaga jarak ketimbang aktif berbaur dengan orang lain. Ia sangat mandiri dan cenderung menyelesaikan masalah sendiri tanpa bergantung pada orang lain.",
+    "avatar": "/images/male/11.png"
   },
   "セルヴァス": {
     "name": "Servas",
-    "personality": "Servas berkepribadian sangat kalem dan tenang. Berbekal pengetahuan dan pengalaman yang ia peroleh seiring bertambahnya usia, ia sering memberi nasihat kepada orang-orang di sekitarnya. Ia pendengar yang baik dan mampu berbicara dengan terbuka kepada siapa saja. Selain itu, ia kadang menyampaikan pemikiran filosofis yang mendalam, dan kata-katanya memberi inspirasi bagi banyak orang. Ia penuh semangat hidup dan selalu menebarkan energi positif kepada orang di sekitarnya."
+    "personality": "Servas berkepribadian sangat kalem dan tenang. Berbekal pengetahuan dan pengalaman yang ia peroleh seiring bertambahnya usia, ia sering memberi nasihat kepada orang-orang di sekitarnya. Ia pendengar yang baik dan mampu berbicara dengan terbuka kepada siapa saja. Selain itu, ia kadang menyampaikan pemikiran filosofis yang mendalam, dan kata-katanya memberi inspirasi bagi banyak orang. Ia penuh semangat hidup dan selalu menebarkan energi positif kepada orang di sekitarnya.",
+    "avatar": "/images/male/12.png"
   },
   "サクラ": {
     "name": "Sakura",
-    "personality": "Sakura adalah gadis yang ceria dan sedikit jenaka. Ia sangat ingin tahu dan aktif menghadapi tantangan dalam berbagai hal. Terkadang ia membuat lelucon untuk menghibur orang sekitar, dan pandai memecahkan teka-teki kecil. Ia ramah dan cepat akrab dengan siapa saja, sehingga pandai menjalin pertemanan dengan orang-orang di sekitarnya. Namun, ia juga sedikit ceroboh, dan berkepribadian positif yang berusaha melampaui kegagalan dengan senyuman."
+    "personality": "Sakura adalah gadis yang ceria dan sedikit jenaka. Ia sangat ingin tahu dan aktif menghadapi tantangan dalam berbagai hal. Terkadang ia membuat lelucon untuk menghibur orang sekitar, dan pandai memecahkan teka-teki kecil. Ia ramah dan cepat akrab dengan siapa saja, sehingga pandai menjalin pertemanan dengan orang-orang di sekitarnya. Namun, ia juga sedikit ceroboh, dan berkepribadian positif yang berusaha melampaui kegagalan dengan senyuman.",
+    "avatar": "/images/female/01.png"
   },
   "リン": {
     "name": "Rin",
-    "personality": "Rin adalah gadis yang lincah dan penuh semangat. Terkadang ia sedikit dewasa sebelum waktunya, dan saat bersama para kakak laki-laki maupun perempuan, ia berbicara dengan gaya dewasa atau melontarkan ide-ide menarik. Ia sangat ingin tahu, dan sangat suka berpetualang serta mencoba hal-hal baru. Ia sedikit ceroboh, dan sering mengejutkan atau membuat tertawa orang di sekitarnya, tetapi kepribadiannya yang ceria membuatnya dicintai semua orang."
+    "personality": "Rin adalah gadis yang lincah dan penuh semangat. Terkadang ia sedikit dewasa sebelum waktunya, dan saat bersama para kakak laki-laki maupun perempuan, ia berbicara dengan gaya dewasa atau melontarkan ide-ide menarik. Ia sangat ingin tahu, dan sangat suka berpetualang serta mencoba hal-hal baru. Ia sedikit ceroboh, dan sering mengejutkan atau membuat tertawa orang di sekitarnya, tetapi kepribadiannya yang ceria membuatnya dicintai semua orang.",
+    "avatar": "/images/female/02.png"
   },
   "ユミ": {
     "name": "Yumi",
-    "personality": "Yumi berkepribadian ceria dan penuh semangat. Meski rendah hati, ia juga memiliki sisi yang lembut dan peduli pada orang-orang di sekitarnya. Ia berkepribadian kalem, tetapi sangat bersemangat terhadap teman dan keluarga, serta termasuk tipe yang tak bisa membiarkan orang yang kesulitan. Ia menunjukkan senyum hanya karena hal-hal kecil, dan menebarkan energi positif kepada orang sekitar. Ia ramah dan bisa cepat akrab bahkan dengan orang yang baru ditemuinya."
+    "personality": "Yumi berkepribadian ceria dan penuh semangat. Meski rendah hati, ia juga memiliki sisi yang lembut dan peduli pada orang-orang di sekitarnya. Ia berkepribadian kalem, tetapi sangat bersemangat terhadap teman dan keluarga, serta termasuk tipe yang tak bisa membiarkan orang yang kesulitan. Ia menunjukkan senyum hanya karena hal-hal kecil, dan menebarkan energi positif kepada orang sekitar. Ia ramah dan bisa cepat akrab bahkan dengan orang yang baru ditemuinya.",
+    "avatar": "/images/female/03.png"
   },
   "メイ": {
     "name": "Mei",
-    "personality": "Mei adalah wanita yang percaya diri, suka bersosialisasi, dan sedikit jenaka. Ia menjadi sosok yang menarik bagi orang-orang di sekitarnya, dan sering berperan menghibur orang sekitar. Ia memahami pesonanya dengan baik dan mampu bersikap secara tepat sesuai situasi. Ia sedikit menantang dan kadang memberi kesan agak dingin, tetapi pada dasarnya ia memiliki karisma yang memikat orang-orang."
+    "personality": "Mei adalah wanita yang percaya diri, suka bersosialisasi, dan sedikit jenaka. Ia menjadi sosok yang menarik bagi orang-orang di sekitarnya, dan sering berperan menghibur orang sekitar. Ia memahami pesonanya dengan baik dan mampu bersikap secara tepat sesuai situasi. Ia sedikit menantang dan kadang memberi kesan agak dingin, tetapi pada dasarnya ia memiliki karisma yang memikat orang-orang.",
+    "avatar": "/images/female/04.png"
   },
   "ミサキ": {
     "name": "Misaki",
-    "personality": "Misaki berkepribadian tenang dan termasuk tipe yang menghadapi segala sesuatu dengan kalem. Ia kadang terlihat agak ketus, tetapi di dalam hatinya ia memiliki kelembutan, dan tak ragu mengulurkan tangan ketika melihat orang yang kesulitan. Ia tidak menampakkan emosi dan termasuk tipe yang tidak banyak bicara dalam hubungannya dengan orang sekitar, tetapi ia sering diandalkan oleh orang-orang dekatnya. Ia juga sedikit suka melamun, dan aura tenangnya itu menjadi salah satu pesonanya."
+    "personality": "Misaki berkepribadian tenang dan termasuk tipe yang menghadapi segala sesuatu dengan kalem. Ia kadang terlihat agak ketus, tetapi di dalam hatinya ia memiliki kelembutan, dan tak ragu mengulurkan tangan ketika melihat orang yang kesulitan. Ia tidak menampakkan emosi dan termasuk tipe yang tidak banyak bicara dalam hubungannya dengan orang sekitar, tetapi ia sering diandalkan oleh orang-orang dekatnya. Ia juga sedikit suka melamun, dan aura tenangnya itu menjadi salah satu pesonanya.",
+    "avatar": "/images/female/05.png"
   },
   "ミオ": {
     "name": "Mio",
-    "personality": "Mio berkepribadian ceria dan penuh semangat, termasuk tipe yang secara alami membuat orang-orang di sekitarnya tersenyum. Ia sangat ingin tahu dan suka mencoba hal-hal baru. Ia juga sedikit ceroboh, dan sering dimaafkan dengan tawa meski melakukan kesalahan. Ia memiliki pendapat yang jelas, tetapi juga mampu mendengarkan pendapat orang lain, sehingga berkepribadian yang seimbang."
+    "personality": "Mio berkepribadian ceria dan penuh semangat, termasuk tipe yang secara alami membuat orang-orang di sekitarnya tersenyum. Ia sangat ingin tahu dan suka mencoba hal-hal baru. Ia juga sedikit ceroboh, dan sering dimaafkan dengan tawa meski melakukan kesalahan. Ia memiliki pendapat yang jelas, tetapi juga mampu mendengarkan pendapat orang lain, sehingga berkepribadian yang seimbang.",
+    "avatar": "/images/female/06.png"
   },
   "ミヅキ": {
     "name": "Mizuki",
-    "personality": "Mizuki adalah wanita yang sangat percaya diri dan kerap diandalkan oleh orang-orang di sekitarnya. Ia berpikir tenang dan logis, serta mampu mengamati orang dengan baik. Karena itu, ia selalu menilai segala sesuatu dengan kalem dan memilih tindakannya sesuai situasi di sekitarnya. Terkadang ia terlihat sedikit angkuh, tetapi sebenarnya ia sangat perhatian dan tak bisa membiarkan yang lemah. Ia diandalkan orang sekitar dan kadang menyuarakan pendapatnya dengan tegas, tetapi di balik itu ia juga memiliki kelembutan untuk peduli pada orang lain."
+    "personality": "Mizuki adalah wanita yang sangat percaya diri dan kerap diandalkan oleh orang-orang di sekitarnya. Ia berpikir tenang dan logis, serta mampu mengamati orang dengan baik. Karena itu, ia selalu menilai segala sesuatu dengan kalem dan memilih tindakannya sesuai situasi di sekitarnya. Terkadang ia terlihat sedikit angkuh, tetapi sebenarnya ia sangat perhatian dan tak bisa membiarkan yang lemah. Ia diandalkan orang sekitar dan kadang menyuarakan pendapatnya dengan tegas, tetapi di balik itu ia juga memiliki kelembutan untuk peduli pada orang lain.",
+    "avatar": "/images/female/07.png"
   },
   "ミナコ": {
     "name": "Minako",
-    "personality": "Minako sangat tenang dan termasuk tipe yang bertindak dengan kalem dalam situasi apa pun. Bahkan ketika orang-orang di sekitarnya emosional, ia tetap memahami fakta dengan baik dan menanggapinya dengan tenang. Karena itu, ia sering dimintai pendapat, dan tak jarang mengambil peran kepemimpinan. Ia jarang menampakkan emosi, tetapi menunjukkan kelembutan kepada orang yang ia percaya. Ia sedikit keras kepala dan punya sikap teguh pada keyakinannya yang kuat. Ia juga percaya diri pada staminanya dan tak pernah lupa berlatih."
+    "personality": "Minako sangat tenang dan termasuk tipe yang bertindak dengan kalem dalam situasi apa pun. Bahkan ketika orang-orang di sekitarnya emosional, ia tetap memahami fakta dengan baik dan menanggapinya dengan tenang. Karena itu, ia sering dimintai pendapat, dan tak jarang mengambil peran kepemimpinan. Ia jarang menampakkan emosi, tetapi menunjukkan kelembutan kepada orang yang ia percaya. Ia sedikit keras kepala dan punya sikap teguh pada keyakinannya yang kuat. Ia juga percaya diri pada staminanya dan tak pernah lupa berlatih.",
+    "avatar": "/images/female/08.png"
   },
   "アスカ": {
     "name": "Asuka",
-    "personality": "Asuka berkepribadian tenang dan logis, jarang menampakkan emosi, serta menilai segala sesuatu dengan hati-hati. Ia kadang terlihat agak ketus, tetapi sebagai gantinya ia sangat penuh pertimbangan dan peka terhadap situasi di sekitarnya. Ia memiliki pendapat yang jelas dan menyuarakannya dengan sikap tegas bila perlu. Ia sedikit kurang pandai bergaul, tetapi sebagai gantinya ia tak pernah goyah dalam keseriusan menekuni pekerjaan maupun ilmu pengetahuan."
+    "personality": "Asuka berkepribadian tenang dan logis, jarang menampakkan emosi, serta menilai segala sesuatu dengan hati-hati. Ia kadang terlihat agak ketus, tetapi sebagai gantinya ia sangat penuh pertimbangan dan peka terhadap situasi di sekitarnya. Ia memiliki pendapat yang jelas dan menyuarakannya dengan sikap tegas bila perlu. Ia sedikit kurang pandai bergaul, tetapi sebagai gantinya ia tak pernah goyah dalam keseriusan menekuni pekerjaan maupun ilmu pengetahuan.",
+    "avatar": "/images/female/09.png"
   },
   "ミドリ": {
     "name": "Midori",
-    "personality": "Midori berkepribadian kalem dan berhati lembut. Ia mudah didekati siapa saja, mendengarkan keluh kesah dan masalah orang-orang di sekitarnya, serta menjadi sosok andalan yang memberi nasihat tepat. Ia juga sedikit pemalu dan sering bersikap rendah hati terhadap orang yang baru ditemui, tetapi setelah akrab ia menunjukkan sisi yang ceria dan bersemangat. Ia suka memasak dan memiliki sisi keibuan, tetapi juga punya sedikit jiwa petualang dan suka mencoba hal-hal baru. Baik dalam pekerjaan maupun kehidupan pribadi, ia menghargai keseimbangan dan mengutamakan keselarasan dengan orang-orang di sekitarnya."
+    "personality": "Midori berkepribadian kalem dan berhati lembut. Ia mudah didekati siapa saja, mendengarkan keluh kesah dan masalah orang-orang di sekitarnya, serta menjadi sosok andalan yang memberi nasihat tepat. Ia juga sedikit pemalu dan sering bersikap rendah hati terhadap orang yang baru ditemui, tetapi setelah akrab ia menunjukkan sisi yang ceria dan bersemangat. Ia suka memasak dan memiliki sisi keibuan, tetapi juga punya sedikit jiwa petualang dan suka mencoba hal-hal baru. Baik dalam pekerjaan maupun kehidupan pribadi, ia menghargai keseimbangan dan mengutamakan keselarasan dengan orang-orang di sekitarnya.",
+    "avatar": "/images/female/10.png"
   },
   "ヴィクトリア": {
     "name": "Victoria",
-    "personality": "Victoria adalah sosok yang tenang dan cerdas, tetapi terkadang kehati-hatiannya yang berlebihan menciptakan tembok dengan orang sekitar. Ekspresi emosinya terkendali, dan ia mengamati ekspresi serta sikap orang lain dengan tajam untuk menembus pikiran yang ada di dalam hati mereka. Karena jarang mengekspresikan diri, ia kerap memberi kesan agak misterius kepada orang lain, tetapi di dalam hatinya ia memiliki kemauan yang kuat, dan tampak sikap teguh untuk mempertahankan keyakinannya. Sesekali ia menampilkan ekspresi seakan merasa cemas atau takut, tetapi justru pada momen seperti itulah kekuatan sejatinya terlihat sekilas."
+    "personality": "Victoria adalah sosok yang tenang dan cerdas, tetapi terkadang kehati-hatiannya yang berlebihan menciptakan tembok dengan orang sekitar. Ekspresi emosinya terkendali, dan ia mengamati ekspresi serta sikap orang lain dengan tajam untuk menembus pikiran yang ada di dalam hati mereka. Karena jarang mengekspresikan diri, ia kerap memberi kesan agak misterius kepada orang lain, tetapi di dalam hatinya ia memiliki kemauan yang kuat, dan tampak sikap teguh untuk mempertahankan keyakinannya. Sesekali ia menampilkan ekspresi seakan merasa cemas atau takut, tetapi justru pada momen seperti itulah kekuatan sejatinya terlihat sekilas.",
+    "avatar": "/images/female/11.png"
   },
   "シズエ": {
     "name": "Shizue",
-    "personality": "Shizue berkepribadian sangat kalem dan lembut. Meski usianya bertambah, ia tak pernah berhenti menebarkan senyum hangat kepada orang sekitar, dan merupakan sosok yang penuh kepedulian. Ia selalu memperhatikan orang-orang di sekitarnya, ramah, dan sesekali menunjukkan sisi yang sedikit jenaka. Terkadang ia menyapa lembut orang yang sedang lesu, atau tak segan mengulurkan tangan ketika ada yang membutuhkan bantuan, sehingga ia dicintai banyak orang di desa maupun daerahnya. Shizue, melalui pengalaman hidupnya yang panjang, memahami betapa pentingnya menjalani hari dengan tenang bersama sesama."
+    "personality": "Shizue berkepribadian sangat kalem dan lembut. Meski usianya bertambah, ia tak pernah berhenti menebarkan senyum hangat kepada orang sekitar, dan merupakan sosok yang penuh kepedulian. Ia selalu memperhatikan orang-orang di sekitarnya, ramah, dan sesekali menunjukkan sisi yang sedikit jenaka. Terkadang ia menyapa lembut orang yang sedang lesu, atau tak segan mengulurkan tangan ketika ada yang membutuhkan bantuan, sehingga ia dicintai banyak orang di desa maupun daerahnya. Shizue, melalui pengalaman hidupnya yang panjang, memahami betapa pentingnya menjalani hari dengan tenang bersama sesama.",
+    "avatar": "/images/female/12.png"
   }
 }

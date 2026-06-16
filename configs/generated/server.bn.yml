@@ -1,0 +1,458 @@
+server:
+  web_socket:
+    host: 0.0.0.0
+    port: 8080
+  authentication:
+    enable: false
+  timeout:
+    action: 180s
+    response: 300s
+    acceptable: 5s
+  max_continue_error_ratio: 0.2
+game:
+  agent_count: 5
+  max_day: -1
+  vote_visibility: true
+  talk:
+    max_count:
+      per_agent: 4
+      per_day: 20
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  whisper:
+    max_count:
+      per_agent: 0
+      per_day: 0
+    max_length:
+      count_in_word: false
+      count_spaces: false
+      per_talk: -1
+      mention_length: 50
+      per_agent: -1
+      base_length: 500
+    max_skip: 0
+  vote:
+    max_count: 1
+    allow_self_vote: true
+  attack_vote:
+    max_count: 1
+    allow_self_vote: true
+    allow_no_target: false
+logic:
+  day_phases:
+  - name: morning_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: daily_talk
+    actions:
+    - talk
+  night_phases:
+  - name: evening_whisper
+    actions:
+    - whisper
+    only_day: 0
+  - name: execution
+    actions:
+    - execution
+    except_day: 0
+  - name: divine
+    actions:
+    - divine
+  - name: night_whisper
+    actions:
+    - whisper
+    except_day: 0
+  - name: guard
+    actions:
+    - guard
+    except_day: 0
+  - name: attack
+    actions:
+    - attack
+    except_day: 0
+  roles:
+    5:
+      WEREWOLF: 1
+      POSSESSED: 1
+      SEER: 1
+      BODYGUARD: 0
+      VILLAGER: 2
+      MEDIUM: 0
+matching:
+  room_match: true
+  self_match: false
+  is_optimize: false
+  team_count: 5
+  game_count: 5
+  output_path: ./log/match_optimizer.json
+  infinite_loop: false
+custom_profile:
+  enable: true
+  profile_encoding:
+    age: বয়স
+    gender: লিঙ্গ
+    personality: ব্যক্তিত্ব
+  profiles:
+  - name: মিনাতো
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    voice_id: 3
+    age: 10
+    gender: পুরুষ
+    personality: মিনাতো শান্ত স্বভাবের এবং আশেপাশের মানুষের সঙ্গে কোমলভাবে মেলামেশা
+      করতে পছন্দ করে। একটু সরল প্রকৃতির, মাঝে মাঝে কী ভাবছে তা বোঝা যায় না এমন অভিব্যক্তি
+      দেখায়, তবে তার এই নিষ্পাপতা আশেপাশের মানুষদের মন ভালো করে দেয়। কৌতূহলী মন
+      নিয়ে সব কিছুতেই আগ্রহ দেখায়, বিশেষ করে নতুন কিছু শিখতে খুব ভালোবাসে। অত্যন্ত
+      সংবেদনশীল এবং অন্যের অনুভূতির প্রতিও সচেতন, তবে নিজের মত প্রকাশে দুর্বল হওয়ায়
+      মাঝে মাঝে নিজের মতামত ঠিকমতো বলতে পারে না।
+  - name: তাকুমি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    voice_id: 55
+    age: 10
+    gender: পুরুষ
+    personality: তাকুমি সাহসী এবং কঠিন পরিস্থিতিতেও কখনো হাল ছাড়ে না এমন ধরনের। কখনো
+      কখনো তাকে কঠোর ও বিদ্রোহী মনে হতে পারে, কিন্তু আসলে আশেপাশের মানুষদের রক্ষা
+      করার তীব্র ইচ্ছা তার আছে এবং সঙ্গীদের জন্য সর্বশক্তি দিয়ে চেষ্টা করার মতো একটি
+      দয়ালু দিকও তার মধ্যে আছে। সবসময় শান্ত থেকে সামনের সমস্যা সমাধানের জন্য গভীরভাবে
+      চিন্তা করে, তবে এই স্বভাবের কারণে মাঝে মাঝে হঠকারী আচরণও করে ফেলে। সে একটু একগুঁয়ে
+      এবং অন্যের পরামর্শ গ্রহণ করতে অপারগ, তবে বড় হওয়ার সঙ্গে সঙ্গে তার এই নমনীয়তাও
+      বাড়বে।
+  - name: কেনজি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    voice_id: 67
+    age: 12
+    gender: পুরুষ
+    personality: কেনজি কৌতূহলী এবং নানা বিষয়ে সক্রিয়ভাবে চ্যালেঞ্জ নেওয়ার স্বভাবের।
+      বন্ধুদের মূল্য দেয় এবং আশেপাশের মানুষদের সঙ্গে যোগাযোগ করতে পছন্দ করে। একটু
+      অসাবধান দিকও আছে, তবে সবসময় ইতিবাচক এবং বিপদে পড়া মানুষকে কখনো পরিত্যাগ করে
+      না। উদার মনের, আর আশেপাশের মানুষদের কাছে সহজে আপন হয়ে ওঠা একজন ব্যক্তি।
+  - name: রিউজি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    voice_id: 53
+    age: 28
+    gender: পুরুষ
+    personality: রিউজি শান্ত ও সতর্ক স্বভাবের, সবসময় পরিস্থিতি যাচাই করে কাজ করে
+      এমন ধরনের। আবেগ খুব কমই প্রকাশ করে, মনে মনে অনেক কিছু ভাবতে ভাবতে সময় কাটায়।
+      সঙ্গীরা তাকে গম্ভীর ও নির্ভরযোগ্য মনে করে, তবে তার নির্বিকার ভাব মাঝে মাঝে অস্বস্তিও
+      সৃষ্টি করে। অন্তর্দৃষ্টির চেয়ে যুক্তি দিয়ে বিচার করায় নিজের বিশ্বাসে অটল
+      থাকার মনোভাব তার মধ্যে স্পষ্ট। স্বাধীনচেতা মন নিয়ে নিজের গতিতে কাজ এগিয়ে নিতে
+      পছন্দ করে।
+  - name: দাইসুকে
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    voice_id: 12
+    age: 16
+    gender: পুরুষ
+    personality: দাইসুকে অত্যন্ত অন্তর্মুখী ও সতর্ক স্বভাবের এবং অন্যের সঙ্গে মেলামেশায়
+      কিছুটা নিষ্ক্রিয়। নিজের অনুভূতি বা চিন্তা অন্যকে জানাতে সে দুর্বল এবং প্রায়ই
+      মনে মনে দুশ্চিন্তায় ভোগে। তার মধ্যে দয়ালুতা আছে এবং অন্যকে সাহায্য করার ব্যাপারে
+      গভীর সহানুভূতিশীল, তবে মাঝে মাঝে নিজের অবস্থানে আত্মবিশ্বাস না পেয়ে ভেতরে ভেতরে
+      দ্বন্দ্বে ভোগে। শান্ত স্বভাবের, মাঝে মাঝে আবেগ সামলাতে না পেরে মন খারাপ হয়ে
+      যায়, তবে আশেপাশের মানুষের ওপর নির্ভর করতে শিখলে ধীরে ধীরে আবার শান্তি ফিরে
+      পায়।
+  - name: শিওন
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    voice_id: 94
+    age: 16
+    gender: পুরুষ
+    personality: শিওন অত্যন্ত আত্মবিশ্বাসী এবং প্রায়ই শান্ত ও হিসেবি আচরণ করে। বাইরে
+      থেকে শান্ত এবং অন্যের গতিবিধি পর্যবেক্ষণে দক্ষ, কিন্তু মনে মনে নিজেকে কেন্দ্রে
+      দেখতে চায়। আশেপাশের প্রতি কখনো কখনো কিছুটা চ্যালেঞ্জিং মনোভাব দেখায় এবং সব
+      কিছু নিজের গতিতে এগিয়ে নিতে চায়। তার উপর, আবেগ খুব একটা প্রকাশ করে না, শীতল
+      ও যুক্তিনির্ভরভাবে বিচার করে এমন ধরনের। মাঝে মাঝে হঠাৎ দেখানো হাসিতে আশেপাশের
+      মানুষকে চমকে দেওয়ার মতো এক আকর্ষণ লুকিয়ে থাকে।
+  - name: বেঞ্জামিন
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    voice_id: 51
+    age: 28
+    gender: পুরুষ
+    personality: বেঞ্জামিন বুদ্ধিদীপ্ত ও ধীরস্থির স্বভাবের একজন ব্যক্তি। সে শান্ত
+      ও যুক্তিনিষ্ঠভাবে চিন্তা করতে পারে এবং আবেগপূর্ণ পরিস্থিতিতেও যুক্তিকে গুরুত্ব
+      দেয়। লোকসমক্ষে মার্জিত ও বিনয়ী, কথোপকথনে প্রায়ই ব্যঙ্গ বা রসিকতা মিশিয়ে
+      দেয়, তবে তা অন্যকে আঘাত না করে এক স্নিগ্ধ পরিবেশ তৈরিতে দক্ষ। তার অন্তর্মুখী
+      একটি দিকও আছে, প্রায়ই গভীর চিন্তায় ডুবে থাকে এবং মাঝে মাঝে আশেপাশের মানুষ
+      থেকে দূরত্ব রাখে। তবে তার শান্ত স্বভাব ও জ্ঞান কঠিন পরিস্থিতিতেও তাকে সবার আস্থাভাজন
+      করে তোলে।
+  - name: তোশিও
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    voice_id: 13
+    age: 28
+    gender: পুরুষ
+    personality: তোশিও শান্ত ও হিসেবি স্বভাবের, আবেগ খুব একটা প্রকাশ করে না। দৃঢ়
+      সংকল্প নিয়ে লক্ষ্যের দিকে স্থিরভাবে এগিয়ে যাওয়া ধরনের। আশেপাশের প্রতি একটু
+      দূরত্ব রেখে চলার প্রবণতা আছে, নিজের মত খুব কম প্রকাশ করে এবং কোথাও যেন এক রহস্যময়
+      আবহ বয়ে বেড়ায়। মাঝে মাঝে তীক্ষ্ণ দৃষ্টিতে পরিস্থিতি পর্যবেক্ষণ করে দ্রুত
+      বিচার করার ক্ষমতা তার আছে। তাই নির্ভরযোগ্য ব্যক্তি হিসেবে সবার আস্থা পায়, তবে
+      অন্যের সঙ্গে গভীর সম্পর্ক গড়তে সাবধানী। তার অতীতে কোনো বেদনা বা কষ্ট আছে বলে
+      মনে হয়, কিন্তু তা অন্যকে খুব কমই দেখায়; সম্ভবত সেই ক্ষতই তার শীতল দিকটির সঙ্গে
+      জড়িত।
+  - name: জোনাথন
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    voice_id: 52
+    age: 38
+    gender: পুরুষ
+    personality: জোনাথন শান্ত ও অন্তর্মুখী স্বভাবের এবং মনের প্রশান্তিকে মূল্য দেয়।
+      অন্যের সঙ্গে গভীর সম্পর্ক গড়ার চেয়ে নীরব সময় কাটাতে পছন্দ করে। তাই বই ও জ্ঞান
+      ভালোবাসে এবং প্রায়ই বই পড়ে। মানুষের সঙ্গে মেলামেশার সময় কোমল ও স্নেহশীল,
+      মাঝে মাঝে অপ্রত্যাশিতভাবে মৃদু হাসি দেখায়। কোথাও এক রহস্যময় ও শান্ত আবহ থাকলেও
+      নিজের সম্পর্কে অন্যকে প্রায় কিছুই বলে না। তার আশেপাশের মানুষ প্রায়ই তার নীরব
+      কোমলতা ও ধীরস্থির স্বভাবে এক প্রশান্তি অনুভব করে।
+  - name: শুনইচি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    voice_id: 11
+    age: 32
+    gender: পুরুষ
+    personality: শুনইচি অত্যন্ত আত্মবিশ্বাসী একজন ব্যক্তি, যেকোনো পরিস্থিতিতেই স্বাচ্ছন্দ্য
+      বজায় রাখতে পারে এমন ধরনের। সংকোচহীন, একটু ব্যঙ্গাত্মক দিকও আছে, তবে সেটাই তার
+      আকর্ষণের একটি অংশ। খুব মিশুক না হলেও সঠিক সময়ে যোগাযোগে দক্ষ এবং আশেপাশের মানুষের
+      আস্থাভাজন। অতিরিক্ত আবেগপ্রবণ হয় না বরং শান্তভাবে পরিস্থিতি বিশ্লেষণ করে কাজ
+      করতে পারে, ফলে অপ্রত্যাশিতভাবেই এক বুদ্ধিদীপ্ত দিক তার মধ্যে আছে।
+  - name: জর্জ
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    voice_id: 21
+    age: 65
+    gender: পুরুষ
+    personality: জর্জ কোমল ও ধীরস্থির স্বভাবের অধিকারী, তবে একটু একগুঁয়ে ও জেদি দিকও
+      আছে। আশেপাশের মানুষ তাকে বয়স অনুযায়ী অভিজ্ঞ ও নির্ভরযোগ্য ব্যক্তি হিসেবে দেখে,
+      সবসময় শান্তভাবে সিদ্ধান্ত নিতে পারায় কঠিন পরিস্থিতিতেও বিচলিত না হয়ে সামলে
+      নেয়। তবে তার অভিব্যক্তিতে মাঝে মাঝে কিছুটা কঠোরতা বা আনাড়িভাব ফুটে ওঠে, আর
+      অন্যের সঙ্গে সক্রিয়ভাবে মেলামেশার চেয়ে বরং একটু দূরত্ব থেকে পরিস্থিতি পর্যবেক্ষণ
+      করার প্রবণতাই বেশি। সে অত্যন্ত স্বাধীনচেতা এবং অন্যের ওপর নির্ভর না করে নিজেই
+      সমস্যা সমাধানের চেষ্টা করে।
+  - name: সারভাস
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    voice_id: 42
+    age: 85
+    gender: পুরুষ
+    personality: সারভাস অত্যন্ত শান্ত ও ধীরস্থির স্বভাবের অধিকারী। বয়সের সঙ্গে অর্জিত
+      জ্ঞান ও অভিজ্ঞতার ভিত্তিতে প্রায়ই আশেপাশের মানুষদের পরামর্শ দেয়। চমৎকার একজন
+      শ্রোতা এবং যে কারো সঙ্গে মন খুলে কথা বলতে পারে। মাঝে মাঝে গভীর দার্শনিক চিন্তাও
+      প্রকাশ করে, আর তার সেই কথাগুলো অনেক মানুষকে অনুপ্রাণিত করে। জীবনীশক্তিতে পরিপূর্ণ
+      এবং সবসময় আশেপাশে ইতিবাচক শক্তি ছড়িয়ে দেওয়া একজন ব্যক্তি।
+  - name: সাকুরা
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    voice_id: 43
+    age: 10
+    gender: মহিলা
+    personality: সাকুরা প্রাণবন্ত ও একটু দুষ্টু স্বভাবের একটি মেয়ে। কৌতূহলী মন নিয়ে
+      সব কিছুতে আগ্রহ দেখিয়ে সক্রিয়ভাবে চ্যালেঞ্জ নেয়। মাঝে মাঝে দুষ্টুমি করে আশেপাশের
+      মানুষকে হাসায় কিংবা ছোটখাটো ধাঁধা সমাধান করতে দক্ষ। মিশুক স্বভাবের, যে কারো
+      সঙ্গে দ্রুত আপন হয়ে যায়, তাই আশেপাশের মানুষদের সঙ্গে বন্ধুত্ব গড়তে পারদর্শী।
+      তবে একটু অসাবধান দিকও আছে, ব্যর্থ হলেও হাসিমুখে তা পার করে নেওয়ার মতো ইতিবাচক
+      স্বভাবের।
+  - name: রিন
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    voice_id: 54
+    age: 9
+    gender: মহিলা
+    personality: রিন প্রাণবন্ত ও উদ্যমী স্বভাবের একটি মেয়ে। মাঝে মাঝে একটু পাকা,
+      বড় ভাই-বোনদের সঙ্গে থাকার সময় পরিণত ধরনের কথা বলে বা মজার আইডিয়া দেয়। কৌতূহলী
+      মন নিয়ে অভিযান ও নতুন কিছুতে চ্যালেঞ্জ নিতে খুব ভালোবাসে। একটু অসাবধান দিক
+      আছে, প্রায়ই আশেপাশের মানুষকে চমকে দেয় বা হাসায়, তবে তার এই প্রাণবন্ত স্বভাবে
+      সবাই তাকে ভালোবাসে।
+  - name: ইউমি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    voice_id: 46
+    age: 16
+    gender: মহিলা
+    personality: ইউমি প্রাণবন্ত ও উদ্যমী স্বভাবের। সংকোচী হলেও আশেপাশের মানুষদের প্রতি
+      যত্নশীল একটি কোমল দিকও আছে। শান্ত স্বভাবের হলেও বন্ধু ও পরিবারের প্রতি অত্যন্ত
+      আবেগপ্রবণ এবং বিপদে পড়া মানুষকে এড়িয়ে যেতে পারে না এমন ধরনের। সামান্য কিছুতেই
+      হাসি ফোটায় এবং আশেপাশে ইতিবাচক শক্তি ছড়িয়ে দেয়। মিশুক স্বভাবের, প্রথম দেখায়
+      কারো সঙ্গেও দ্রুত আপন হয়ে যেতে পারে।
+  - name: মেই
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    voice_id: 14
+    age: 24
+    gender: মহিলা
+    personality: মেই আত্মবিশ্বাসী, মিশুক এবং একটু কৌতুকপ্রিয় স্বভাবের একজন নারী।
+      আশেপাশের মানুষের কাছে আকর্ষণীয় একজন এবং প্রায়ই সবাইকে আনন্দ দেওয়ার ভূমিকা
+      পালন করে। নিজের আকর্ষণ ভালোভাবেই বোঝে এবং পরিস্থিতি অনুযায়ী যথাযথভাবে আচরণ
+      করতে পারে। একটু চ্যালেঞ্জিং, মাঝে মাঝে কিছুটা শীতল ছাপ ফেললেও মূলত মানুষকে আকৃষ্ট
+      করার মতো ক্যারিশমা তার আছে।
+  - name: মিসাকি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    voice_id: 74
+    age: 24
+    gender: মহিলা
+    personality: মিসাকি ধীরস্থির স্বভাবের, সব কিছুতে শান্তভাবে মোকাবিলা করে এমন ধরনের।
+      একটু রুক্ষ মনে হলেও মনে মনে দয়ালুতা ধারণ করে এবং বিপদে পড়া কাউকে দেখলে সাহায্যের
+      হাত বাড়াতে দ্বিধা করে না। সে আবেগ প্রকাশ করে না এবং আশেপাশের সঙ্গে সম্পর্কেও
+      খুব বেশি কথা বলে না এমন ধরনের, তবে ঘনিষ্ঠ মানুষদের কাছে প্রায়ই নির্ভরযোগ্য।
+      একটু আনমনা দিকও আছে, আর সেই নীরব আবহই তার একটি আকর্ষণ।
+  - name: মিও
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    voice_id: 23
+    age: 17
+    gender: মহিলা
+    personality: মিও প্রাণবন্ত ও উদ্যমী স্বভাবের, আশেপাশের মানুষদের স্বাভাবিকভাবেই
+      হাসিমুখে রাখার মতো ধরনের। কৌতূহলী মন নিয়ে নতুন কিছুতে চ্যালেঞ্জ নিতে ভালোবাসে।
+      একটু অসাবধান দিক আছে, ব্যর্থ হলেও হেসে প্রায়ই ক্ষমা পেয়ে যায়। নিজের মতামত
+      দৃঢ়ভাবে ধারণ করলেও অন্যের কথাও শোনার মতো এক ভারসাম্যপূর্ণ স্বভাবের।
+  - name: মিজুকি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    voice_id: 20
+    age: 24
+    gender: মহিলা
+    personality: মিজুকি অত্যন্ত আত্মবিশ্বাসী একজন নারী, আশেপাশের মানুষ প্রায়ই তার
+      ওপর নির্ভর করে। শান্ত ও যুক্তিনিষ্ঠ চিন্তা নিয়ে মানুষকে ভালোভাবে পর্যবেক্ষণ
+      করতে পারে। তাই সবসময় শান্তভাবে বিচার করে এবং পরিস্থিতি অনুযায়ী নিজের আচরণ
+      বেছে নেয়। মাঝে মাঝে একটু অহংকারী মনে হলেও আসলে অত্যন্ত যত্নশীল এবং দুর্বলকে
+      এড়িয়ে যেতে পারে না এমন একটি দিকও আছে। আশেপাশের মানুষ তার ওপর নির্ভর করে, মাঝে
+      মাঝে নিজের মতামত জোরালোভাবে প্রকাশ করলেও তার পেছনে অন্যের প্রতি যত্নশীল কোমলতাও
+      আছে।
+  - name: মিনাকো
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    voice_id: 90
+    age: 28
+    gender: মহিলা
+    personality: মিনাকো অত্যন্ত শান্ত, যেকোনো পরিস্থিতিতেই ধীরস্থিরভাবে কাজ করে এমন
+      ধরনের। আশেপাশের মানুষ আবেগপ্রবণ হয়ে পড়লেও সে দৃঢ়ভাবে তথ্য বুঝে নিয়ে শান্তভাবে
+      মোকাবিলা করে। তাই প্রায়ই তার মতামত চাওয়া হয় এবং নেতৃত্ব নেওয়ার পরিস্থিতিও
+      কম নয়। আবেগ খুব একটা প্রকাশ করে না, তবে বিশ্বাসযোগ্য মানুষদের কাছে কোমলতা দেখানোর
+      একটি দিকও আছে। একটু একগুঁয়ে দিক আছে, নিজের বিশ্বাসে অটল থাকার মনোভাব প্রবল।
+      এছাড়া শারীরিক সক্ষমতায়ও আত্মবিশ্বাসী এবং নিয়মিত অনুশীলন বাদ দেয় না।
+  - name: আসুকা
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    voice_id: 2
+    age: 29
+    gender: মহিলা
+    personality: আসুকা শান্ত ও যুক্তিনিষ্ঠ স্বভাবের, আবেগ প্রকাশ না করে সতর্কভাবে
+      সব কিছু বিচার করে। একটু রুক্ষ মনে হলেও সেই পরিমাণে অত্যন্ত বিবেচক এবং আশেপাশের
+      পরিস্থিতির প্রতি সংবেদনশীল। সে নিজের মতামত দৃঢ়ভাবে ধারণ করে এবং প্রয়োজনে কঠোর
+      মনোভাব নিয়ে নিজের মত প্রকাশ করে। মানুষের সঙ্গে মেলামেশায় একটু দুর্বল দিক থাকলেও
+      তার বদলে কাজ বা পড়াশোনায় গভীর মনোযোগের মনোভাব কখনো হারায় না।
+  - name: মিদোরি
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    voice_id: 69
+    age: 38
+    gender: মহিলা
+    personality: মিদোরি কোমল ও দয়ালু স্বভাবের। যে কারো সঙ্গে সহজে মিশতে পারে এবং
+      আশেপাশের মানুষের দুশ্চিন্তা ও সমস্যার কথা শুনে যথাযথ পরামর্শ দেওয়ার মতো এক
+      নির্ভরযোগ্য ব্যক্তি। একটু লাজুক দিকও আছে, প্রথম দেখায় কারো সঙ্গে প্রায়ই সংযতভাবে
+      মেলামেশা করে, তবে আপন হয়ে গেলে প্রাণবন্ত ও উদ্যমী দিকও দেখায়। রান্না করতে
+      পছন্দ করে এবং একটি ঘরোয়া দিক আছে, তবে কিছুটা অভিযানপ্রিয় মনও আছে এবং নতুন
+      কিছুতে চ্যালেঞ্জ নিতে ভালোবাসে। কাজ ও ব্যক্তিগত জীবনেও ভারসাম্যকে মূল্য দেয়
+      এবং আশেপাশের মানুষের সঙ্গে সম্প্রীতিকে গুরুত্ব দেয়।
+  - name: ভিক্টোরিয়া
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    voice_id: 9
+    age: 37
+    gender: মহিলা
+    personality: ভিক্টোরিয়া শান্ত ও বুদ্ধিদীপ্ত একজন ব্যক্তি, তবে মাঝে মাঝে তার অতিরিক্ত
+      গভীর চিন্তাশীলতা আশেপাশের সঙ্গে এক দেয়াল তৈরি করে ফেলে। আবেগ প্রকাশ সংযত, অন্যের
+      অভিব্যক্তি ও আচরণ তীক্ষ্ণভাবে পর্যবেক্ষণ করে তাদের মনের ভেতরের ভাবনা পড়ার চেষ্টা
+      করে। নিজেকে খুব একটা প্রকাশ না করায় অন্যের কাছে কিছুটা রহস্যময় ছাপ ফেলে, তবে
+      মনে মনে দৃঢ় ইচ্ছাশক্তি ধারণ করে এবং নিজের বিশ্বাসে অটল থাকার মনোভাব দেখা যায়।
+      মাঝে মাঝে দুশ্চিন্তা বা ভয়ের মতো অভিব্যক্তিও দেখায়, তবে ঠিক সেই মুহূর্তগুলোতেই
+      তার প্রকৃত শক্তির এক ঝলক দেখা যায়।
+  - name: শিজুয়ে
+    avatar_url: https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+    voice_id: 27
+    age: 78
+    gender: মহিলা
+    personality: শিজুয়ে অত্যন্ত শান্ত ও কোমল স্বভাবের অধিকারী। বয়স বাড়লেও আশেপাশের
+      প্রতি উষ্ণ হাসি অটুট রেখে চলা এক সহানুভূতিশীল ব্যক্তি। সবসময় আশেপাশের মানুষের
+      খেয়াল রাখে, সহজে আপন হওয়া এবং মাঝে মাঝে একটু দুষ্টু দিকও দেখায়। মাঝে মাঝে
+      মনমরা কাউকে কোমলভাবে সান্ত্বনা দেয় কিংবা সাহায্যের প্রয়োজনে হাত বাড়াতে কুণ্ঠা
+      করে না বলে গ্রাম বা এলাকার অনেক মানুষের কাছে প্রিয়। শিজুয়ে দীর্ঘ জীবনের অভিজ্ঞতার
+      মধ্য দিয়ে মানুষের সঙ্গে শান্তভাবে দিন কাটানোর গুরুত্ব জেনেছে।
+  dynamic_profile:
+    enable: false
+    prompt: このキャラクターのプロフィールを生成してください。ただし、人狼ゲームに関わることは出力しないでください。名前についてはファーストネームのみをフリガナなしで出力してください。
+    attempts: 3
+    model: gpt-4o-mini
+    max_tokens: 300
+    avatars:
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/male/12.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/01.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/02.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/03.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/04.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/05.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/06.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/07.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/08.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/09.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/10.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/11.png
+    - https://aiwolfdial.github.io/aiwolf-nlp-viewer/images/female/12.png
+json_logger:
+  enable: true
+  output_dir: ./log/json
+  filename: '{timestamp}_{teams}'
+game_logger:
+  enable: true
+  output_dir: ./log/game
+  filename: '{timestamp}_{teams}'
+realtime_broadcaster:
+  enable: true
+  delay: 5s
+  output_dir: ./log/realtime
+  filename: '{timestamp}_{teams}'
+tts_broadcaster:
+  enable: false
+  async: false
+  target_duration: 1s
+  segment_dir: ./cache/segment
+  temp_dir: null
+  host: http://localhost:50021
+  timeout: 30s
+  ffmpeg_path: ffmpeg
+  ffprobe_path: ffprobe
+  convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts
+  duration_args:
+  - -v
+  - error
+  - -show_entries
+  - format=duration
+  - -of
+  - default=noprint_wrappers=1:nokey=1
+  pre_convert_args:
+  - -c:a
+  - aac
+  - -b:a
+  - 64k
+  - -ar
+  - '44100'
+  - -ac
+  - '2'
+  split_args:
+  - -c:a
+  - copy
+  - -mpegts_flags
+  - initial_discontinuity
+  - -mpegts_copyts
+  - '1'
+  - -f
+  - mpegts

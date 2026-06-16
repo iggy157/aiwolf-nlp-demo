@@ -11,7 +11,7 @@
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { agentSettings } from "$lib/stores/agent-settings";
   import { language, normalizeLanguage } from "$lib/stores/language";
-  import { localizedName, localizedPersonality } from "$lib/stores/profiles";
+  import { localizedAvatar, localizedName, localizedPersonality } from "$lib/stores/profiles";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
@@ -199,7 +199,11 @@
   }
 
   function avatarSrc(name: string): string {
-    const path = DefaultProfileAvatars[name as keyof typeof DefaultProfileAvatars];
+    // 言語別サーバは現地名を送るので、まず現ロケールの 表示名→avatar で解決し、
+    // 無ければ従来の原名(JP)→avatar マップにフォールバックする。
+    const path =
+      localizedAvatar(name, $locale) ??
+      DefaultProfileAvatars[name as keyof typeof DefaultProfileAvatars];
     return path ? `${base}${path}` : "";
   }
 

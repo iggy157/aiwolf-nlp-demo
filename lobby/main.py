@@ -75,13 +75,47 @@ GAME_WS_PUBLIC_URL_9 = _env("GAME_WS_PUBLIC_URL_9", "") or _derive9(GAME_WS_PUBL
 # 対応する村サイズ（=サーバの agent_count）。最小/既定は 5。
 VALID_SIZES = {5, 9}
 
+# 言語別サーバ（scripts/gen_i18n.py が生成）を運用しているか。
+#   I18N_SERVER_LANGS="all"          → ja以外の全言語に専用サーバがある前提（make public 既定）
+#   I18N_SERVER_LANGS="en,zh,..."    → 列挙した言語だけ専用サーバがある
+#   未設定                            → 言語別サーバなし（全卓を既定=ja サーバへ）
+_i18n_raw = _env("I18N_SERVER_LANGS", "")
+I18N_SERVER_ALL = _i18n_raw.strip().lower() == "all"
+I18N_SERVER_LANGS = {x.strip() for x in _i18n_raw.split(",") if x.strip() and x.strip().lower() != "all"}
 
-def internal_url_for(size: int) -> str:
-    return GAME_WS_INTERNAL_URL_9 if size == 9 else GAME_WS_INTERNAL_URL
+
+def _has_lang_server(language: str) -> bool:
+    # 既定言語(ja)はベースのサーバ(game-server/game-server-9)を使う。
+    if not language or language == DEFAULT_LANGUAGE:
+        return False
+    return I18N_SERVER_ALL or language in I18N_SERVER_LANGS
 
 
-def public_url_for(size: int) -> str:
-    return GAME_WS_PUBLIC_URL_9 if size == 9 else GAME_WS_PUBLIC_URL
+def _lang_internal(base: str, size: int, language: str) -> str:
+    # 内部URLのサービス名に -<lang> を付ける（compose のサービス名規約に一致）。
+    # 例: ws://game-server:8080/ws -> ws://game-server-en:8080/ws
+    #     ws://game-server-9:8080/ws -> ws://game-server-9-en:8080/ws
+    token = "game-server-9" if size == 9 else "game-server"
+    return base.replace(token, f"{token}-{language}", 1)
+
+
+def _lang_public(base: str, size: int, language: str) -> str:
+    # 公開URLのパス末尾に -<lang> を付ける（Caddy の言語別ルートに一致）。
+    # 例: wss://host/ws -> wss://host/ws-en ／ wss://host/ws9 -> wss://host/ws9-en
+    suffix = "/ws9" if size == 9 else "/ws"
+    if base.endswith(suffix):
+        return base[: -len(suffix)] + f"{suffix}-{language}"
+    return base
+
+
+def internal_url_for(size: int, language: str = DEFAULT_LANGUAGE) -> str:
+    base = GAME_WS_INTERNAL_URL_9 if size == 9 else GAME_WS_INTERNAL_URL
+    return _lang_internal(base, size, language) if _has_lang_server(language) else base
+
+
+def public_url_for(size: int, language: str = DEFAULT_LANGUAGE) -> str:
+    base = GAME_WS_PUBLIC_URL_9 if size == 9 else GAME_WS_PUBLIC_URL
+    return _lang_public(base, size, language) if _has_lang_server(language) else base
 
 
 def with_room(url: str, room: str) -> str:
@@ -247,7 +281,7 @@ class Lobby:
 
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         # サンプルAIは ?room=<session.room> を付けて、この卓(room)にだけ参加する。
-        ai_url = with_room(internal_url_for(session.size), session.room)
+        ai_url = with_room(internal_url_for(session.size, session.language), session.room)
         cfg = self._build_agent_config(session.team, session.ai_count, ai_url, session.language)
         cfg_path = GENERATED_DIR / f"{session.id}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
@@ -527,7 +561,7 @@ async def join(req: JoinRequest | None = None) -> JoinResponse:
         status=session.status,
         position=lobby.position_of(session.id),
         # ws_url に ?room= を付与。フロントはこの URL に接続するだけで正しい卓に入る。
-        ws_url=with_room(public_url_for(session.size), session.room),
+        ws_url=with_room(public_url_for(session.size, session.language), session.room),
         ai_count=session.ai_count,
         size=session.size,
         language=session.language,
@@ -569,7 +603,7 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
     await lobby._schedule()  # noqa: SLF001
 
     # 持ち込みエージェントも人間も ?room=<session.room> を付けて同一卓(room)に入る。
-    pub_room = with_room(public_url_for(session.size), session.room)
+    pub_room = with_room(public_url_for(session.size, session.language), session.room)
     human_url = None
     if human:
         # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る。
@@ -608,7 +642,7 @@ async def get_session(session_id: str) -> StatusResponse:
         team=session.human_team,
         status=session.status,
         position=lobby.position_of(session.id),
-        ws_url=with_room(public_url_for(session.size), session.room),
+        ws_url=with_room(public_url_for(session.size, session.language), session.room),
         size=session.size,
         language=session.language,
         error=session.error,
