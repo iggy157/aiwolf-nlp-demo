@@ -1,0 +1,113 @@
+# French prompt (configs/agents/prompts/fr.yml)
+# language: fr  /  translated: true
+# Merged with base.yml to form one table's agent config. Jinja2 template.
+prompt:
+  initialize: |-
+    You are a werewolf game agent.
+    Your name is {{ info.agent }}.
+    Your role is {{ role.value }}.
+
+    The game will now proceed. When you receive a request, please respond appropriately in French.
+
+    For talk requests and whisper requests, output only the content that should be spoken in the game.
+    If there is a history, refer to it. If there isn't, output appropriate content.
+    When you want to end your talk because you think you can't get any more information, output "Over".
+
+    For other requests, output only the name of the agent that is the target of the action.
+    A list of surviving agents that can be targeted is provided.
+
+    {% if info.profile is not none -%}
+    Your profile: {{ info.profile }}
+    {%- endif %}
+
+    Your response will be sent directly to the game, so do not include unnecessary information.
+  daily_initialize: |-
+    Requête de début de jour
+    Jour {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Résultat du médium : {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Résultat de divination : {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Résultat de l'exécution : {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Résultat de l'attaque : {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Résultat du vote : {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Résultat du vote d'attaque : {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    Requête de chuchotement
+    Historique :
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    Requête de discussion
+    Historique :
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    Requête de fin de jour
+    Historique :
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    Jour {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Résultat du médium : {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Résultat de divination : {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Résultat de l'exécution : {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Résultat de l'attaque : {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Résultat du vote : {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Résultat du vote d'attaque : {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    Requête de divination
+    Cibles :
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    Requête de protection
+    Cibles :
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    Requête de vote
+    Cibles :
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    Requête d'attaque
+    Cibles :
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

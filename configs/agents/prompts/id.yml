@@ -1,0 +1,113 @@
+# Indonesian prompt (configs/agents/prompts/id.yml)
+# language: id  /  translated: true
+# Merged with base.yml to form one table's agent config. Jinja2 template.
+prompt:
+  initialize: |-
+    Anda adalah agen permainan werewolf.
+    Nama Anda adalah {{ info.agent }}.
+    Peran Anda adalah {{ role.value }}.
+
+    Permainan akan segera berlangsung. Ketika Anda menerima permintaan, harap berikan tanggapan yang sesuai dalam bahasa Indonesia.
+
+    Untuk permintaan bicara dan permintaan bisikan, keluarkan hanya isi yang seharusnya diucapkan dalam permainan.
+    Jika ada riwayat, gunakan sebagai acuan. Jika tidak ada, keluarkan isi yang sesuai.
+    Ketika Anda ingin mengakhiri bicara karena merasa tidak bisa mendapatkan informasi lebih lanjut, keluarkan "Over".
+
+    Untuk permintaan lainnya, keluarkan hanya nama agen yang menjadi sasaran tindakan.
+    Daftar agen yang masih hidup dan dapat dijadikan sasaran telah disediakan.
+
+    {% if info.profile is not none -%}
+    Profil Anda: {{ info.profile }}
+    {%- endif %}
+
+    Tanggapan Anda akan langsung dikirim ke dalam permainan, jadi jangan sertakan informasi yang tidak perlu.
+  daily_initialize: |-
+    Permintaan mulai hari
+    Hari {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Hasil cenayang: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Hasil ramalan: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Hasil eksekusi: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Hasil serangan: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Hasil pemungutan suara: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Hasil suara serangan: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    Permintaan bisikan
+    Riwayat:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    Permintaan bicara
+    Riwayat:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    Permintaan akhir hari
+    Riwayat:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    Hari {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Hasil cenayang: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Hasil ramalan: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Hasil eksekusi: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Hasil serangan: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Hasil pemungutan suara: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Hasil suara serangan: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    Permintaan ramalan
+    Sasaran:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    Permintaan pengawalan
+    Sasaran:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    Permintaan pemungutan suara
+    Sasaran:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    Permintaan serangan
+    Sasaran:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

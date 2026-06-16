@@ -120,7 +120,9 @@ aiwolf-nlp-demo/                 ← 作業ルート（このMDとClaude Code起
 ├── lobby/                        # ★新規backend（FastAPI等）
 └── configs/
     ├── server.yml               # room_match:true（?room=卓IDで卓構成）, agent_count:5, turn-based
-    └── agent.yml                # LLM接続（env から生成）
+    └── agents/                  # LLM接続＋プロンプト（env から生成）
+        ├── base.yml             #   言語非依存（接続/num/team/LLM/ログ）
+        └── prompts/<lang>.yml   #   言語別プロンプト（14言語。ja/en は本物、他はプレースホルダ）
 ```
 
 ---

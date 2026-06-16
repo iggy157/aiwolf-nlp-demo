@@ -30,6 +30,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 
+from prompt_provider import FilePromptProvider
+
 # ---------------------------------------------------------------------------
 # 設定（環境変数）
 # ---------------------------------------------------------------------------
@@ -44,8 +46,16 @@ def _env(key: str, default: str) -> str:
 
 # agent-llm リポジトリと設定テンプレートの場所
 AGENT_LLM_DIR = Path(_env("AGENT_LLM_DIR", str(WORK_ROOT / "repos" / "aiwolf-nlp-agent-llm")))
-AGENT_CONFIG_TEMPLATE = Path(_env("AGENT_CONFIG_TEMPLATE", str(WORK_ROOT / "configs" / "agent.yml")))
+# 言語別エージェント設定の置き場（base.yml + prompts/<lang>.yml）。
+# 旧 configs/agent.yml は base.yml + prompts/ja.yml に分割された。
+AGENTS_DIR = Path(_env("AGENTS_DIR", str(WORK_ROOT / "configs" / "agents")))
+# ゲーム言語の既定値。未対応言語が要求されたときのフォールバックにもなる。
+DEFAULT_LANGUAGE = _env("DEFAULT_LANGUAGE", "ja")
 GENERATED_DIR = Path(_env("GENERATED_CONFIG_DIR", str(HERE / ".generated")))
+
+# プロンプト供給元。今はファイル実装。将来ユーザ編集プロンプトをDB化するなら
+# 同じインタフェースの実装に差し替えるだけで _build_agent_config はそのまま使える。
+PROMPT_PROVIDER = FilePromptProvider(AGENTS_DIR, default_language=DEFAULT_LANGUAGE)
 
 # AIが接続する内部URL（dockerでは ws://game-server:8080/ws、ローカルでは ws://127.0.0.1:8080/ws）
 GAME_WS_INTERNAL_URL = _env("GAME_WS_INTERNAL_URL", "ws://127.0.0.1:8080/ws")
@@ -136,6 +146,7 @@ class Session:
     human_team: str = ""
     status: str = "queued"  # queued | running | finished | error
     size: int = 5           # 村の人数（= サーバの agent_count。5 or 9）
+    language: str = "ja"    # ゲーム言語（AIの発話/プロンプト言語。卓作成時に固定）
     ai_count: int = 0       # この卓で起動するサンプルAI数（= size - external_slots）
     external_slots: int = 1 # 外部接続数（人間 + 持ち込みエージェント）
     process: Any = None     # subprocess.Popen | None
@@ -167,12 +178,16 @@ class Lobby:
         token = secrets.token_hex(4) + secrets.choice(string.ascii_lowercase)
         return f"s-{display_name}-{token}"
 
-    async def create_session(self, external_slots: int, size: int = 5) -> Session:
+    async def create_session(
+        self, external_slots: int, size: int = 5, language: str = DEFAULT_LANGUAGE
+    ) -> Session:
         # size = 村の人数（5 or 9）。external_slots = 外部接続数（人間 + 持ち込みエージェント）。
         # 残り（size - external_slots）をサンプルAIで埋める。
+        # language = ゲーム言語。未対応なら provider が既定言語にフォールバックする。
         if size not in VALID_SIZES:
             size = 5
         external_slots = max(1, min(external_slots, size))
+        language = PROMPT_PROVIDER.resolve_language(language)
         async with self._lock:
             display = self._next_display_name()
             sid = secrets.token_urlsafe(9)
@@ -187,14 +202,15 @@ class Lobby:
                 size=size,
                 ai_count=max(0, size - external_slots),
                 external_slots=external_slots,
+                language=language,
             )
             self.sessions[sid] = session
             self.queue.append(sid)
             return session
 
-    async def join(self, size: int = 5) -> Session:
+    async def join(self, size: int = 5, language: str = DEFAULT_LANGUAGE) -> Session:
         # /demo の人間1枠（外部=人間1人、残りをAIが埋める）
-        return await self.create_session(external_slots=1, size=size)
+        return await self.create_session(external_slots=1, size=size, language=language)
 
     def running_count(self) -> int:
         return sum(1 for s in self.sessions.values() if s.status == "running")
@@ -232,7 +248,7 @@ class Lobby:
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         # サンプルAIは ?room=<session.room> を付けて、この卓(room)にだけ参加する。
         ai_url = with_room(internal_url_for(session.size), session.room)
-        cfg = self._build_agent_config(session.team, session.ai_count, ai_url)
+        cfg = self._build_agent_config(session.team, session.ai_count, ai_url, session.language)
         cfg_path = GENERATED_DIR / f"{session.id}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -252,10 +268,12 @@ class Lobby:
             start_new_session=True,
         )
 
-    def _build_agent_config(self, team: str, ai_count: int, internal_url: str) -> dict[str, Any]:
-        # テンプレート(configs/agent.yml: プロンプト等を含む)を読み、接続/チーム/LLMを上書き
-        with AGENT_CONFIG_TEMPLATE.open(encoding="utf-8") as f:
-            cfg: dict[str, Any] = yaml.safe_load(f)
+    def _build_agent_config(
+        self, team: str, ai_count: int, internal_url: str, language: str = DEFAULT_LANGUAGE
+    ) -> dict[str, Any]:
+        # provider が base.yml + prompts/<lang>.yml をマージした config を返す。
+        # それに接続/チーム/LLM を上書きして最終 config にする。
+        cfg: dict[str, Any] = PROMPT_PROVIDER.config_for(language)
 
         cfg.setdefault("web_socket", {})
         cfg["web_socket"]["url"] = internal_url
@@ -406,10 +424,12 @@ class JoinResponse(BaseModel):
     ws_url: str
     ai_count: int
     size: int
+    language: str
 
 
 class JoinRequest(BaseModel):
     size: int = 5  # 村の人数（5 or 9）
+    language: str = DEFAULT_LANGUAGE  # ゲーム言語（AIの発話/プロンプト言語）
 
 
 class StatusResponse(BaseModel):
@@ -420,6 +440,7 @@ class StatusResponse(BaseModel):
     position: int
     ws_url: str
     size: int
+    language: str
     error: str | None = None
 
 
@@ -474,10 +495,20 @@ async def health() -> dict[str, Any]:
     }
 
 
+@app.get("/api/languages")
+async def languages() -> dict[str, Any]:
+    """ゲーム言語として選べる言語コード一覧と既定値。"""
+    return {
+        "languages": PROMPT_PROVIDER.supported_languages(),
+        "default": PROMPT_PROVIDER.resolve_language(DEFAULT_LANGUAGE),
+    }
+
+
 @app.post("/api/join", response_model=JoinResponse)
 async def join(req: JoinRequest | None = None) -> JoinResponse:
     size = req.size if req else 5
-    session = await lobby.join(size=size)
+    language = req.language if req else DEFAULT_LANGUAGE
+    session = await lobby.join(size=size, language=language)
     # すぐ空きがあれば spawn を試みる
     await lobby._schedule()  # noqa: SLF001
     return JoinResponse(
@@ -491,6 +522,7 @@ async def join(req: JoinRequest | None = None) -> JoinResponse:
         ws_url=with_room(public_url_for(session.size), session.room),
         ai_count=session.ai_count,
         size=session.size,
+        language=session.language,
     )
 
 
@@ -498,6 +530,7 @@ class ByoRequest(BaseModel):
     agents: int = 1          # 持ち込みエージェントの数
     human: bool = False      # 人間プレイヤー(/demo)も1枠入れるか
     size: int = 5            # 村の人数（5 or 9）
+    language: str = DEFAULT_LANGUAGE  # ゲーム言語（埋めのサンプルAIの発話言語）
 
 
 class ByoResponse(BaseModel):
@@ -509,6 +542,7 @@ class ByoResponse(BaseModel):
     human_slots: int         # 人間枠(0/1)
     agent_total: int         # 1卓の総数
     status: str
+    language: str            # ゲーム言語
     human_join_url: str | None = None  # 人間が /demo で参加する直リンク
 
 
@@ -523,7 +557,7 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
     if external > size:
         raise HTTPException(status_code=400, detail=f"external slots must be <= {size}")
 
-    session = await lobby.create_session(external_slots=external, size=size)
+    session = await lobby.create_session(external_slots=external, size=size, language=req.language)
     await lobby._schedule()  # noqa: SLF001
 
     # 持ち込みエージェントも人間も ?room=<session.room> を付けて同一卓(room)に入る。
@@ -533,7 +567,12 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
         # 既存 /demo の直接接続モード(?url=&team=)を再利用して人間が同卓に入る。
         # url には room 付き URL を、team には人間と分かるチーム名を渡す。
         from urllib.parse import quote
-        human_url = f"/demo?url={quote(pub_room, safe='')}&team={quote(session.human_team, safe='')}"
+        # lang も渡し、人間のUIの初期表示言語を卓のゲーム言語に合わせる（UI言語は後から変更可）。
+        human_url = (
+            f"/demo?url={quote(pub_room, safe='')}"
+            f"&team={quote(session.human_team, safe='')}"
+            f"&lang={quote(session.language, safe='')}"
+        )
 
     return ByoResponse(
         session_id=session.id,
@@ -544,6 +583,7 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
         human_slots=human,
         agent_total=session.size,
         status=session.status,
+        language=session.language,
         human_join_url=human_url,
     )
 
@@ -562,6 +602,7 @@ async def get_session(session_id: str) -> StatusResponse:
         position=lobby.position_of(session.id),
         ws_url=with_room(public_url_for(session.size), session.room),
         size=session.size,
+        language=session.language,
         error=session.error,
     )
 

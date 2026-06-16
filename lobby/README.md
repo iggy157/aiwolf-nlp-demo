@@ -6,11 +6,17 @@
 ## エンドポイント
 | method | path | 役割 |
 |---|---|---|
-| POST | `/api/join` | 人間1枠で参加（/demo用）。残り(AGENT_TOTAL-1)をAIが埋める。`{session_id, team, ws_url, ai_count, ...}` |
-| POST | `/api/byo` | 持ち込みエージェント卓を作成。body `{agents:int, human:bool}`。外部枠=agents+human、残りをAIが埋める。`{team, ws_url, ai_count, human_join_url, ...}` |
-| GET | `/api/session/{id}` | 状態取得（`queued`→`running`→`finished`/`error`、`position`）。フロントはこれをポーリング |
+| POST | `/api/join` | 人間1枠で参加（/demo用）。body `{size:int, language:str}`。残り(AGENT_TOTAL-1)をAIが埋める。`{session_id, team, ws_url, ai_count, language, ...}` |
+| POST | `/api/byo` | 持ち込みエージェント卓を作成。body `{agents:int, human:bool, size:int, language:str}`。外部枠=agents+human、残りをAIが埋める。`{team, ws_url, ai_count, language, human_join_url, ...}` |
+| GET | `/api/session/{id}` | 状態取得（`queued`→`running`→`finished`/`error`、`position`、`language`）。フロントはこれをポーリング |
 | POST | `/api/session/{id}/leave` | 離脱（スロット解放・AIプロセス停止） |
+| GET | `/api/languages` | 選択可能なゲーム言語コード一覧と既定値 `{languages, default}` |
 | GET | `/api/health` | 稼働状況（running/queued/max, provider/model） |
+
+**ゲーム言語**: `language`（既定 `DEFAULT_LANGUAGE`）で卓ごとにAIの発話言語を決める。
+`prompt_provider.py` が `configs/agents/prompts/<lang>.yml` を解決し、未対応言語は既定言語にフォールバックする。
+UI言語（画面表示）は viewer 側 svelte-i18n の別管理で、`/api/byo` の `human_join_url` には `&lang=` が付き
+人間UIの初期表示言語を卓のゲーム言語に合わせる（UI言語は後から変更可）。
 
 **卓の構成（fill-to-5）**: 1卓は `AGENT_TOTAL`(=5) 名。`external_slots`(外部接続=人間+持ち込みエージェント)を
 指定すると、残り `AGENT_TOTAL - external_slots` 体をサンプルAIが埋める。`external_slots=5` なら AI 0体（全持ち込み）。
@@ -20,9 +26,9 @@
 ## 動作
 - `MAX_CONCURRENT_GAMES` 卓まで同時進行。超過分は待機列で「あなたは N 番目」。
 - バックグラウンドループ(1秒間隔)が「終了卓のスロット解放(reap)」→「空きがあれば待機列先頭を spawn(schedule)」。
-- spawn: `configs/agent.yml` をテンプレに `web_socket.url`／`agent.team`／`agent.num`／`llm.*` を上書きした
-  一時 config を `lobby/.generated/<id>.yml` に書き出し、`AGENT_LLM_PYTHON src/main.py -c <cfg>` を
-  別プロセスグループで起動。APIキー類は子プロセスの環境変数で渡す。
+- spawn: `prompt_provider` が `configs/agents/base.yml` ＋ `prompts/<lang>.yml` をマージし、それに
+  `web_socket.url`／`agent.team`／`agent.num`／`llm.*` を上書きした一時 config を `lobby/.generated/<id>.yml`
+  に書き出し、`AGENT_LLM_PYTHON src/main.py -c <cfg>` を別プロセスグループで起動。APIキー類は子プロセスの環境変数で渡す。
 - ゲーム終了で agent-llm プロセスが自然終了 → reap がスロットを解放。
 
 ## 環境変数（.env 由来。すべて任意・既定あり）
@@ -37,7 +43,8 @@
 | `GAME_WS_INTERNAL_URL` | `ws://127.0.0.1:8080/ws` | AIが接続する内部URL（docker: `ws://game-server:8080/ws`） |
 | `GAME_WS_PUBLIC_URL` | `ws://localhost:8080/ws` | 人間が接続する公開URL（本番: `wss://<host>/ws`） |
 | `AGENT_LLM_DIR` | `../repos/aiwolf-nlp-agent-llm` | agent-llm の場所 |
-| `AGENT_CONFIG_TEMPLATE` | `../configs/agent.yml` | プロンプト等を含む設定テンプレ |
+| `AGENTS_DIR` | `../configs/agents` | `base.yml` ＋ `prompts/<lang>.yml` の置き場 |
+| `DEFAULT_LANGUAGE` | `ja` | ゲーム言語の既定／未対応言語のフォールバック先 |
 | `AGENT_LLM_PYTHON` | venv 自動検出→`python3` | agent-llm を起動する Python |
 
 ## ローカル起動（※起動は運営が実施）

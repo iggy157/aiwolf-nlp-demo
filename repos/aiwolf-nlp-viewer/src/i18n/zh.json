@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "zh",
+    "name": "Chinese (Mandarin)",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "首页",
+    "realtime": "实时日志",
+    "archive": "归档日志",
+    "agent": "智能体",
+    "token": "令牌生成",
+    "statistics": "统计信息"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "实时日志",
+      "description": "实时显示游戏日志\n支持 JSONL 格式文件"
+    },
+    "archiveLog": {
+      "title": "归档日志",
+      "description": "显示已归档的游戏日志\n支持 LOG 格式文件"
+    },
+    "agent": {
+      "title": "智能体",
+      "description": "连接到游戏服务器，以智能体身份参与游戏"
+    },
+    "sourceCode": "源代码",
+    "gameServer": "游戏服务器",
+    "sampleAgent": "示例智能体",
+    "sampleAgentLLM": "示例智能体 (LLM)",
+    "viewer": "查看器"
+  },
+  "realtime": {
+    "connect": "连接",
+    "disconnect": "断开",
+    "settings": "设置",
+    "pasteFromClipboard": "从剪贴板粘贴",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "Optional",
+    "displaySettings": "显示设置",
+    "canvasAgentInfo": "画布上的智能体信息",
+    "messageBoxAgentInfo": "消息框中的智能体信息",
+    "listAgentInfo": "列表中的智能体信息",
+    "largeScreen": "适配大屏幕",
+    "name": "名字",
+    "teamName": "队伍名称",
+    "role": "角色",
+    "enable": "启用",
+    "notConnected": "未连接",
+    "day": "第 {day} 天",
+    "daytime": "白天",
+    "nighttime": "夜晚",
+    "events": {
+      "disconnected": "未连接",
+      "whispered": "进行了密谈",
+      "attack_voted_with_target": "{from} 投票袭击 {to}",
+      "attack_voted": "进行了袭击投票",
+      "voted_with_target": "{from} 投票给了 {to}",
+      "voted": "{from} 进行了投票",
+      "no_execute": "没有人被放逐",
+      "executed": "{target} 被放逐了",
+      "no_attack": "没有人被袭击",
+      "attacked_but_guarded": "{target} 遭到袭击，但被守护了",
+      "attacked": "{target} 被袭击了",
+      "divined_with_result": "{from} 占卜 {to} 的结果为 {result}",
+      "divined": "进行了占卜",
+      "guarded_with_target": "{from} 将 {to} 设为守护对象",
+      "guarded": "进行了守护",
+      "game_ended": "{winner} 获胜",
+      "unknown": "未知事件"
+    },
+    "eventTypes": {
+      "未接続": "未连接",
+      "トーク": "发言",
+      "囁き": "密谈",
+      "投票": "投票",
+      "襲撃投票": "袭击投票",
+      "追放": "放逐",
+      "襲撃": "袭击",
+      "占い": "占卜",
+      "護衛": "守护",
+      "終了": "结束"
+    }
+  },
+  "archive": {
+    "selectFolder": "选择文件夹",
+    "selectLog": "选择日志",
+    "pasteFromClipboard": "从剪贴板粘贴",
+    "agents": "智能体",
+    "whispers": "密谈",
+    "talk": "发言",
+    "voting": "投票",
+    "votedFor": " 投票给 ",
+    "execute": "放逐",
+    "wasExecuted": " 被放逐",
+    "divination": "占卜",
+    "divined": " 占卜了 ",
+    "guard": "守护",
+    "protected": " 守护了 ",
+    "attackVotes": "袭击投票",
+    "attack": "袭击",
+    "wasAttacked": " 被袭击：",
+    "success": "成功",
+    "failure": "失败",
+    "noAttackTarget": "无袭击对象",
+    "result": "结果",
+    "won": " 获胜",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "发言历史",
+    "whisperHistory": "密谈历史",
+    "agentSettings": "智能体设置",
+    "teamName": "队伍名称",
+    "notConnected": "未连接",
+    "selectTarget": "请选择对象",
+    "enterContent": "请输入内容",
+    "remainingChars": "剩余 {count} 个字符",
+    "exceededChars": "超出 {count} 个字符",
+    "send": "发送"
+  },
+  "statistics": {
+    "downloadCsv": "下载为 CSV 格式"
+  },
+  "token": {
+    "title": "令牌生成",
+    "description": "在游戏服务器启用连接认证时，需要生成相应的令牌。密钥在浏览器中生成，绝不会发送到服务器。",
+    "agentDescription": "如果以智能体身份连接，请输入队伍名称。",
+    "generateSecret": "生成密钥",
+    "secretKey": "密钥",
+    "agent": "智能体",
+    "realtimeLog": "实时日志",
+    "teamName": "队伍名称",
+    "copyToken": "复制令牌",
+    "errorOccurred": "发生错误"
+  },
+  "common": {
+    "close": "关闭",
+    "language": "语言"
+  },
+  "displaySettings": {
+    "title": "显示项目设置",
+    "selectAll": "全选",
+    "deselectAll": "全部取消",
+    "reset": "重置",
+    "before": "前",
+    "after": "后",
+    "allFields": "全部项目",
+    "noFields": "不显示",
+    "fields": {
+      "agents": {
+        "gameName": "智能体名称",
+        "originalName": "原始名称",
+        "role": "角色",
+        "status": "状态"
+      },
+      "beforeWhisper": {
+        "agentName": "智能体名称",
+        "originalName": "原始名称",
+        "text": "文本",
+        "talkIdx": "发言 ID",
+        "turnIdx": "回合",
+        "timestamp": "时间戳"
+      },
+      "talks": {
+        "agentName": "智能体名称",
+        "originalName": "原始名称",
+        "text": "文本",
+        "talkIdx": "发言 ID",
+        "turnIdx": "回合",
+        "timestamp": "时间戳"
+      },
+      "votes": {
+        "voterName": "投票者",
+        "targetName": "投票对象"
+      },
+      "execution": {
+        "agentName": "被放逐的智能体",
+        "role": "角色"
+      },
+      "divine": {
+        "seerName": "预言家",
+        "targetName": "占卜对象",
+        "result": "结果"
+      },
+      "afterWhisper": {
+        "agentName": "智能体名称",
+        "originalName": "原始名称",
+        "text": "文本",
+        "talkIdx": "发言 ID",
+        "turnIdx": "回合",
+        "timestamp": "时间戳"
+      },
+      "guard": {
+        "guardName": "守卫",
+        "targetName": "守护对象",
+        "result": "结果"
+      },
+      "attackVotes": {
+        "voterName": "投票者",
+        "targetName": "袭击候选"
+      },
+      "attack": {
+        "targetName": "袭击对象",
+        "result": "结果"
+      },
+      "result": {
+        "winSide": "获胜阵营",
+        "villagers": "村民人数",
+        "werewolves": "狼人数量"
+      }
+    }
+  },
+  "audio": {
+    "play": "播放",
+    "stop": "停止"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "狼人",
+      "POSSESSED": "狼人同伙",
+      "SEER": "预言家",
+      "BODYGUARD": "守卫",
+      "VILLAGER": "村民",
+      "MEDIUM": "通灵师"
+    },
+    "species": {
+      "HUMAN": "人类",
+      "WEREWOLF": "狼人"
+    },
+    "status": {
+      "ALIVE": "存活",
+      "DEAD": "死亡"
+    },
+    "teams": {
+      "VILLAGER": "村民阵营",
+      "WEREWOLF": "狼人阵营"
+    },
+    "request": {
+      "NAME": "名字",
+      "TALK": "发言",
+      "WHISPER": "密谈",
+      "VOTE": "投票",
+      "DIVINE": "占卜",
+      "GUARD": "守护",
+      "ATTACK": "袭击",
+      "INITIALIZE": "游戏开始",
+      "DAILY_INITIALIZE": "白天开始",
+      "DAILY_FINISH": "白天结束",
+      "FINISH": "游戏结束"
+    }
+  },
+  "demo": {
+    "title": "人狼智能大会 自然语言部门 体验演示",
+    "titleShort": "人狼智能大会",
+    "subtitle": "自然语言部门 体验演示",
+    "tagline": "和 AI 智能体一起玩狼人杀。轮到你时即可发言。",
+    "status": {
+      "connected": "已连接",
+      "connecting": "连接中…",
+      "disconnected": "未连接"
+    },
+    "header": {
+      "pause": "暂停",
+      "resume": "继续",
+      "info": "信息",
+      "leave": "中止",
+      "myInfo": "我的信息"
+    },
+    "day": "第 {day} 天",
+    "banner": {
+      "connecting": "连接中…",
+      "disconnected": "未连接",
+      "pausedYourTurn": "已暂停（轮到你：{action}）",
+      "yourTurn": "轮到你了：{action}（{hint}）",
+      "othersTurn": "{name} 正在输入…",
+      "voting": "投票中…",
+      "nightAction": "夜晚行动进行中…",
+      "morning": "天亮了",
+      "night": "夜晚降临了",
+      "finished": "游戏结束",
+      "inProgress": "进行中…",
+      "waitingStart": "正在等待游戏开始"
+    },
+    "remain": "剩余 {sec} 秒",
+    "action": {
+      "TALK": "发言",
+      "WHISPER": "密谈",
+      "VOTE": "投票",
+      "DIVINE": "占卜",
+      "GUARD": "守护",
+      "ATTACK": "袭击",
+      "fallback": "行动"
+    },
+    "hint": {
+      "talk": "输入消息",
+      "vote": "选择要放逐的对象",
+      "divine": "选择要占卜的对象",
+      "guard": "选择要守护的对象",
+      "attack": "选择要袭击的对象",
+      "fallback": "选择对象"
+    },
+    "roleDesc": {
+      "VILLAGER": "你没有特殊能力。请通过讨论和投票找出狼人。",
+      "WEREWOLF": "你是狼人。请隐藏身份，在夜晚与同伴一起袭击。欺骗村民吧。",
+      "SEER": "每晚可占卜一人，得知其是狼人还是人类。请善用情报引导村庄。",
+      "MEDIUM": "每晚可得知被放逐的人是否为狼人。",
+      "BODYGUARD": "每晚可守护一人，使其免受狼人的袭击。",
+      "POSSESSED": "你是狼人同伙（看起来是人类，但站在狼人一方）。请协助狼人取得胜利。"
+    },
+    "result": {
+      "villagerWin": "村民阵营获胜",
+      "werewolfWin": "狼人阵营获胜",
+      "youWin": "你赢了 🎉",
+      "youLose": "你输了…",
+      "title": "🏁 游戏结束",
+      "reveal": "角色公开",
+      "backHome": "返回首页"
+    },
+    "info": {
+      "title": "玩家信息",
+      "role": "角色：{role}",
+      "team": "所属队伍：{team}",
+      "noProfile": "无个人资料信息",
+      "participants": "参与者",
+      "you": "（你）",
+      "alive": "存活",
+      "dead": "死亡",
+      "privacyNote": "※ 由于狼人杀游戏的性质，其他玩家的角色和个人资料原则上不公开。",
+      "divineResults": "🔮 占卜结果",
+      "mediumResults": "🔮 通灵结果",
+      "close": "关闭"
+    },
+    "intro": {
+      "yourCharacter": "你扮演的角色人物",
+      "instruction": "请在游戏中以这个人物和角色的身份行动。",
+      "start": "开始游戏"
+    },
+    "start": {
+      "villageSize": "村庄人数",
+      "village5": "5 人村",
+      "village9": "9 人村",
+      "comp5": "村民2・预言家・狼人・狼人同伙（你 + 4 个 AI）",
+      "comp9": "村民3・预言家・守卫・通灵师・狼人2・狼人同伙（你 + 8 个 AI）",
+      "gameLanguage": "游戏语言",
+      "gameLanguageHint": "AI 所说的语言（界面语言可在右上角切换）。",
+      "start": "开始游戏",
+      "joining": "正在请求加入…",
+      "queued": "排队等待中",
+      "queuePosition": "你排在第 {pos} 位",
+      "queueNote": "有空桌后将自动开始",
+      "preparing": "正在准备桌位…",
+      "error": "错误：{message}",
+      "retry": "重试",
+      "displayName": "你的显示名称：{name}",
+      "unknownError": "未知错误",
+      "startFailed": "会话启动失败"
+    },
+    "feed": {
+      "waitingStart": "正在等待游戏开始…",
+      "waitingConnect": "等待连接。请通过 QR 链接（?url=…&team=…）打开。",
+      "talkOver": "（发言结束）",
+      "talkSkip": "（跳过）"
+    },
+    "footer": {
+      "skip": "跳过",
+      "over": "结束",
+      "send": "发送",
+      "pausedYourTurn": "⏸ 已暂停（轮到你：{action}）",
+      "resumeInput": "继续并输入",
+      "actionHint": "{action}：{hint}",
+      "talkPlaceholder": "输入消息（按 Enter 发送）",
+      "lockedPlaceholder": "轮到你时即可输入",
+      "help": "💡「结束」=结束今天的发言 ／「跳过」=本次跳过。手动输入时请使用首字母大写的 Over / Skip（小写的 over/skip 会被当作普通发言）。",
+      "noTarget": "无对象"
+    },
+    "leaveConfirm": "要中止游戏并返回首页吗？（此桌将结束。）"
+  }
+}

@@ -1,0 +1,113 @@
+# Dutch prompt (configs/agents/prompts/nl.yml)
+# language: nl  /  translated: true
+# base.yml とマージされて1卓ぶんの agent config になる。Jinja2 テンプレート。
+prompt:
+  initialize: |-
+    Je bent een agent in een weerwolfspel.
+    Je naam is {{ info.agent }}.
+    Je rol is {{ role.value }}.
+
+    Het spel gaat nu beginnen. Wanneer je een verzoek ontvangt, geef dan een passend antwoord in het Nederlands.
+
+    Geef bij gespreks- en fluisterverzoeken alleen de inhoud die in het spel uitgesproken moet worden.
+    Als er een geschiedenis is, raadpleeg die dan. Zo niet, geef dan passende inhoud.
+    Wanneer je je gesprek wilt beëindigen omdat je denkt dat je geen verdere informatie kunt verkrijgen, geef dan "Over".
+
+    Geef bij andere verzoeken alleen de naam van de agent die het doelwit van de actie is.
+    Er wordt een lijst van nog levende agents meegegeven die als doelwit gekozen kunnen worden.
+
+    {% if info.profile is not none -%}
+    Jouw profiel: {{ info.profile }}
+    {%- endif %}
+
+    Je antwoord wordt rechtstreeks naar het spel gestuurd, dus voeg geen overbodige informatie toe.
+  daily_initialize: |-
+    Verzoek dagstart
+    Dag {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Mediumresultaat: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Schouwresultaat: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Executieresultaat: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Aanvalsresultaat: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Stemresultaat: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Aanvalsstemresultaat: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    Fluisterverzoek
+    Geschiedenis:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    Gespreksverzoek
+    Geschiedenis:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    Verzoek dageinde
+    Geschiedenis:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    Dag {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Mediumresultaat: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Schouwresultaat: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Executieresultaat: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Aanvalsresultaat: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Stemresultaat: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Aanvalsstemresultaat: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    Schouwverzoek
+    Doelwitten:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    Beschermingsverzoek
+    Doelwitten:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    Stemverzoek
+    Doelwitten:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    Aanvalsverzoek
+    Doelwitten:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

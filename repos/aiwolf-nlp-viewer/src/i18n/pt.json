@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "pt",
+    "name": "Portuguese",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "Início",
+    "realtime": "Log em Tempo Real",
+    "archive": "Log Arquivado",
+    "agent": "Agente",
+    "token": "Geração de Token",
+    "statistics": "Estatísticas"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "Log em Tempo Real",
+      "description": "Exibe os logs do jogo em tempo real\nSuporta arquivos no formato JSONL"
+    },
+    "archiveLog": {
+      "title": "Log Arquivado",
+      "description": "Exibe logs de jogos arquivados\nSuporta arquivos no formato LOG"
+    },
+    "agent": {
+      "title": "Agente",
+      "description": "Conecte-se ao servidor do jogo e participe como um agente"
+    },
+    "sourceCode": "Código-fonte",
+    "gameServer": "Servidor do Jogo",
+    "sampleAgent": "Agente de Exemplo",
+    "sampleAgentLLM": "Agente de Exemplo (LLM)",
+    "viewer": "Visualizador"
+  },
+  "realtime": {
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "settings": "Configurações",
+    "pasteFromClipboard": "Colar da área de transferência",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "Opcional",
+    "displaySettings": "Configurações de Exibição",
+    "canvasAgentInfo": "Informações do agente no Canvas",
+    "messageBoxAgentInfo": "Informações do agente na caixa de mensagens",
+    "listAgentInfo": "Informações do agente na lista",
+    "largeScreen": "Tela Grande",
+    "name": "Nome",
+    "teamName": "Nome da Equipe",
+    "role": "Papel",
+    "enable": "Ativar",
+    "notConnected": "Não Conectado",
+    "day": "Dia {day}",
+    "daytime": "Dia",
+    "nighttime": "Noite",
+    "events": {
+      "disconnected": "Desconectado",
+      "whispered": "Sussurrou",
+      "attack_voted_with_target": "{from} votou para atacar {to}",
+      "attack_voted": "Votou para atacar",
+      "voted_with_target": "{from} votou em {to}",
+      "voted": "{from} votou",
+      "no_execute": "Ninguém foi executado",
+      "executed": "{target} foi executado",
+      "no_attack": "Ninguém foi atacado",
+      "attacked_but_guarded": "{target} foi atacado, mas foi protegido",
+      "attacked": "{target} foi atacado",
+      "divined_with_result": "{from} adivinhou {to} e descobriu que é {result}",
+      "divined": "Adivinhou",
+      "guarded_with_target": "{from} definiu {to} como alvo de proteção",
+      "guarded": "Protegeu",
+      "game_ended": "{winner} venceu",
+      "unknown": "Evento desconhecido"
+    },
+    "eventTypes": {
+      "未接続": "Desconectado",
+      "トーク": "Conversa",
+      "囁き": "Sussurro",
+      "投票": "Voto",
+      "襲撃投票": "Voto de Ataque",
+      "追放": "Executar",
+      "襲撃": "Ataque",
+      "占い": "Adivinhar",
+      "護衛": "Proteger",
+      "終了": "Fim"
+    }
+  },
+  "archive": {
+    "selectFolder": "Selecionar Pasta",
+    "selectLog": "Selecionar Log",
+    "pasteFromClipboard": "Colar da área de transferência",
+    "agents": "Agentes",
+    "whispers": "Sussurros",
+    "talk": "Conversa",
+    "voting": "Votação",
+    "votedFor": " votou em ",
+    "execute": "Executar",
+    "wasExecuted": " foi executado",
+    "divination": "Adivinhação",
+    "divined": " adivinhou ",
+    "guard": "Proteção",
+    "protected": " protegeu ",
+    "attackVotes": "Votos de Ataque",
+    "attack": "Ataque",
+    "wasAttacked": " foi atacado: ",
+    "success": "Sucesso",
+    "failure": "Falha",
+    "noAttackTarget": "Sem alvo de ataque",
+    "result": "Resultado",
+    "won": " venceu",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "Histórico de Conversa",
+    "whisperHistory": "Histórico de Sussurros",
+    "agentSettings": "Configurações do Agente",
+    "teamName": "Nome da Equipe",
+    "notConnected": "Não Conectado",
+    "selectTarget": "Selecione um alvo",
+    "enterContent": "Insira o conteúdo",
+    "remainingChars": "{count} caracteres restantes",
+    "exceededChars": "{count} caracteres excedidos",
+    "send": "Enviar"
+  },
+  "statistics": {
+    "downloadCsv": "Baixar como CSV"
+  },
+  "token": {
+    "title": "Geração de Token",
+    "description": "Gera os tokens necessários quando a autenticação de conexão está ativada no servidor do jogo. A chave secreta é gerada no navegador e nunca é enviada ao servidor.",
+    "agentDescription": "Se for se conectar como agente, insira o nome da equipe.",
+    "generateSecret": "Gerar Chave Secreta",
+    "secretKey": "Chave Secreta",
+    "agent": "Agente",
+    "realtimeLog": "Log em Tempo Real",
+    "teamName": "Nome da Equipe",
+    "copyToken": "Copiar Token",
+    "errorOccurred": "Ocorreu um erro"
+  },
+  "common": {
+    "close": "Fechar",
+    "language": "Idioma"
+  },
+  "displaySettings": {
+    "title": "Configurações dos Itens Exibidos",
+    "selectAll": "Selecionar Tudo",
+    "deselectAll": "Desmarcar Tudo",
+    "reset": "Redefinir",
+    "before": "Antes",
+    "after": "Depois",
+    "allFields": "Todos os Campos",
+    "noFields": "Nenhum Campo",
+    "fields": {
+      "agents": {
+        "gameName": "Nome do Agente",
+        "originalName": "Nome Original",
+        "role": "Papel",
+        "status": "Status"
+      },
+      "beforeWhisper": {
+        "agentName": "Nome do Agente",
+        "originalName": "Nome Original",
+        "text": "Texto",
+        "talkIdx": "ID da Conversa",
+        "turnIdx": "Turno",
+        "timestamp": "Carimbo de Tempo"
+      },
+      "talks": {
+        "agentName": "Nome do Agente",
+        "originalName": "Nome Original",
+        "text": "Texto",
+        "talkIdx": "ID da Conversa",
+        "turnIdx": "Turno",
+        "timestamp": "Carimbo de Tempo"
+      },
+      "votes": {
+        "voterName": "Votante",
+        "targetName": "Alvo"
+      },
+      "execution": {
+        "agentName": "Agente Executado",
+        "role": "Papel"
+      },
+      "divine": {
+        "seerName": "Vidente",
+        "targetName": "Alvo",
+        "result": "Resultado"
+      },
+      "afterWhisper": {
+        "agentName": "Nome do Agente",
+        "originalName": "Nome Original",
+        "text": "Texto",
+        "talkIdx": "ID da Conversa",
+        "turnIdx": "Turno",
+        "timestamp": "Carimbo de Tempo"
+      },
+      "guard": {
+        "guardName": "Guardião",
+        "targetName": "Alvo",
+        "result": "Resultado"
+      },
+      "attackVotes": {
+        "voterName": "Votante",
+        "targetName": "Alvo"
+      },
+      "attack": {
+        "targetName": "Alvo",
+        "result": "Resultado"
+      },
+      "result": {
+        "winSide": "Lado Vencedor",
+        "villagers": "Número de Aldeões",
+        "werewolves": "Número de Lobisomens"
+      }
+    }
+  },
+  "audio": {
+    "play": "Reproduzir",
+    "stop": "Parar"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "Lobisomem",
+      "POSSESSED": "Possuído",
+      "SEER": "Vidente",
+      "BODYGUARD": "Guarda-costas",
+      "VILLAGER": "Aldeão",
+      "MEDIUM": "Médium"
+    },
+    "species": {
+      "HUMAN": "Humano",
+      "WEREWOLF": "Lobisomem"
+    },
+    "status": {
+      "ALIVE": "Vivo",
+      "DEAD": "Morto"
+    },
+    "teams": {
+      "VILLAGER": "Equipe dos Aldeões",
+      "WEREWOLF": "Equipe dos Lobisomens"
+    },
+    "request": {
+      "NAME": "Nome",
+      "TALK": "Conversa",
+      "WHISPER": "Sussurro",
+      "VOTE": "Voto",
+      "DIVINE": "Adivinhar",
+      "GUARD": "Proteger",
+      "ATTACK": "Ataque",
+      "INITIALIZE": "Início do Jogo",
+      "DAILY_INITIALIZE": "Início do Dia",
+      "DAILY_FINISH": "Fim do Dia",
+      "FINISH": "Fim do Jogo"
+    }
+  },
+  "demo": {
+    "title": "Competição AIWolf — Demo da Divisão de Linguagem Natural",
+    "titleShort": "Competição AIWolf",
+    "subtitle": "Demo da Divisão de Linguagem Natural",
+    "tagline": "Jogue Lobisomem com agentes de IA. Você pode falar quando for a sua vez.",
+    "status": {
+      "connected": "Conectado",
+      "connecting": "Conectando…",
+      "disconnected": "Desconectado"
+    },
+    "header": {
+      "pause": "Pausar",
+      "resume": "Retomar",
+      "info": "Info",
+      "leave": "Sair",
+      "myInfo": "Minhas informações"
+    },
+    "day": "Dia {day}",
+    "banner": {
+      "connecting": "Conectando…",
+      "disconnected": "Desconectado",
+      "pausedYourTurn": "Pausado (sua vez: {action})",
+      "yourTurn": "Sua vez: {action} ({hint})",
+      "othersTurn": "{name} está digitando…",
+      "voting": "Votando…",
+      "nightAction": "Ação noturna em andamento…",
+      "morning": "A manhã chegou",
+      "night": "A noite caiu",
+      "finished": "Fim do jogo",
+      "inProgress": "Em andamento…",
+      "waitingStart": "Aguardando o início do jogo"
+    },
+    "remain": "{sec}s restantes",
+    "action": {
+      "TALK": "Falar",
+      "WHISPER": "Sussurrar",
+      "VOTE": "Votar",
+      "DIVINE": "Adivinhar",
+      "GUARD": "Proteger",
+      "ATTACK": "Atacar",
+      "fallback": "Ação"
+    },
+    "hint": {
+      "talk": "Digite uma mensagem",
+      "vote": "Escolha quem executar",
+      "divine": "Escolha quem adivinhar",
+      "guard": "Escolha quem proteger",
+      "attack": "Escolha quem atacar",
+      "fallback": "Escolha um alvo"
+    },
+    "roleDesc": {
+      "VILLAGER": "Você não tem nenhuma habilidade especial. Encontre os lobisomens por meio da discussão e da votação.",
+      "WEREWOLF": "Você é um lobisomem. Esconda sua identidade e ataque com seus aliados durante a noite. Engane os aldeões.",
+      "SEER": "Toda noite você adivinha uma pessoa para descobrir se ela é um lobisomem ou um humano. Use isso para guiar a aldeia.",
+      "MEDIUM": "Toda noite você descobre se o jogador executado era um lobisomem.",
+      "BODYGUARD": "Toda noite você protege uma pessoa e a defende do ataque dos lobisomens.",
+      "POSSESSED": "Você é o possuído (parece humano, mas está do lado dos lobisomens). Ajude os lobisomens a vencer."
+    },
+    "result": {
+      "villagerWin": "A equipe dos aldeões venceu",
+      "werewolfWin": "A equipe dos lobisomens venceu",
+      "youWin": "Você venceu 🎉",
+      "youLose": "Você perdeu…",
+      "title": "🏁 Fim do jogo",
+      "reveal": "Papéis revelados",
+      "backHome": "Voltar ao início"
+    },
+    "info": {
+      "title": "Informações do jogador",
+      "role": "Papel: {role}",
+      "team": "Equipe: {team}",
+      "noProfile": "Sem perfil",
+      "participants": "Participantes",
+      "you": " (você)",
+      "alive": "Vivo",
+      "dead": "Morto",
+      "privacyNote": "Observação: os papéis e perfis dos outros jogadores permanecem ocultos, como é da natureza do Lobisomem.",
+      "divineResults": "🔮 Resultados da adivinhação",
+      "mediumResults": "🔮 Resultados do médium",
+      "close": "Fechar"
+    },
+    "intro": {
+      "yourCharacter": "O personagem que você interpreta",
+      "instruction": "Por favor, comporte-se como este personagem e papel durante o jogo.",
+      "start": "Iniciar o jogo"
+    },
+    "start": {
+      "villageSize": "Tamanho da aldeia",
+      "village5": "5 jogadores",
+      "village9": "9 jogadores",
+      "comp5": "2 aldeões, vidente, lobisomem, possuído (você + 4 IA)",
+      "comp9": "3 aldeões, vidente, guarda-costas, médium, 2 lobisomens, possuído (você + 8 IA)",
+      "gameLanguage": "Idioma do jogo",
+      "gameLanguageHint": "O idioma em que a IA fala (troque o idioma da tela no canto superior direito).",
+      "start": "Iniciar jogo",
+      "joining": "Solicitando entrada…",
+      "queued": "Na fila",
+      "queuePosition": "Você é o número {pos}",
+      "queueNote": "O jogo começa automaticamente quando uma mesa fica livre",
+      "preparing": "Preparando a mesa…",
+      "error": "Erro: {message}",
+      "retry": "Tentar novamente",
+      "displayName": "Seu nome de exibição: {name}",
+      "unknownError": "Erro desconhecido",
+      "startFailed": "Falha ao iniciar a sessão"
+    },
+    "feed": {
+      "waitingStart": "Aguardando o início do jogo…",
+      "waitingConnect": "Aguardando conexão. Abra pelo link do QR (?url=…&team=…).",
+      "talkOver": "(fim da fala)",
+      "talkSkip": "(pulado)"
+    },
+    "footer": {
+      "skip": "Pular",
+      "over": "Encerrar",
+      "send": "Enviar",
+      "pausedYourTurn": "⏸ Pausado (sua vez: {action})",
+      "resumeInput": "Retomar e digitar",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Digite uma mensagem (Enter para enviar)",
+      "lockedPlaceholder": "Você pode digitar quando for a sua vez",
+      "help": "💡 \"Over\" = encerrar a fala de hoje / \"Skip\" = passar a vez desta vez. Se digitar manualmente, use Over / Skip com inicial maiúscula (over/skip em minúsculas viram mensagens normais).",
+      "noTarget": "Sem alvo"
+    },
+    "leaveConfirm": "Sair do jogo e voltar ao início? (Esta mesa será encerrada.)"
+  }
+}

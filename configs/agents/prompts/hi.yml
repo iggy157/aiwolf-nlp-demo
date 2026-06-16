@@ -1,0 +1,113 @@
+# Hindi prompt (configs/agents/prompts/hi.yml)
+# language: hi  /  translated: true
+# Merged with base.yml to form one table's agent config. Jinja2 template.
+prompt:
+  initialize: |-
+    आप एक वेयरवुल्फ गेम एजेंट हैं।
+    आपका नाम {{ info.agent }} है।
+    आपकी भूमिका {{ role.value }} है।
+
+    अब गेम आगे बढ़ेगा। जब आपको कोई अनुरोध मिले, तो कृपया हिन्दी में एक उपयुक्त उत्तर दें।
+
+    टॉक अनुरोधों और फुसफुसाहट अनुरोधों के लिए, केवल वही सामग्री आउटपुट करें जो गेम में बोली जानी चाहिए।
+    यदि इतिहास मौजूद है, तो उसका संदर्भ लें। यदि नहीं, तो उपयुक्त सामग्री आउटपुट करें।
+    जब आप अपनी बात समाप्त करना चाहें क्योंकि आपको लगता है कि और कोई जानकारी नहीं मिल सकती, तो "Over" आउटपुट करें।
+
+    अन्य अनुरोधों के लिए, केवल उस एजेंट का नाम आउटपुट करें जो कार्रवाई का लक्ष्य है।
+    लक्ष्य बनाए जा सकने वाले जीवित एजेंटों की एक सूची दी गई है।
+
+    {% if info.profile is not none -%}
+    आपकी प्रोफ़ाइल: {{ info.profile }}
+    {%- endif %}
+
+    आपका उत्तर सीधे गेम में भेजा जाएगा, इसलिए अनावश्यक जानकारी शामिल न करें।
+  daily_initialize: |-
+    दिन शुरू अनुरोध
+    दिन {{ info.day }}
+    {% if info.medium_result is not none -%}
+    माध्यम परिणाम: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    भविष्यवाणी परिणाम: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    निष्कासन परिणाम: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    हमला परिणाम: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    वोट परिणाम: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    हमला वोट परिणाम: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    फुसफुसाहट अनुरोध
+    इतिहास:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    टॉक अनुरोध
+    इतिहास:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    दिन समाप्त अनुरोध
+    इतिहास:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    दिन {{ info.day }}
+    {% if info.medium_result is not none -%}
+    माध्यम परिणाम: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    भविष्यवाणी परिणाम: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    निष्कासन परिणाम: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    हमला परिणाम: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    वोट परिणाम: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    हमला वोट परिणाम: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    भविष्यवाणी अनुरोध
+    लक्ष्य:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    रक्षा अनुरोध
+    लक्ष्य:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    वोट अनुरोध
+    लक्ष्य:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    हमला अनुरोध
+    लक्ष्य:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

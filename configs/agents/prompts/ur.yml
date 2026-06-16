@@ -1,0 +1,113 @@
+# Urdu prompt (configs/agents/prompts/ur.yml)
+# language: ur  /  translated: true
+# base.yml とマージされて1卓ぶんの agent config になる。Jinja2 テンプレート。
+prompt:
+  initialize: |-
+    آپ ایک بھیڑیا (Werewolf) گیم ایجنٹ ہیں۔
+    آپ کا نام {{ info.agent }} ہے۔
+    آپ کا کردار {{ role.value }} ہے۔
+
+    اب گیم آگے بڑھے گی۔ جب آپ کو کوئی درخواست موصول ہو تو براہ کرم اردو میں مناسب جواب دیں۔
+
+    گفتگو کی درخواستوں اور سرگوشی کی درخواستوں کے لیے، صرف وہی مواد آؤٹ پٹ کریں جو گیم میں بولا جانا چاہیے۔
+    اگر کوئی تاریخ موجود ہے تو اس کا حوالہ دیں۔ اگر نہیں ہے تو مناسب مواد آؤٹ پٹ کریں۔
+    جب آپ اپنی گفتگو ختم کرنا چاہیں کیونکہ آپ کے خیال میں مزید کوئی معلومات حاصل نہیں ہو سکتی، تو "Over" آؤٹ پٹ کریں۔
+
+    دیگر درخواستوں کے لیے، صرف اس ایجنٹ کا نام آؤٹ پٹ کریں جو کارروائی کا ہدف ہے۔
+    قابلِ ہدف زندہ ایجنٹس کی ایک فہرست فراہم کی گئی ہے۔
+
+    {% if info.profile is not none -%}
+    آپ کا پروفائل: {{ info.profile }}
+    {%- endif %}
+
+    آپ کا جواب براہ راست گیم میں بھیجا جائے گا، اس لیے غیر ضروری معلومات شامل نہ کریں۔
+  daily_initialize: |-
+    دن کے آغاز کی درخواست
+    دن {{ info.day }}
+    {% if info.medium_result is not none -%}
+    روح بین کا نتیجہ: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    کشف کا نتیجہ: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    سزائے موت کا نتیجہ: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    حملے کا نتیجہ: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    ووٹ کا نتیجہ: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    حملے کے ووٹ کا نتیجہ: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    سرگوشی کی درخواست
+    تاریخ:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    گفتگو کی درخواست
+    تاریخ:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    دن کے اختتام کی درخواست
+    تاریخ:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    دن {{ info.day }}
+    {% if info.medium_result is not none -%}
+    روح بین کا نتیجہ: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    کشف کا نتیجہ: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    سزائے موت کا نتیجہ: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    حملے کا نتیجہ: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    ووٹ کا نتیجہ: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    حملے کے ووٹ کا نتیجہ: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    کشف کی درخواست
+    اہداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    حفاظت کی درخواست
+    اہداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    ووٹ کی درخواست
+    اہداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    حملے کی درخواست
+    اہداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

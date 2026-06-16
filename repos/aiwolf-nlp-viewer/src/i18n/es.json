@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "es",
+    "name": "Spanish",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "Inicio",
+    "realtime": "Registro en tiempo real",
+    "archive": "Registro archivado",
+    "agent": "Agente",
+    "token": "Generación de token",
+    "statistics": "Estadísticas"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "Registro en tiempo real",
+      "description": "Muestra los registros de la partida en tiempo real\nCompatible con archivos en formato JSONL"
+    },
+    "archiveLog": {
+      "title": "Registro archivado",
+      "description": "Muestra los registros archivados de las partidas\nCompatible con archivos en formato LOG"
+    },
+    "agent": {
+      "title": "Agente",
+      "description": "Conéctate al servidor de juego y participa como agente"
+    },
+    "sourceCode": "Código fuente",
+    "gameServer": "Servidor de juego",
+    "sampleAgent": "Agente de ejemplo",
+    "sampleAgentLLM": "Agente de ejemplo (LLM)",
+    "viewer": "Visor"
+  },
+  "realtime": {
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "settings": "Configuración",
+    "pasteFromClipboard": "Pegar desde el portapapeles",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "Opcional",
+    "displaySettings": "Configuración de visualización",
+    "canvasAgentInfo": "Información del agente en el lienzo",
+    "messageBoxAgentInfo": "Información del agente en el cuadro de mensajes",
+    "listAgentInfo": "Información del agente en la lista",
+    "largeScreen": "Pantalla grande",
+    "name": "Nombre",
+    "teamName": "Nombre del equipo",
+    "role": "Rol",
+    "enable": "Activar",
+    "notConnected": "Sin conexión",
+    "day": "Día {day}",
+    "daytime": "Día",
+    "nighttime": "Noche",
+    "events": {
+      "disconnected": "Sin conexión",
+      "whispered": "Susurró",
+      "attack_voted_with_target": "{from} votó por atacar a {to}",
+      "attack_voted": "Votó por atacar",
+      "voted_with_target": "{from} votó por {to}",
+      "voted": "{from} votó",
+      "no_execute": "Nadie fue ejecutado",
+      "executed": "{target} fue ejecutado",
+      "no_attack": "Nadie fue atacado",
+      "attacked_but_guarded": "{target} fue atacado pero estaba protegido",
+      "attacked": "{target} fue atacado",
+      "divined_with_result": "{from} adivinó a {to} y resultó ser {result}",
+      "divined": "Adivinó",
+      "guarded_with_target": "{from} fijó a {to} como objetivo de protección",
+      "guarded": "Protegió",
+      "game_ended": "{winner} ganó",
+      "unknown": "Evento desconocido"
+    },
+    "eventTypes": {
+      "未接続": "Sin conexión",
+      "トーク": "Conversación",
+      "囁き": "Susurro",
+      "投票": "Voto",
+      "襲撃投票": "Voto de ataque",
+      "追放": "Ejecutar",
+      "襲撃": "Ataque",
+      "占い": "Adivinar",
+      "護衛": "Proteger",
+      "終了": "Fin"
+    }
+  },
+  "archive": {
+    "selectFolder": "Seleccionar carpeta",
+    "selectLog": "Seleccionar registro",
+    "pasteFromClipboard": "Pegar desde el portapapeles",
+    "agents": "Agentes",
+    "whispers": "Susurros",
+    "talk": "Conversación",
+    "voting": "Votación",
+    "votedFor": " votó por ",
+    "execute": "Ejecutar",
+    "wasExecuted": " fue ejecutado",
+    "divination": "Adivinación",
+    "divined": " adivinó a ",
+    "guard": "Protección",
+    "protected": " protegió a ",
+    "attackVotes": "Votos de ataque",
+    "attack": "Ataque",
+    "wasAttacked": " fue atacado: ",
+    "success": "Éxito",
+    "failure": "Fracaso",
+    "noAttackTarget": "Sin objetivo de ataque",
+    "result": "Resultado",
+    "won": " ganó",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "Historial de conversación",
+    "whisperHistory": "Historial de susurros",
+    "agentSettings": "Configuración del agente",
+    "teamName": "Nombre del equipo",
+    "notConnected": "Sin conexión",
+    "selectTarget": "Selecciona un objetivo",
+    "enterContent": "Introduce el contenido",
+    "remainingChars": "Quedan {count} caracteres",
+    "exceededChars": "{count} caracteres de más",
+    "send": "Enviar"
+  },
+  "statistics": {
+    "downloadCsv": "Descargar como CSV"
+  },
+  "token": {
+    "title": "Generación de token",
+    "description": "Genera los tokens necesarios cuando la autenticación de conexión está activada en el servidor de juego. La clave secreta se genera en el navegador y nunca se envía al servidor.",
+    "agentDescription": "Si te conectas como agente, introduce un nombre de equipo.",
+    "generateSecret": "Generar clave secreta",
+    "secretKey": "Clave secreta",
+    "agent": "Agente",
+    "realtimeLog": "Registro en tiempo real",
+    "teamName": "Nombre del equipo",
+    "copyToken": "Copiar token",
+    "errorOccurred": "Se produjo un error"
+  },
+  "common": {
+    "close": "Cerrar",
+    "language": "Idioma"
+  },
+  "displaySettings": {
+    "title": "Configuración de elementos a mostrar",
+    "selectAll": "Seleccionar todo",
+    "deselectAll": "Deseleccionar todo",
+    "reset": "Restablecer",
+    "before": "Antes",
+    "after": "Después",
+    "allFields": "Todos los campos",
+    "noFields": "Ningún campo",
+    "fields": {
+      "agents": {
+        "gameName": "Nombre del agente",
+        "originalName": "Nombre original",
+        "role": "Rol",
+        "status": "Estado"
+      },
+      "beforeWhisper": {
+        "agentName": "Nombre del agente",
+        "originalName": "Nombre original",
+        "text": "Texto",
+        "talkIdx": "ID de conversación",
+        "turnIdx": "Turno",
+        "timestamp": "Marca de tiempo"
+      },
+      "talks": {
+        "agentName": "Nombre del agente",
+        "originalName": "Nombre original",
+        "text": "Texto",
+        "talkIdx": "ID de conversación",
+        "turnIdx": "Turno",
+        "timestamp": "Marca de tiempo"
+      },
+      "votes": {
+        "voterName": "Votante",
+        "targetName": "Objetivo"
+      },
+      "execution": {
+        "agentName": "Agente ejecutado",
+        "role": "Rol"
+      },
+      "divine": {
+        "seerName": "Vidente",
+        "targetName": "Objetivo",
+        "result": "Resultado"
+      },
+      "afterWhisper": {
+        "agentName": "Nombre del agente",
+        "originalName": "Nombre original",
+        "text": "Texto",
+        "talkIdx": "ID de conversación",
+        "turnIdx": "Turno",
+        "timestamp": "Marca de tiempo"
+      },
+      "guard": {
+        "guardName": "Guardián",
+        "targetName": "Objetivo",
+        "result": "Resultado"
+      },
+      "attackVotes": {
+        "voterName": "Votante",
+        "targetName": "Objetivo"
+      },
+      "attack": {
+        "targetName": "Objetivo",
+        "result": "Resultado"
+      },
+      "result": {
+        "winSide": "Bando ganador",
+        "villagers": "Número de aldeanos",
+        "werewolves": "Número de hombres lobo"
+      }
+    }
+  },
+  "audio": {
+    "play": "Reproducir",
+    "stop": "Detener"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "Hombre lobo",
+      "POSSESSED": "Poseído",
+      "SEER": "Vidente",
+      "BODYGUARD": "Guardaespaldas",
+      "VILLAGER": "Aldeano",
+      "MEDIUM": "Médium"
+    },
+    "species": {
+      "HUMAN": "Humano",
+      "WEREWOLF": "Hombre lobo"
+    },
+    "status": {
+      "ALIVE": "Vivo",
+      "DEAD": "Muerto"
+    },
+    "teams": {
+      "VILLAGER": "Bando de los aldeanos",
+      "WEREWOLF": "Bando de los hombres lobo"
+    },
+    "request": {
+      "NAME": "Nombre",
+      "TALK": "Conversación",
+      "WHISPER": "Susurro",
+      "VOTE": "Voto",
+      "DIVINE": "Adivinar",
+      "GUARD": "Proteger",
+      "ATTACK": "Ataque",
+      "INITIALIZE": "Inicio de la partida",
+      "DAILY_INITIALIZE": "Inicio del día",
+      "DAILY_FINISH": "Fin del día",
+      "FINISH": "Fin de la partida"
+    }
+  },
+  "demo": {
+    "title": "Concurso AIWolf — Demostración de la División de Lenguaje Natural",
+    "titleShort": "Concurso AIWolf",
+    "subtitle": "Demostración de la División de Lenguaje Natural",
+    "tagline": "Juega a Hombre lobo con agentes de IA. Puedes hablar cuando llegue tu turno.",
+    "status": {
+      "connected": "Conectado",
+      "connecting": "Conectando…",
+      "disconnected": "Sin conexión"
+    },
+    "header": {
+      "pause": "Pausar",
+      "resume": "Reanudar",
+      "info": "Información",
+      "leave": "Salir",
+      "myInfo": "Mi información"
+    },
+    "day": "Día {day}",
+    "banner": {
+      "connecting": "Conectando…",
+      "disconnected": "Sin conexión",
+      "pausedYourTurn": "En pausa (tu turno: {action})",
+      "yourTurn": "Tu turno: {action} ({hint})",
+      "othersTurn": "{name} está escribiendo…",
+      "voting": "Votando…",
+      "nightAction": "Acción nocturna en curso…",
+      "morning": "Ha amanecido",
+      "night": "Ha caído la noche",
+      "finished": "Fin de la partida",
+      "inProgress": "En curso…",
+      "waitingStart": "Esperando a que empiece la partida"
+    },
+    "remain": "Quedan {sec}s",
+    "action": {
+      "TALK": "Hablar",
+      "WHISPER": "Susurrar",
+      "VOTE": "Votar",
+      "DIVINE": "Adivinar",
+      "GUARD": "Proteger",
+      "ATTACK": "Atacar",
+      "fallback": "Acción"
+    },
+    "hint": {
+      "talk": "Escribe un mensaje",
+      "vote": "Elige a quién ejecutar",
+      "divine": "Elige a quién adivinar",
+      "guard": "Elige a quién proteger",
+      "attack": "Elige a quién atacar",
+      "fallback": "Elige un objetivo"
+    },
+    "roleDesc": {
+      "VILLAGER": "No tienes ninguna habilidad especial. Encuentra a los hombres lobo mediante el debate y la votación.",
+      "WEREWOLF": "Eres un hombre lobo. Oculta tu identidad y ataca junto a tus aliados durante la noche. Engaña a los aldeanos.",
+      "SEER": "Cada noche adivinas a una persona para saber si es un hombre lobo o un humano. Úsalo para guiar a la aldea.",
+      "MEDIUM": "Cada noche descubres si el jugador ejecutado era un hombre lobo.",
+      "BODYGUARD": "Cada noche proteges a una persona y la salvas del ataque de los hombres lobo.",
+      "POSSESSED": "Eres el poseído (pareces humano pero estás del lado de los hombres lobo). Ayuda a los hombres lobo a ganar."
+    },
+    "result": {
+      "villagerWin": "Gana el bando de los aldeanos",
+      "werewolfWin": "Gana el bando de los hombres lobo",
+      "youWin": "Has ganado 🎉",
+      "youLose": "Has perdido…",
+      "title": "🏁 Fin de la partida",
+      "reveal": "Roles revelados",
+      "backHome": "Volver al inicio"
+    },
+    "info": {
+      "title": "Información del jugador",
+      "role": "Rol: {role}",
+      "team": "Equipo: {team}",
+      "noProfile": "Sin perfil",
+      "participants": "Participantes",
+      "you": " (tú)",
+      "alive": "Vivo",
+      "dead": "Muerto",
+      "privacyNote": "Nota: los roles y perfiles de los demás jugadores se mantienen ocultos, como es propio del Hombre lobo.",
+      "divineResults": "🔮 Resultados de adivinación",
+      "mediumResults": "🔮 Resultados del médium",
+      "close": "Cerrar"
+    },
+    "intro": {
+      "yourCharacter": "El personaje que interpretas",
+      "instruction": "Actúa como este personaje y rol durante la partida.",
+      "start": "Empezar la partida"
+    },
+    "start": {
+      "villageSize": "Tamaño de la aldea",
+      "village5": "5 jugadores",
+      "village9": "9 jugadores",
+      "comp5": "2 aldeanos, vidente, hombre lobo, poseído (tú + 4 IA)",
+      "comp9": "3 aldeanos, vidente, guardaespaldas, médium, 2 hombres lobo, poseído (tú + 8 IA)",
+      "gameLanguage": "Idioma del juego",
+      "gameLanguageHint": "El idioma en el que habla la IA (cambia el idioma de la pantalla en la esquina superior derecha).",
+      "start": "Empezar partida",
+      "joining": "Solicitando unirse…",
+      "queued": "En cola",
+      "queuePosition": "Eres el número {pos}",
+      "queueNote": "La partida empieza automáticamente cuando se libera una mesa",
+      "preparing": "Preparando la mesa…",
+      "error": "Error: {message}",
+      "retry": "Reintentar",
+      "displayName": "Tu nombre visible: {name}",
+      "unknownError": "Error desconocido",
+      "startFailed": "No se pudo iniciar la sesión"
+    },
+    "feed": {
+      "waitingStart": "Esperando a que empiece la partida…",
+      "waitingConnect": "Esperando conexión. Abre desde el enlace QR (?url=…&team=…).",
+      "talkOver": "(fin de la intervención)",
+      "talkSkip": "(omitido)"
+    },
+    "footer": {
+      "skip": "Omitir",
+      "over": "Terminar",
+      "send": "Enviar",
+      "pausedYourTurn": "⏸ En pausa (tu turno: {action})",
+      "resumeInput": "Reanudar y escribir",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Escribe un mensaje (Enter para enviar)",
+      "lockedPlaceholder": "Podrás escribir cuando llegue tu turno",
+      "help": "💡 \"Over\" = terminar tus intervenciones de hoy / \"Skip\" = pasar esta vez. Si lo escribes a mano, usa Over / Skip con mayúscula inicial (over/skip en minúscula se convierten en mensajes normales).",
+      "noTarget": "Sin objetivo"
+    },
+    "leaveConfirm": "¿Salir de la partida y volver al inicio? (Esta mesa se cerrará.)"
+  }
+}

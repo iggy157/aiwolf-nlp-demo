@@ -1,0 +1,113 @@
+# Arabic prompt (configs/agents/prompts/ar.yml)
+# language: ar  /  translated: true
+# base.yml とマージされて1卓ぶんの agent config になる。Jinja2 テンプレート。
+prompt:
+  initialize: |-
+    أنت وكيل في لعبة المستذئب.
+    اسمك هو {{ info.agent }}.
+    دورك هو {{ role.value }}.
+
+    ستبدأ اللعبة الآن. عند تلقّيك طلبًا، يرجى إرجاع ردّ مناسب باللغة العربية.
+
+    بالنسبة لطلبات المحادثة وطلبات الهمس، أخرِج فقط المحتوى الذي ينبغي قوله داخل اللعبة.
+    إن وُجد سجلّ سابق فاسترشد به. وإن لم يوجد، فأخرِج محتوى مناسبًا.
+    عندما تريد إنهاء كلامك لأنك ترى أنه لا يمكنك الحصول على مزيد من المعلومات، أخرِج "Over".
+
+    بالنسبة للطلبات الأخرى، أخرِج فقط اسم الوكيل الذي هو هدف الإجراء.
+    تُرفَق قائمة بالوكلاء الأحياء الذين يمكن استهدافهم.
+
+    {% if info.profile is not none -%}
+    ملفك التعريفي: {{ info.profile }}
+    {%- endif %}
+
+    سيُرسَل ردّك مباشرةً إلى اللعبة، لذا لا تُضمّنه أي معلومات غير ضرورية.
+  daily_initialize: |-
+    طلب بداية النهار
+    اليوم {{ info.day }}
+    {% if info.medium_result is not none -%}
+    نتيجة الوساطة: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    نتيجة التكهّن: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    نتيجة الطرد: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    نتيجة الهجوم: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    نتيجة التصويت: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    نتيجة تصويت الهجوم: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    طلب الهمس
+    السجلّ:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    طلب المحادثة
+    السجلّ:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    طلب نهاية النهار
+    السجلّ:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    اليوم {{ info.day }}
+    {% if info.medium_result is not none -%}
+    نتيجة الوساطة: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    نتيجة التكهّن: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    نتيجة الطرد: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    نتيجة الهجوم: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    نتيجة التصويت: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    نتيجة تصويت الهجوم: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    طلب التكهّن
+    الأهداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    طلب الحراسة
+    الأهداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    طلب التصويت
+    الأهداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    طلب الهجوم
+    الأهداف:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

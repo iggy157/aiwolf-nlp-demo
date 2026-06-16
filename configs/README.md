@@ -3,7 +3,12 @@
 | file | 用途 |
 |---|---|
 | `server.yml` | ゲームサーバ設定。`room_match:true`（?room=卓IDで卓構成）, `agent_count:5`, ターンベース, whisper無効, TTS無効, host `0.0.0.0`。 |
-| `agent.yml`  | AIエージェント設定テンプレ（手動コア検証用）。`team=test`, `num=4`, `llm.type=openai`。 |
+| `agents/base.yml` | AIエージェント設定の言語非依存部分（接続/`num`/`team`/LLM/ログ）。 |
+| `agents/prompts/<lang>.yml` | 言語ごとのプロンプトテンプレート（14言語）。`ja`/`en` は本物、他は英語骨組みのプレースホルダ（`translated: false`）。 |
+
+> 旧 `configs/agent.yml` は `agents/base.yml` ＋ `agents/prompts/ja.yml` に分割した。
+> lobby は `base.yml` ＋ `prompts/<lang>.yml` ＋ 実行時上書き(URL/team/num/LLM) をマージして各卓の config を生成する
+> （`lobby/prompt_provider.py: FilePromptProvider`）。ゲーム言語は `/api/join` の `language` で選ぶ。
 
 ## マイルストン2（コア検証）の手動起動手順 ※起動は運営（人間）が実施
 
@@ -21,10 +26,13 @@ go run . -c ../../configs/server.yml
 #   -> 0.0.0.0:8080 で待受。/ws が WebSocket エンドポイント。
 
 # 2) AI4体を起動（別ターミナル, Python 3.11+, uv 推奨）
+#    まず base.yml + prompts/<lang>.yml をマージした単一 config を生成（手動検証用）
+python lobby/prompt_provider.py --language ja --out configs/.generated/agent.ja.yml
 cd repos/aiwolf-nlp-agent-llm
 uv sync               # 初回のみ依存解決
-uv run src/main.py -c ../../configs/agent.yml
+uv run src/main.py -c ../../configs/.generated/agent.ja.yml
 #   -> test1..test4 の4体が ws://127.0.0.1:8080/ws に接続
+#   別言語で試すなら --language en など（python lobby/prompt_provider.py --list で一覧）
 
 # 3) 人間1枠をビューア /agent で接続（5枠目）
 #    会場ビルド or dev:  cd repos/aiwolf-nlp-viewer && pnpm install && pnpm dev
@@ -39,4 +47,4 @@ uv run src/main.py -c ../../configs/agent.yml
 - M6 のロビーが発行するユニーク session team は、末尾数字除去で他卓と衝突しないよう
   「数字で終わらない一意プレフィックス」を持たせる（例 `s-user01-x9fk`）。
 
-> 注意: これは手動検証用。`agent.yml` の `team`/`num` は本番では lobby が動的生成する。
+> 注意: これは手動検証用。`base.yml` の `team`/`num` は本番では lobby が動的生成する。

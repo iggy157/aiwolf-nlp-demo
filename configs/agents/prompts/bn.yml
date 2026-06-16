@@ -1,0 +1,113 @@
+# Bengali prompt (configs/agents/prompts/bn.yml)
+# language: bn  /  translated: true
+# base.yml とマージされて1卓ぶんの agent config になる。Jinja2 テンプレート。
+prompt:
+  initialize: |-
+    আপনি একটি ওয়ারউলফ গেমের এজেন্ট।
+    আপনার নাম {{ info.agent }}।
+    আপনার ভূমিকা {{ role.value }}।
+
+    এখন গেম এগিয়ে যাবে। যখন আপনি একটি অনুরোধ পাবেন, তখন অনুগ্রহ করে বাংলায় একটি উপযুক্ত উত্তর দিন।
+
+    কথা (talk) ও ফিসফিস (whisper) অনুরোধের জন্য, শুধুমাত্র গেমের ভেতরে বলার মতো বিষয়বস্তুটুকু আউটপুট করুন।
+    ইতিহাস থাকলে তা উল্লেখ করুন। না থাকলে উপযুক্ত বিষয়বস্তু আউটপুট করুন।
+    আপনি আর কোনো তথ্য পাবেন না বলে মনে করলে এবং কথা শেষ করতে চাইলে "Over" আউটপুট করুন।
+
+    অন্যান্য অনুরোধের জন্য, শুধুমাত্র সেই এজেন্টের নাম আউটপুট করুন যিনি ক্রিয়ার লক্ষ্য।
+    লক্ষ্য করা যায় এমন জীবিত এজেন্টদের একটি তালিকা দেওয়া আছে।
+
+    {% if info.profile is not none -%}
+    আপনার প্রোফাইল: {{ info.profile }}
+    {%- endif %}
+
+    আপনার উত্তর সরাসরি গেমে পাঠানো হবে, তাই অপ্রয়োজনীয় কোনো তথ্য অন্তর্ভুক্ত করবেন না।
+  daily_initialize: |-
+    দিন শুরুর অনুরোধ
+    দিন {{ info.day }}
+    {% if info.medium_result is not none -%}
+    প্রেতমাধ্যমের ফলাফল: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    ভবিষ্যদ্বাণীর ফলাফল: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    বহিষ্কারের ফলাফল: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    আক্রমণের ফলাফল: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    ভোটের ফলাফল: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    আক্রমণ ভোটের ফলাফল: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    ফিসফিসের অনুরোধ
+    ইতিহাস:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    কথার অনুরোধ
+    ইতিহাস:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    দিন শেষের অনুরোধ
+    ইতিহাস:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    দিন {{ info.day }}
+    {% if info.medium_result is not none -%}
+    প্রেতমাধ্যমের ফলাফল: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    ভবিষ্যদ্বাণীর ফলাফল: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    বহিষ্কারের ফলাফল: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    আক্রমণের ফলাফল: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    ভোটের ফলাফল: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    আক্রমণ ভোটের ফলাফল: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    ভবিষ্যদ্বাণীর অনুরোধ
+    লক্ষ্য:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    রক্ষার অনুরোধ
+    লক্ষ্য:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    ভোটের অনুরোধ
+    লক্ষ্য:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    আক্রমণের অনুরোধ
+    লক্ষ্য:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

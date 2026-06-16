@@ -248,5 +248,131 @@
       "DAILY_FINISH": "昼終了",
       "FINISH": "ゲーム終了"
     }
+  },
+  "demo": {
+    "title": "人狼知能大会 自然言語部門 体験デモ",
+    "titleShort": "人狼知能大会",
+    "subtitle": "自然言語部門 体験デモ",
+    "tagline": "AIエージェントと人狼ゲーム。あなたの番になったら発言できます。",
+    "status": {
+      "connected": "接続中",
+      "connecting": "接続中…",
+      "disconnected": "未接続"
+    },
+    "header": {
+      "pause": "一時停止",
+      "resume": "再開",
+      "info": "情報",
+      "leave": "中断",
+      "myInfo": "自分の情報"
+    },
+    "day": "{day}日目",
+    "banner": {
+      "connecting": "接続中…",
+      "disconnected": "未接続",
+      "pausedYourTurn": "一時停止中（あなたの番：{action}）",
+      "yourTurn": "あなたの番です：{action}（{hint}）",
+      "othersTurn": "{name} さんが入力中…",
+      "voting": "投票中…",
+      "nightAction": "夜のアクション中…",
+      "morning": "朝になりました",
+      "night": "夜になりました",
+      "finished": "ゲーム終了",
+      "inProgress": "進行中…",
+      "waitingStart": "ゲーム開始を待っています"
+    },
+    "remain": "残り {sec}s",
+    "action": {
+      "TALK": "発言",
+      "WHISPER": "囁き",
+      "VOTE": "投票",
+      "DIVINE": "占い",
+      "GUARD": "護衛",
+      "ATTACK": "襲撃",
+      "fallback": "アクション"
+    },
+    "hint": {
+      "talk": "メッセージを入力",
+      "vote": "追放する相手を選択",
+      "divine": "占う相手を選択",
+      "guard": "護衛する相手を選択",
+      "attack": "襲撃する相手を選択",
+      "fallback": "対象を選択"
+    },
+    "roleDesc": {
+      "VILLAGER": "特殊能力はありません。議論と投票で人狼を見つけ出してください。",
+      "WEREWOLF": "あなたは人狼です。正体を隠し、夜は仲間と襲撃します。村人を欺いてください。",
+      "SEER": "毎晩1人を占い、人狼か人間かを知れます。情報を活かして村を導いてください。",
+      "MEDIUM": "追放された人が人狼だったか毎晩わかります。",
+      "BODYGUARD": "毎晩1人を護衛し、人狼の襲撃から守れます。",
+      "POSSESSED": "あなたは狂人（人間陣営に見えるが人狼の味方）。人狼の勝利に協力してください。"
+    },
+    "result": {
+      "villagerWin": "村人陣営の勝利",
+      "werewolfWin": "人狼陣営の勝利",
+      "youWin": "あなたの勝ち 🎉",
+      "youLose": "あなたの負け…",
+      "title": "🏁 ゲーム終了",
+      "reveal": "役職の開示",
+      "backHome": "ホームに戻る"
+    },
+    "info": {
+      "title": "プレイヤー情報",
+      "role": "役職: {role}",
+      "team": "接続チーム: {team}",
+      "noProfile": "プロフィール情報なし",
+      "participants": "参加者",
+      "you": "（あなた）",
+      "alive": "生存",
+      "dead": "死亡",
+      "privacyNote": "※ 他プレイヤーの役職・プロフィールは人狼ゲームの性質上、原則非公開です。",
+      "divineResults": "🔮 占い結果",
+      "mediumResults": "🔮 霊媒結果",
+      "close": "閉じる"
+    },
+    "intro": {
+      "yourCharacter": "あなたが担当するキャラクター",
+      "instruction": "あなたはこのキャラクター・役職としてゲーム内で振る舞ってください。",
+      "start": "ゲームを開始する"
+    },
+    "start": {
+      "villageSize": "村の人数",
+      "village5": "5人村",
+      "village9": "9人村",
+      "comp5": "村人2・占い師・人狼・狂人（あなた＋AI4体）",
+      "comp9": "村人3・占い師・騎士・霊媒師・人狼2・狂人（あなた＋AI8体）",
+      "gameLanguage": "ゲームの言語",
+      "gameLanguageHint": "AIが話す言語です（画面の言語は右上で切り替えできます）",
+      "start": "ゲーム開始",
+      "joining": "参加を要求しています…",
+      "queued": "順番待ち",
+      "queuePosition": "あなたは {pos} 番目です",
+      "queueNote": "空き卓ができ次第、自動で開始します",
+      "preparing": "卓を準備しています…",
+      "error": "エラー: {message}",
+      "retry": "再試行",
+      "displayName": "あなたの表示名: {name}",
+      "unknownError": "不明なエラー",
+      "startFailed": "セッションの起動に失敗しました"
+    },
+    "feed": {
+      "waitingStart": "ゲームの開始を待っています…",
+      "waitingConnect": "接続待ち。QRリンク（?url=…&team=…）から開いてください。",
+      "talkOver": "（発言終了）",
+      "talkSkip": "（スキップ）"
+    },
+    "footer": {
+      "skip": "スキップ",
+      "over": "終了",
+      "send": "送信",
+      "pausedYourTurn": "⏸ 一時停止中（あなたの番：{action}）",
+      "resumeInput": "再開して入力",
+      "actionHint": "{action}：{hint}",
+      "talkPlaceholder": "メッセージを入力（Enterで送信）",
+      "lockedPlaceholder": "あなたの番になると入力できます",
+      "help": "💡「終了」=本日の発言を終える ／「スキップ」=今回はパス。手入力する場合は大文字始まりの Over / Skip（小文字 over/skip は通常の発言になります）。",
+      "noTarget": "対象なし"
+    },
+    "leaveConfirm": "ゲームを中断してホームに戻りますか？（この卓は終了します）"
   }
 }

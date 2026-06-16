@@ -17,7 +17,8 @@ COPY lobby/ /app/lobby/
 COPY configs/ /app/configs/
 
 ENV AGENT_LLM_DIR=/app/agent-llm \
-    AGENT_CONFIG_TEMPLATE=/app/configs/agent.yml \
+    AGENTS_DIR=/app/configs/agents \
+    DEFAULT_LANGUAGE=ja \
     AGENT_LLM_PYTHON=python \
     GENERATED_CONFIG_DIR=/app/lobby/.generated
 

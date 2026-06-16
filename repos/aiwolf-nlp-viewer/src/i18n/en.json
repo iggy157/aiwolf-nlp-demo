@@ -248,5 +248,131 @@
       "DAILY_FINISH": "Day End",
       "FINISH": "Game End"
     }
+  },
+  "demo": {
+    "title": "AIWolf Contest — Natural Language Division Demo",
+    "titleShort": "AIWolf Contest",
+    "subtitle": "Natural Language Division Demo",
+    "tagline": "Play Werewolf with AI agents. You can speak when it is your turn.",
+    "status": {
+      "connected": "Connected",
+      "connecting": "Connecting…",
+      "disconnected": "Disconnected"
+    },
+    "header": {
+      "pause": "Pause",
+      "resume": "Resume",
+      "info": "Info",
+      "leave": "Quit",
+      "myInfo": "My info"
+    },
+    "day": "Day {day}",
+    "banner": {
+      "connecting": "Connecting…",
+      "disconnected": "Disconnected",
+      "pausedYourTurn": "Paused (your turn: {action})",
+      "yourTurn": "Your turn: {action} ({hint})",
+      "othersTurn": "{name} is typing…",
+      "voting": "Voting…",
+      "nightAction": "Night action in progress…",
+      "morning": "Morning has come",
+      "night": "Night has fallen",
+      "finished": "Game over",
+      "inProgress": "In progress…",
+      "waitingStart": "Waiting for the game to start"
+    },
+    "remain": "{sec}s left",
+    "action": {
+      "TALK": "Talk",
+      "WHISPER": "Whisper",
+      "VOTE": "Vote",
+      "DIVINE": "Divine",
+      "GUARD": "Guard",
+      "ATTACK": "Attack",
+      "fallback": "Action"
+    },
+    "hint": {
+      "talk": "Type a message",
+      "vote": "Choose who to execute",
+      "divine": "Choose who to divine",
+      "guard": "Choose who to guard",
+      "attack": "Choose who to attack",
+      "fallback": "Choose a target"
+    },
+    "roleDesc": {
+      "VILLAGER": "You have no special ability. Find the werewolves through discussion and voting.",
+      "WEREWOLF": "You are a werewolf. Hide your identity and attack with your allies at night. Deceive the villagers.",
+      "SEER": "Each night you divine one person to learn if they are a werewolf or a human. Use it to guide the village.",
+      "MEDIUM": "Each night you learn whether the executed player was a werewolf.",
+      "BODYGUARD": "Each night you guard one person and protect them from the werewolves' attack.",
+      "POSSESSED": "You are the possessed (looks human but sides with the werewolves). Help the werewolves win."
+    },
+    "result": {
+      "villagerWin": "Villager team wins",
+      "werewolfWin": "Werewolf team wins",
+      "youWin": "You win 🎉",
+      "youLose": "You lose…",
+      "title": "🏁 Game over",
+      "reveal": "Roles revealed",
+      "backHome": "Back to home"
+    },
+    "info": {
+      "title": "Player info",
+      "role": "Role: {role}",
+      "team": "Team: {team}",
+      "noProfile": "No profile",
+      "participants": "Participants",
+      "you": " (you)",
+      "alive": "Alive",
+      "dead": "Dead",
+      "privacyNote": "Note: other players' roles and profiles are kept hidden, as is the nature of Werewolf.",
+      "divineResults": "🔮 Divination results",
+      "mediumResults": "🔮 Medium results",
+      "close": "Close"
+    },
+    "intro": {
+      "yourCharacter": "The character you play",
+      "instruction": "Please act as this character and role during the game.",
+      "start": "Start the game"
+    },
+    "start": {
+      "villageSize": "Village size",
+      "village5": "5 players",
+      "village9": "9 players",
+      "comp5": "2 villagers, seer, werewolf, possessed (you + 4 AI)",
+      "comp9": "3 villagers, seer, bodyguard, medium, 2 werewolves, possessed (you + 8 AI)",
+      "gameLanguage": "Game language",
+      "gameLanguageHint": "The language the AI speaks (switch the screen language at the top right).",
+      "start": "Start game",
+      "joining": "Requesting to join…",
+      "queued": "In queue",
+      "queuePosition": "You are number {pos}",
+      "queueNote": "The game starts automatically when a table frees up",
+      "preparing": "Preparing the table…",
+      "error": "Error: {message}",
+      "retry": "Retry",
+      "displayName": "Your display name: {name}",
+      "unknownError": "Unknown error",
+      "startFailed": "Failed to start the session"
+    },
+    "feed": {
+      "waitingStart": "Waiting for the game to start…",
+      "waitingConnect": "Waiting to connect. Open from the QR link (?url=…&team=…).",
+      "talkOver": "(end of talk)",
+      "talkSkip": "(skipped)"
+    },
+    "footer": {
+      "skip": "Skip",
+      "over": "End",
+      "send": "Send",
+      "pausedYourTurn": "⏸ Paused (your turn: {action})",
+      "resumeInput": "Resume and type",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Type a message (Enter to send)",
+      "lockedPlaceholder": "You can type when it is your turn",
+      "help": "💡 \"End\" = finish speaking for today / \"Skip\" = pass this time. If typing manually, use capitalized Over / Skip (lowercase over/skip become normal messages).",
+      "noTarget": "No target"
+    },
+    "leaveConfirm": "Quit the game and return home? (This table will end.)"
   }
 }

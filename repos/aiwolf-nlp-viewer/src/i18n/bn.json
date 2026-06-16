@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "bn",
+    "name": "Bengali",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "হোম",
+    "realtime": "রিয়েলটাইম লগ",
+    "archive": "আর্কাইভ লগ",
+    "agent": "এজেন্ট",
+    "token": "টোকেন তৈরি",
+    "statistics": "পরিসংখ্যান"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "রিয়েলটাইম লগ",
+      "description": "রিয়েলটাইমে গেম লগ প্রদর্শন করে\nJSONL ফরম্যাটের ফাইল সমর্থন করে"
+    },
+    "archiveLog": {
+      "title": "আর্কাইভ লগ",
+      "description": "আর্কাইভ করা গেম লগ প্রদর্শন করে\nLOG ফরম্যাটের ফাইল সমর্থন করে"
+    },
+    "agent": {
+      "title": "এজেন্ট",
+      "description": "গেম সার্ভারে সংযুক্ত হয়ে এজেন্ট হিসেবে অংশগ্রহণ করুন"
+    },
+    "sourceCode": "সোর্স কোড",
+    "gameServer": "গেম সার্ভার",
+    "sampleAgent": "নমুনা এজেন্ট",
+    "sampleAgentLLM": "নমুনা এজেন্ট (LLM)",
+    "viewer": "ভিউয়ার"
+  },
+  "realtime": {
+    "connect": "সংযোগ",
+    "disconnect": "বিচ্ছিন্ন",
+    "settings": "সেটিংস",
+    "pasteFromClipboard": "ক্লিপবোর্ড থেকে পেস্ট করুন",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "ঐচ্ছিক",
+    "displaySettings": "প্রদর্শন সেটিংস",
+    "canvasAgentInfo": "ক্যানভাসে এজেন্টের তথ্য",
+    "messageBoxAgentInfo": "মেসেজ বক্সে এজেন্টের তথ্য",
+    "listAgentInfo": "তালিকায় এজেন্টের তথ্য",
+    "largeScreen": "বড় স্ক্রিন",
+    "name": "নাম",
+    "teamName": "দলের নাম",
+    "role": "ভূমিকা",
+    "enable": "সক্রিয়",
+    "notConnected": "সংযুক্ত নয়",
+    "day": "দিন {day}",
+    "daytime": "দিন",
+    "nighttime": "রাত",
+    "events": {
+      "disconnected": "বিচ্ছিন্ন",
+      "whispered": "ফিসফিস করেছে",
+      "attack_voted_with_target": "{from} {to}-কে আক্রমণের জন্য ভোট দিয়েছে",
+      "attack_voted": "আক্রমণের জন্য ভোট দিয়েছে",
+      "voted_with_target": "{from} {to}-কে ভোট দিয়েছে",
+      "voted": "{from} ভোট দিয়েছে",
+      "no_execute": "কাউকে বহিষ্কার করা হয়নি",
+      "executed": "{target}-কে বহিষ্কার করা হয়েছে",
+      "no_attack": "কাউকে আক্রমণ করা হয়নি",
+      "attacked_but_guarded": "{target}-কে আক্রমণ করা হয়েছিল কিন্তু রক্ষা করা হয়েছে",
+      "attacked": "{target}-কে আক্রমণ করা হয়েছে",
+      "divined_with_result": "{from} {to}-কে ভবিষ্যদ্বাণী করে দেখেছে যে সে {result}",
+      "divined": "ভবিষ্যদ্বাণী করেছে",
+      "guarded_with_target": "{from} {to}-কে রক্ষার লক্ষ্য হিসেবে নির্ধারণ করেছে",
+      "guarded": "রক্ষা করেছে",
+      "game_ended": "{winner} জিতেছে",
+      "unknown": "অজানা ইভেন্ট"
+    },
+    "eventTypes": {
+      "未接続": "বিচ্ছিন্ন",
+      "トーク": "কথা",
+      "囁き": "ফিসফিস",
+      "投票": "ভোট",
+      "襲撃投票": "আক্রমণ ভোট",
+      "追放": "বহিষ্কার",
+      "襲撃": "আক্রমণ",
+      "占い": "ভবিষ্যদ্বাণী",
+      "護衛": "রক্ষা",
+      "終了": "সমাপ্ত"
+    }
+  },
+  "archive": {
+    "selectFolder": "ফোল্ডার নির্বাচন করুন",
+    "selectLog": "লগ নির্বাচন করুন",
+    "pasteFromClipboard": "ক্লিপবোর্ড থেকে পেস্ট করুন",
+    "agents": "এজেন্ট",
+    "whispers": "ফিসফিস",
+    "talk": "কথা",
+    "voting": "ভোটদান",
+    "votedFor": " ভোট দিয়েছে ",
+    "execute": "বহিষ্কার",
+    "wasExecuted": " বহিষ্কৃত হয়েছে",
+    "divination": "ভবিষ্যদ্বাণী",
+    "divined": " ভবিষ্যদ্বাণী করেছে:",
+    "guard": "রক্ষা",
+    "protected": " রক্ষা করেছে ",
+    "attackVotes": "আক্রমণ ভোট",
+    "attack": "আক্রমণ",
+    "wasAttacked": " আক্রান্ত হয়েছে:",
+    "success": "সফল",
+    "failure": "ব্যর্থ",
+    "noAttackTarget": "আক্রমণের লক্ষ্য নেই",
+    "result": "ফলাফল",
+    "won": " জিতেছে",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "কথার ইতিহাস",
+    "whisperHistory": "ফিসফিসের ইতিহাস",
+    "agentSettings": "এজেন্ট সেটিংস",
+    "teamName": "দলের নাম",
+    "notConnected": "সংযুক্ত নয়",
+    "selectTarget": "অনুগ্রহ করে একটি লক্ষ্য নির্বাচন করুন",
+    "enterContent": "অনুগ্রহ করে বিষয়বস্তু লিখুন",
+    "remainingChars": "{count}টি অক্ষর বাকি",
+    "exceededChars": "{count}টি অক্ষর অতিক্রম করেছে",
+    "send": "পাঠান"
+  },
+  "statistics": {
+    "downloadCsv": "CSV হিসেবে ডাউনলোড করুন"
+  },
+  "token": {
+    "title": "টোকেন তৈরি",
+    "description": "গেম সার্ভারে সংযোগ প্রমাণীকরণ সক্রিয় থাকলে প্রয়োজনীয় টোকেন তৈরি করুন। গোপন কী ব্রাউজারে তৈরি হয় এবং কখনোই সার্ভারে পাঠানো হয় না।",
+    "agentDescription": "এজেন্ট হিসেবে সংযুক্ত হলে অনুগ্রহ করে একটি দলের নাম লিখুন।",
+    "generateSecret": "গোপন কী তৈরি করুন",
+    "secretKey": "গোপন কী",
+    "agent": "এজেন্ট",
+    "realtimeLog": "রিয়েলটাইম লগ",
+    "teamName": "দলের নাম",
+    "copyToken": "টোকেন কপি করুন",
+    "errorOccurred": "একটি ত্রুটি ঘটেছে"
+  },
+  "common": {
+    "close": "বন্ধ করুন",
+    "language": "ভাষা"
+  },
+  "displaySettings": {
+    "title": "প্রদর্শন আইটেম সেটিংস",
+    "selectAll": "সব নির্বাচন করুন",
+    "deselectAll": "সব বাতিল করুন",
+    "reset": "রিসেট",
+    "before": "আগে",
+    "after": "পরে",
+    "allFields": "সব ক্ষেত্র",
+    "noFields": "কোনো ক্ষেত্র নেই",
+    "fields": {
+      "agents": {
+        "gameName": "এজেন্টের নাম",
+        "originalName": "মূল নাম",
+        "role": "ভূমিকা",
+        "status": "অবস্থা"
+      },
+      "beforeWhisper": {
+        "agentName": "এজেন্টের নাম",
+        "originalName": "মূল নাম",
+        "text": "টেক্সট",
+        "talkIdx": "কথা ID",
+        "turnIdx": "টার্ন",
+        "timestamp": "টাইমস্ট্যাম্প"
+      },
+      "talks": {
+        "agentName": "এজেন্টের নাম",
+        "originalName": "মূল নাম",
+        "text": "টেক্সট",
+        "talkIdx": "কথা ID",
+        "turnIdx": "টার্ন",
+        "timestamp": "টাইমস্ট্যাম্প"
+      },
+      "votes": {
+        "voterName": "ভোটদাতা",
+        "targetName": "লক্ষ্য"
+      },
+      "execution": {
+        "agentName": "বহিষ্কৃত এজেন্ট",
+        "role": "ভূমিকা"
+      },
+      "divine": {
+        "seerName": "দ্রষ্টা (Seer)",
+        "targetName": "লক্ষ্য",
+        "result": "ফলাফল"
+      },
+      "afterWhisper": {
+        "agentName": "এজেন্টের নাম",
+        "originalName": "মূল নাম",
+        "text": "টেক্সট",
+        "talkIdx": "কথা ID",
+        "turnIdx": "টার্ন",
+        "timestamp": "টাইমস্ট্যাম্প"
+      },
+      "guard": {
+        "guardName": "রক্ষক",
+        "targetName": "লক্ষ্য",
+        "result": "ফলাফল"
+      },
+      "attackVotes": {
+        "voterName": "ভোটদাতা",
+        "targetName": "লক্ষ্য"
+      },
+      "attack": {
+        "targetName": "লক্ষ্য",
+        "result": "ফলাফল"
+      },
+      "result": {
+        "winSide": "বিজয়ী পক্ষ",
+        "villagers": "গ্রামবাসীর সংখ্যা",
+        "werewolves": "ওয়ারউলফের সংখ্যা"
+      }
+    }
+  },
+  "audio": {
+    "play": "চালান",
+    "stop": "থামান"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "ওয়ারউলফ (Werewolf)",
+      "POSSESSED": "আবিষ্ট (Possessed)",
+      "SEER": "দ্রষ্টা (Seer)",
+      "BODYGUARD": "দেহরক্ষী (Bodyguard)",
+      "VILLAGER": "গ্রামবাসী (Villager)",
+      "MEDIUM": "প্রেতমাধ্যম (Medium)"
+    },
+    "species": {
+      "HUMAN": "মানুষ",
+      "WEREWOLF": "ওয়ারউলফ (Werewolf)"
+    },
+    "status": {
+      "ALIVE": "জীবিত",
+      "DEAD": "মৃত"
+    },
+    "teams": {
+      "VILLAGER": "গ্রামবাসী দল",
+      "WEREWOLF": "ওয়ারউলফ দল"
+    },
+    "request": {
+      "NAME": "নাম",
+      "TALK": "কথা",
+      "WHISPER": "ফিসফিস",
+      "VOTE": "ভোট",
+      "DIVINE": "ভবিষ্যদ্বাণী",
+      "GUARD": "রক্ষা",
+      "ATTACK": "আক্রমণ",
+      "INITIALIZE": "গেম শুরু",
+      "DAILY_INITIALIZE": "দিন শুরু",
+      "DAILY_FINISH": "দিন শেষ",
+      "FINISH": "গেম শেষ"
+    }
+  },
+  "demo": {
+    "title": "AIWolf প্রতিযোগিতা — প্রাকৃতিক ভাষা বিভাগ ডেমো",
+    "titleShort": "AIWolf প্রতিযোগিতা",
+    "subtitle": "প্রাকৃতিক ভাষা বিভাগ ডেমো",
+    "tagline": "AI এজেন্টদের সাথে ওয়ারউলফ খেলুন। আপনার পালা এলে আপনি কথা বলতে পারবেন।",
+    "status": {
+      "connected": "সংযুক্ত",
+      "connecting": "সংযুক্ত হচ্ছে…",
+      "disconnected": "সংযুক্ত নয়"
+    },
+    "header": {
+      "pause": "বিরতি",
+      "resume": "পুনরায় শুরু",
+      "info": "তথ্য",
+      "leave": "প্রস্থান",
+      "myInfo": "আমার তথ্য"
+    },
+    "day": "দিন {day}",
+    "banner": {
+      "connecting": "সংযুক্ত হচ্ছে…",
+      "disconnected": "সংযুক্ত নয়",
+      "pausedYourTurn": "বিরতি (আপনার পালা: {action})",
+      "yourTurn": "আপনার পালা: {action} ({hint})",
+      "othersTurn": "{name} লিখছেন…",
+      "voting": "ভোট চলছে…",
+      "nightAction": "রাতের ক্রিয়া চলছে…",
+      "morning": "সকাল হয়েছে",
+      "night": "রাত নেমেছে",
+      "finished": "গেম শেষ",
+      "inProgress": "চলছে…",
+      "waitingStart": "গেম শুরুর জন্য অপেক্ষা করছে"
+    },
+    "remain": "{sec}s বাকি",
+    "action": {
+      "TALK": "কথা",
+      "WHISPER": "ফিসফিস",
+      "VOTE": "ভোট",
+      "DIVINE": "ভবিষ্যদ্বাণী",
+      "GUARD": "রক্ষা",
+      "ATTACK": "আক্রমণ",
+      "fallback": "ক্রিয়া"
+    },
+    "hint": {
+      "talk": "একটি বার্তা লিখুন",
+      "vote": "কাকে বহিষ্কার করবেন তা বেছে নিন",
+      "divine": "কাকে ভবিষ্যদ্বাণী করবেন তা বেছে নিন",
+      "guard": "কাকে রক্ষা করবেন তা বেছে নিন",
+      "attack": "কাকে আক্রমণ করবেন তা বেছে নিন",
+      "fallback": "একটি লক্ষ্য বেছে নিন"
+    },
+    "roleDesc": {
+      "VILLAGER": "আপনার কোনো বিশেষ ক্ষমতা নেই। আলোচনা ও ভোটের মাধ্যমে ওয়ারউলফদের খুঁজে বের করুন।",
+      "WEREWOLF": "আপনি একজন ওয়ারউলফ। আপনার পরিচয় গোপন রাখুন এবং রাতে আপনার সঙ্গীদের সাথে আক্রমণ করুন। গ্রামবাসীদের প্রতারিত করুন।",
+      "SEER": "প্রতি রাতে আপনি একজনকে ভবিষ্যদ্বাণী করে জানতে পারেন যে সে ওয়ারউলফ নাকি মানুষ। গ্রামকে পথ দেখাতে এটি ব্যবহার করুন।",
+      "MEDIUM": "প্রতি রাতে আপনি জানতে পারেন যে বহিষ্কৃত খেলোয়াড়টি ওয়ারউলফ ছিল কিনা।",
+      "BODYGUARD": "প্রতি রাতে আপনি একজনকে রক্ষা করেন এবং ওয়ারউলফদের আক্রমণ থেকে তাকে বাঁচান।",
+      "POSSESSED": "আপনি আবিষ্ট (Possessed) (দেখতে মানুষের মতো কিন্তু ওয়ারউলফদের পক্ষে)। ওয়ারউলফদের জিততে সাহায্য করুন।"
+    },
+    "result": {
+      "villagerWin": "গ্রামবাসী দলের জয়",
+      "werewolfWin": "ওয়ারউলফ দলের জয়",
+      "youWin": "আপনি জিতেছেন 🎉",
+      "youLose": "আপনি হেরেছেন…",
+      "title": "🏁 গেম শেষ",
+      "reveal": "ভূমিকা প্রকাশ",
+      "backHome": "হোমে ফিরুন"
+    },
+    "info": {
+      "title": "খেলোয়াড়ের তথ্য",
+      "role": "ভূমিকা: {role}",
+      "team": "দল: {team}",
+      "noProfile": "কোনো প্রোফাইল নেই",
+      "participants": "অংশগ্রহণকারী",
+      "you": " (আপনি)",
+      "alive": "জীবিত",
+      "dead": "মৃত",
+      "privacyNote": "দ্রষ্টব্য: ওয়ারউলফ খেলার স্বভাব অনুযায়ী অন্য খেলোয়াড়দের ভূমিকা ও প্রোফাইল গোপন রাখা হয়।",
+      "divineResults": "🔮 ভবিষ্যদ্বাণীর ফলাফল",
+      "mediumResults": "🔮 প্রেতমাধ্যমের ফলাফল",
+      "close": "বন্ধ করুন"
+    },
+    "intro": {
+      "yourCharacter": "আপনি যে চরিত্রে অভিনয় করবেন",
+      "instruction": "অনুগ্রহ করে গেম চলাকালীন এই চরিত্র ও ভূমিকা হিসেবে আচরণ করুন।",
+      "start": "গেম শুরু করুন"
+    },
+    "start": {
+      "villageSize": "গ্রামের আকার",
+      "village5": "৫ জন খেলোয়াড়",
+      "village9": "৯ জন খেলোয়াড়",
+      "comp5": "২ জন গ্রামবাসী, দ্রষ্টা, ওয়ারউলফ, আবিষ্ট (আপনি + ৪ AI)",
+      "comp9": "৩ জন গ্রামবাসী, দ্রষ্টা, দেহরক্ষী, প্রেতমাধ্যম, ২ ওয়ারউলফ, আবিষ্ট (আপনি + ৮ AI)",
+      "gameLanguage": "গেমের ভাষা",
+      "gameLanguageHint": "AI যে ভাষায় কথা বলে (উপরের ডানদিকে স্ক্রিনের ভাষা পরিবর্তন করুন)।",
+      "start": "গেম শুরু",
+      "joining": "যোগ দেওয়ার অনুরোধ করা হচ্ছে…",
+      "queued": "সারিতে আছেন",
+      "queuePosition": "আপনি {pos} নম্বরে আছেন",
+      "queueNote": "একটি টেবিল খালি হলে গেম স্বয়ংক্রিয়ভাবে শুরু হয়",
+      "preparing": "টেবিল প্রস্তুত করা হচ্ছে…",
+      "error": "ত্রুটি: {message}",
+      "retry": "পুনরায় চেষ্টা করুন",
+      "displayName": "আপনার প্রদর্শন নাম: {name}",
+      "unknownError": "অজানা ত্রুটি",
+      "startFailed": "সেশন শুরু করতে ব্যর্থ হয়েছে"
+    },
+    "feed": {
+      "waitingStart": "গেম শুরুর জন্য অপেক্ষা করছে…",
+      "waitingConnect": "সংযোগের জন্য অপেক্ষা করছে। QR লিঙ্ক (?url=…&team=…) থেকে খুলুন।",
+      "talkOver": "(কথা শেষ)",
+      "talkSkip": "(এড়িয়ে গেছে)"
+    },
+    "footer": {
+      "skip": "Skip",
+      "over": "শেষ",
+      "send": "পাঠান",
+      "pausedYourTurn": "⏸ বিরতি (আপনার পালা: {action})",
+      "resumeInput": "পুনরায় শুরু করে লিখুন",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "একটি বার্তা লিখুন (পাঠাতে Enter চাপুন)",
+      "lockedPlaceholder": "আপনার পালা এলে আপনি লিখতে পারবেন",
+      "help": "💡 \"Over\" = আজকের জন্য কথা বলা শেষ / \"Skip\" = এবার পাস। হাতে লিখলে বড় হাতের অক্ষরে Over / Skip ব্যবহার করুন (ছোট হাতের over/skip সাধারণ বার্তা হয়ে যায়)।",
+      "noTarget": "কোনো লক্ষ্য নেই"
+    },
+    "leaveConfirm": "গেম বন্ধ করে হোমে ফিরবেন? (এই টেবিলটি শেষ হয়ে যাবে।)"
+  }
+}

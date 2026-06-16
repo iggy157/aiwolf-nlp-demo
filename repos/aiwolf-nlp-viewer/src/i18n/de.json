@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "de",
+    "name": "German",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "Startseite",
+    "realtime": "Echtzeit-Log",
+    "archive": "Archiv-Log",
+    "agent": "Agent",
+    "token": "Token-Erstellung",
+    "statistics": "Statistik"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "Echtzeit-Log",
+      "description": "Spielprotokolle in Echtzeit anzeigen\nUnterstützt Dateien im JSONL-Format"
+    },
+    "archiveLog": {
+      "title": "Archiv-Log",
+      "description": "Archivierte Spielprotokolle anzeigen\nUnterstützt Dateien im LOG-Format"
+    },
+    "agent": {
+      "title": "Agent",
+      "description": "Mit dem Spielserver verbinden und als Agent teilnehmen"
+    },
+    "sourceCode": "Quellcode",
+    "gameServer": "Spielserver",
+    "sampleAgent": "Beispiel-Agent",
+    "sampleAgentLLM": "Beispiel-Agent (LLM)",
+    "viewer": "Viewer"
+  },
+  "realtime": {
+    "connect": "Verbinden",
+    "disconnect": "Trennen",
+    "settings": "Einstellungen",
+    "pasteFromClipboard": "Aus Zwischenablage einfügen",
+    "websocketUrl": "WebSocket-URL",
+    "authKey": "Authorization Key",
+    "optional": "Optional",
+    "displaySettings": "Anzeigeeinstellungen",
+    "canvasAgentInfo": "Agenteninformationen auf der Leinwand",
+    "messageBoxAgentInfo": "Agenteninformationen im Nachrichtenfeld",
+    "listAgentInfo": "Agenteninformationen in der Liste",
+    "largeScreen": "Großbildschirm",
+    "name": "Name",
+    "teamName": "Teamname",
+    "role": "Rolle",
+    "enable": "Aktiviert",
+    "notConnected": "Nicht verbunden",
+    "day": "Tag {day}",
+    "daytime": "Tag",
+    "nighttime": "Nacht",
+    "events": {
+      "disconnected": "Nicht verbunden",
+      "whispered": "Hat geflüstert",
+      "attack_voted_with_target": "{from} hat für den Angriff auf {to} gestimmt",
+      "attack_voted": "Für Angriff gestimmt",
+      "voted_with_target": "{from} hat für {to} gestimmt",
+      "voted": "{from} hat abgestimmt",
+      "no_execute": "Niemand wurde hingerichtet",
+      "executed": "{target} wurde hingerichtet",
+      "no_attack": "Niemand wurde angegriffen",
+      "attacked_but_guarded": "{target} wurde angegriffen, aber beschützt",
+      "attacked": "{target} wurde angegriffen",
+      "divined_with_result": "{from} hat {to} geweissagt und festgestellt: {result}",
+      "divined": "Geweissagt",
+      "guarded_with_target": "{from} hat {to} als Schutzziel gewählt",
+      "guarded": "Beschützt",
+      "game_ended": "{winner} hat gewonnen",
+      "unknown": "Unbekanntes Ereignis"
+    },
+    "eventTypes": {
+      "未接続": "Nicht verbunden",
+      "トーク": "Gespräch",
+      "囁き": "Flüstern",
+      "投票": "Abstimmung",
+      "襲撃投票": "Angriffsabstimmung",
+      "追放": "Hinrichtung",
+      "襲撃": "Angriff",
+      "占い": "Weissagung",
+      "護衛": "Schutz",
+      "終了": "Ende"
+    }
+  },
+  "archive": {
+    "selectFolder": "Ordner auswählen",
+    "selectLog": "Log auswählen",
+    "pasteFromClipboard": "Aus Zwischenablage einfügen",
+    "agents": "Agenten",
+    "whispers": "Flüstern",
+    "talk": "Gespräch",
+    "voting": "Abstimmung",
+    "votedFor": " stimmte für ",
+    "execute": "Hinrichtung",
+    "wasExecuted": " wurde hingerichtet",
+    "divination": "Weissagung",
+    "divined": " weissagte ",
+    "guard": "Schutz",
+    "protected": " beschützte ",
+    "attackVotes": "Angriffsabstimmungen",
+    "attack": "Angriff",
+    "wasAttacked": " wurde angegriffen: ",
+    "success": "Erfolg",
+    "failure": "Misserfolg",
+    "noAttackTarget": "Kein Angriffsziel",
+    "result": "Ergebnis",
+    "won": " hat gewonnen",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "Gesprächsverlauf",
+    "whisperHistory": "Flüsterverlauf",
+    "agentSettings": "Agenteneinstellungen",
+    "teamName": "Teamname",
+    "notConnected": "Nicht verbunden",
+    "selectTarget": "Bitte ein Ziel auswählen",
+    "enterContent": "Bitte einen Inhalt eingeben",
+    "remainingChars": "Noch {count} Zeichen",
+    "exceededChars": "{count} Zeichen zu viel",
+    "send": "Senden"
+  },
+  "statistics": {
+    "downloadCsv": "Als CSV herunterladen"
+  },
+  "token": {
+    "title": "Token-Erstellung",
+    "description": "Erstellt die Tokens, die benötigt werden, wenn die Verbindungsauthentifizierung auf dem Spielserver aktiviert ist. Der geheime Schlüssel wird im Browser erzeugt und niemals an den Server gesendet.",
+    "agentDescription": "Wenn Sie sich als Agent verbinden, geben Sie bitte einen Teamnamen ein.",
+    "generateSecret": "Geheimen Schlüssel erzeugen",
+    "secretKey": "Geheimer Schlüssel",
+    "agent": "Agent",
+    "realtimeLog": "Echtzeit-Log",
+    "teamName": "Teamname",
+    "copyToken": "Token kopieren",
+    "errorOccurred": "Ein Fehler ist aufgetreten"
+  },
+  "common": {
+    "close": "Schließen",
+    "language": "Sprache"
+  },
+  "displaySettings": {
+    "title": "Anzeigeelemente einstellen",
+    "selectAll": "Alle auswählen",
+    "deselectAll": "Alle abwählen",
+    "reset": "Zurücksetzen",
+    "before": "Vorher",
+    "after": "Nachher",
+    "allFields": "Alle Felder",
+    "noFields": "Keine Felder",
+    "fields": {
+      "agents": {
+        "gameName": "Agentenname",
+        "originalName": "Ursprünglicher Name",
+        "role": "Rolle",
+        "status": "Status"
+      },
+      "beforeWhisper": {
+        "agentName": "Agentenname",
+        "originalName": "Ursprünglicher Name",
+        "text": "Text",
+        "talkIdx": "Gesprächs-ID",
+        "turnIdx": "Runde",
+        "timestamp": "Zeitstempel"
+      },
+      "talks": {
+        "agentName": "Agentenname",
+        "originalName": "Ursprünglicher Name",
+        "text": "Text",
+        "talkIdx": "Gesprächs-ID",
+        "turnIdx": "Runde",
+        "timestamp": "Zeitstempel"
+      },
+      "votes": {
+        "voterName": "Wähler",
+        "targetName": "Ziel"
+      },
+      "execution": {
+        "agentName": "Hingerichteter Agent",
+        "role": "Rolle"
+      },
+      "divine": {
+        "seerName": "Seherin",
+        "targetName": "Ziel",
+        "result": "Ergebnis"
+      },
+      "afterWhisper": {
+        "agentName": "Agentenname",
+        "originalName": "Ursprünglicher Name",
+        "text": "Text",
+        "talkIdx": "Gesprächs-ID",
+        "turnIdx": "Runde",
+        "timestamp": "Zeitstempel"
+      },
+      "guard": {
+        "guardName": "Leibwächter",
+        "targetName": "Ziel",
+        "result": "Ergebnis"
+      },
+      "attackVotes": {
+        "voterName": "Wähler",
+        "targetName": "Ziel"
+      },
+      "attack": {
+        "targetName": "Ziel",
+        "result": "Ergebnis"
+      },
+      "result": {
+        "winSide": "Siegreiche Seite",
+        "villagers": "Anzahl Dorfbewohner",
+        "werewolves": "Anzahl Werwölfe"
+      }
+    }
+  },
+  "audio": {
+    "play": "Abspielen",
+    "stop": "Stopp"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "Werwolf",
+      "POSSESSED": "Besessener",
+      "SEER": "Seherin",
+      "BODYGUARD": "Leibwächter",
+      "VILLAGER": "Dorfbewohner",
+      "MEDIUM": "Medium"
+    },
+    "species": {
+      "HUMAN": "Mensch",
+      "WEREWOLF": "Werwolf"
+    },
+    "status": {
+      "ALIVE": "Lebendig",
+      "DEAD": "Tot"
+    },
+    "teams": {
+      "VILLAGER": "Dorfbewohner-Team",
+      "WEREWOLF": "Werwolf-Team"
+    },
+    "request": {
+      "NAME": "Name",
+      "TALK": "Gespräch",
+      "WHISPER": "Flüstern",
+      "VOTE": "Abstimmung",
+      "DIVINE": "Weissagung",
+      "GUARD": "Schutz",
+      "ATTACK": "Angriff",
+      "INITIALIZE": "Spielbeginn",
+      "DAILY_INITIALIZE": "Tagesbeginn",
+      "DAILY_FINISH": "Tagesende",
+      "FINISH": "Spielende"
+    }
+  },
+  "demo": {
+    "title": "AIWolf-Wettbewerb — Demo der Sektion für natürliche Sprache",
+    "titleShort": "AIWolf-Wettbewerb",
+    "subtitle": "Demo der Sektion für natürliche Sprache",
+    "tagline": "Spiele Werwolf mit KI-Agenten. Wenn du an der Reihe bist, kannst du sprechen.",
+    "status": {
+      "connected": "Verbunden",
+      "connecting": "Verbinde…",
+      "disconnected": "Nicht verbunden"
+    },
+    "header": {
+      "pause": "Pause",
+      "resume": "Fortsetzen",
+      "info": "Info",
+      "leave": "Beenden",
+      "myInfo": "Meine Infos"
+    },
+    "day": "Tag {day}",
+    "banner": {
+      "connecting": "Verbinde…",
+      "disconnected": "Nicht verbunden",
+      "pausedYourTurn": "Pausiert (du bist dran: {action})",
+      "yourTurn": "Du bist dran: {action} ({hint})",
+      "othersTurn": "{name} schreibt…",
+      "voting": "Abstimmung läuft…",
+      "nightAction": "Nachtaktion läuft…",
+      "morning": "Der Morgen ist angebrochen",
+      "night": "Die Nacht ist hereingebrochen",
+      "finished": "Spiel vorbei",
+      "inProgress": "Läuft…",
+      "waitingStart": "Warte auf den Spielbeginn"
+    },
+    "remain": "Noch {sec}s",
+    "action": {
+      "TALK": "Gespräch",
+      "WHISPER": "Flüstern",
+      "VOTE": "Abstimmung",
+      "DIVINE": "Weissagung",
+      "GUARD": "Schutz",
+      "ATTACK": "Angriff",
+      "fallback": "Aktion"
+    },
+    "hint": {
+      "talk": "Nachricht eingeben",
+      "vote": "Wähle, wer hingerichtet wird",
+      "divine": "Wähle, wen du weissagst",
+      "guard": "Wähle, wen du beschützt",
+      "attack": "Wähle, wen du angreifst",
+      "fallback": "Ziel auswählen"
+    },
+    "roleDesc": {
+      "VILLAGER": "Du hast keine besondere Fähigkeit. Finde die Werwölfe durch Diskussion und Abstimmung.",
+      "WEREWOLF": "Du bist ein Werwolf. Verbirg deine Identität und greife nachts gemeinsam mit deinen Verbündeten an. Täusche die Dorfbewohner.",
+      "SEER": "Jede Nacht weissagst du eine Person und erfährst, ob sie ein Werwolf oder ein Mensch ist. Nutze dies, um das Dorf zu führen.",
+      "MEDIUM": "Jede Nacht erfährst du, ob der hingerichtete Spieler ein Werwolf war.",
+      "BODYGUARD": "Jede Nacht beschützt du eine Person und bewahrst sie vor dem Angriff der Werwölfe.",
+      "POSSESSED": "Du bist der Besessene (wirkt menschlich, steht aber auf der Seite der Werwölfe). Hilf den Werwölfen zum Sieg."
+    },
+    "result": {
+      "villagerWin": "Das Dorfbewohner-Team gewinnt",
+      "werewolfWin": "Das Werwolf-Team gewinnt",
+      "youWin": "Du gewinnst 🎉",
+      "youLose": "Du verlierst…",
+      "title": "🏁 Spiel vorbei",
+      "reveal": "Rollen aufgedeckt",
+      "backHome": "Zurück zur Startseite"
+    },
+    "info": {
+      "title": "Spielerinformationen",
+      "role": "Rolle: {role}",
+      "team": "Team: {team}",
+      "noProfile": "Kein Profil",
+      "participants": "Teilnehmer",
+      "you": " (du)",
+      "alive": "Lebendig",
+      "dead": "Tot",
+      "privacyNote": "Hinweis: Rollen und Profile der anderen Spieler bleiben verborgen, wie es das Werwolf-Spiel vorsieht.",
+      "divineResults": "🔮 Weissagungsergebnisse",
+      "mediumResults": "🔮 Medium-Ergebnisse",
+      "close": "Schließen"
+    },
+    "intro": {
+      "yourCharacter": "Der Charakter, den du spielst",
+      "instruction": "Bitte verhalte dich während des Spiels als dieser Charakter und in dieser Rolle.",
+      "start": "Das Spiel starten"
+    },
+    "start": {
+      "villageSize": "Dorfgröße",
+      "village5": "5 Spieler",
+      "village9": "9 Spieler",
+      "comp5": "2 Dorfbewohner, Seherin, Werwolf, Besessener (du + 4 KI)",
+      "comp9": "3 Dorfbewohner, Seherin, Leibwächter, Medium, 2 Werwölfe, Besessener (du + 8 KI)",
+      "gameLanguage": "Spielsprache",
+      "gameLanguageHint": "Die Sprache, die die KI spricht (die Anzeigesprache wechselst du oben rechts).",
+      "start": "Spiel starten",
+      "joining": "Beitritt wird angefragt…",
+      "queued": "In der Warteschlange",
+      "queuePosition": "Du bist Nummer {pos}",
+      "queueNote": "Das Spiel startet automatisch, sobald ein Tisch frei wird",
+      "preparing": "Tisch wird vorbereitet…",
+      "error": "Fehler: {message}",
+      "retry": "Erneut versuchen",
+      "displayName": "Dein Anzeigename: {name}",
+      "unknownError": "Unbekannter Fehler",
+      "startFailed": "Die Sitzung konnte nicht gestartet werden"
+    },
+    "feed": {
+      "waitingStart": "Warte auf den Spielbeginn…",
+      "waitingConnect": "Warte auf Verbindung. Über den QR-Link öffnen (?url=…&team=…).",
+      "talkOver": "(Ende des Gesprächs)",
+      "talkSkip": "(übersprungen)"
+    },
+    "footer": {
+      "skip": "Überspringen",
+      "over": "Beenden",
+      "send": "Senden",
+      "pausedYourTurn": "⏸ Pausiert (du bist dran: {action})",
+      "resumeInput": "Fortsetzen und schreiben",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Nachricht eingeben (Enter zum Senden)",
+      "lockedPlaceholder": "Du kannst schreiben, wenn du an der Reihe bist",
+      "help": "💡 \"Over\" = das heutige Reden beenden / \"Skip\" = diesmal passen. Bei manueller Eingabe groß geschriebenes Over / Skip verwenden (kleingeschriebenes over/skip wird zu normalen Nachrichten).",
+      "noTarget": "Kein Ziel"
+    },
+    "leaveConfirm": "Das Spiel beenden und zur Startseite zurückkehren? (Dieser Tisch wird beendet.)"
+  }
+}

@@ -1,0 +1,113 @@
+# 简体中文提示词（configs/agents/prompts/zh.yml）
+# language: zh  /  translated: true
+# 与 base.yml 合并后构成一卓的 agent config。Jinja2 模板。
+prompt:
+  initialize: |-
+    你是人狼游戏（狼人杀）的智能体。
+    你的名字是{{ info.agent }}。
+    你的角色是{{ role.value }}。
+
+    游戏现在开始进行。当收到请求时，请用简体中文返回恰当的回应。
+
+    对于发言请求和密谈请求，只需输出应在游戏中发言的内容。
+    如果有历史记录，请参考它。如果没有，请输出恰当的内容。
+    当你认为无法获得更多信息等想要结束发言时，请输出「Over」。
+
+    对于其他请求，只需输出作为行动对象的智能体名称。
+    已附上可作为对象的存活智能体一览。
+
+    {% if info.profile is not none -%}
+    你的个人资料: {{ info.profile }}
+    {%- endif %}
+
+    你的回应将被直接发送到游戏内，因此请不要包含多余的信息。
+  daily_initialize: |-
+    白天开始请求
+    第 {{ info.day }} 天
+    {% if info.medium_result is not none -%}
+    通灵结果: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    占卜结果: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    放逐结果: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    袭击结果: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    投票结果: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    袭击投票结果: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    密谈请求
+    历史:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    发言请求
+    历史:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    白天结束请求
+    历史:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    第 {{ info.day }} 天
+    {% if info.medium_result is not none -%}
+    通灵结果: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    占卜结果: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    放逐结果: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    袭击结果: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    投票结果: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    袭击投票结果: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    占卜请求
+    对象:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    守护请求
+    对象:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    投票请求
+    对象:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    袭击请求
+    对象:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

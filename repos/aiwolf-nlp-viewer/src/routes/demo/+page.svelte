@@ -1,17 +1,19 @@
 <script lang="ts">
   // aiwolf-nlp-demo: QR着地のプレイヤー視点UI（新ルート /demo）
   // 既存 /agent は不変。WebSocketロジックは demo-socket.ts（agent-socket のコピー＋拡張）を再利用。
-  // M4 時点: 接続・LINE風逐次表示・ターンに応じた入力ロックの最小実装。
-  //   - 採番/開始ボタン/キュー は M6（lobby）で前段に載せる。
-  //   - サーバ側の逐次push＋ターンマーカー は M5。本UIは未送出でも request ベースで動作する。
+  //   - 採番/開始ボタン/キュー は lobby（M6）で前段に載せる。
+  //   - 表示文字列はすべて svelte-i18n（demo 名前空間）。UI言語は右上の LanguageSwitcher で切替。
+  //   - ゲーム言語（AIの発話言語）はスタート画面で選び、初期値は現在のUI言語に追従する。
   import { browser } from "$app/environment";
   import { base } from "$app/paths";
   import { page } from "$app/state";
   import { Status } from "$lib/constants/common";
   import { agentSettings } from "$lib/stores/agent-settings";
+  import { LANGUAGES, language, normalizeLanguage } from "$lib/stores/language";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
+  import { _, locale } from "svelte-i18n";
   import "../../app.css";
 
   // ---- socket state（demo-socket の writable を購読）----
@@ -63,48 +65,37 @@
     team = v?.team ?? null;
   });
 
-  // 役職の日本語表示
-  const ROLE_JP: Record<string, string> = {
-    VILLAGER: "村人",
-    WEREWOLF: "人狼",
-    SEER: "占い師",
-    MEDIUM: "霊媒師",
-    BODYGUARD: "騎士",
-    POSSESSED: "狂人",
-  };
-  const roleJp = (r: string | null | undefined) => (r ? (ROLE_JP[r] ?? r) : "—");
-  const speciesJp = (s: string | null | undefined) =>
-    s === "WEREWOLF" ? "人狼" : s === "HUMAN" ? "人間" : (s ?? "—");
-  // 役職の一言説明（開始ポップアップ用）
-  const ROLE_DESC: Record<string, string> = {
-    VILLAGER: "特殊能力はありません。議論と投票で人狼を見つけ出してください。",
-    WEREWOLF: "あなたは人狼です。正体を隠し、夜は仲間と襲撃します。村人を欺いてください。",
-    SEER: "毎晩1人を占い、人狼か人間かを知れます。情報を活かして村を導いてください。",
-    MEDIUM: "追放された人が人狼だったか毎晩わかります。",
-    BODYGUARD: "毎晩1人を護衛し、人狼の襲撃から守れます。",
-    POSSESSED: "あなたは狂人（人間陣営に見えるが人狼の味方）。人狼の勝利に協力してください。",
-  };
+  // 役職・種別の表示（i18n: game.role / game.species を再利用）
+  const roleName = (r: string | null | undefined) => (r ? $_(`game.role.${r}`) : "—");
+  const speciesName = (s: string | null | undefined) =>
+    s === "WEREWOLF" || s === "HUMAN" ? $_(`game.species.${s}`) : (s ?? "—");
 
   let infoOpen = $state(false); // プロフィール/役職プレビューの開閉
   let introOpen = $state(false); // ゲーム開始時の説明ポップアップ
   let introAck = $state(false); // 説明を確認済みか
 
-  // 勝敗の推定（FINISH時の役職開示＋生存状況から）
-  const winnerText = $derived.by(() => {
+  // 勝敗の推定（FINISH時の役職開示＋生存状況から）。表示文字列ではなく陣営キーで持つ。
+  const winnerCamp = $derived.by(() => {
     if (!finished || !info?.role_map || !info?.status_map) return null;
     let aliveWolf = 0;
-    let aliveHuman = 0;
     for (const [name, st] of Object.entries(info.status_map as Record<string, string>)) {
       if (st !== "ALIVE") continue;
       if ((info.role_map as Record<string, string>)[name] === "WEREWOLF") aliveWolf++;
-      else aliveHuman++;
     }
-    return aliveWolf === 0 ? "村人陣営の勝利" : "人狼陣営の勝利";
+    return aliveWolf === 0 ? "VILLAGER" : "WEREWOLF";
   });
+  const winnerText = $derived(
+    winnerCamp === "VILLAGER"
+      ? $_("demo.result.villagerWin")
+      : winnerCamp === "WEREWOLF"
+        ? $_("demo.result.werewolfWin")
+        : null,
+  );
+  const myCamp = $derived(role === "WEREWOLF" || role === "POSSESSED" ? "WEREWOLF" : "VILLAGER");
+  const iWon = $derived(finished && winnerCamp !== null && winnerCamp === myCamp);
   const myResult = $derived.by(() => {
-    if (!finished || !role || !winnerText) return null;
-    const myCamp = role === "WEREWOLF" || role === "POSSESSED" ? "人狼陣営" : "村人陣営";
-    return winnerText.startsWith(myCamp) ? "あなたの勝ち 🎉" : "あなたの負け…";
+    if (!finished || !role || !winnerCamp) return null;
+    return iWon ? $_("demo.result.youWin") : $_("demo.result.youLose");
   });
 
   // ---- 入力可否の判定 ----
@@ -115,27 +106,24 @@
     Request.ATTACK,
   ];
   // 求められているアクション名
-  const ACTION_JP: Record<string, string> = {
-    TALK: "発言",
-    WHISPER: "囁き",
-    VOTE: "投票",
-    DIVINE: "占い",
-    GUARD: "護衛",
-    ATTACK: "襲撃",
-  };
-  const actionName = $derived(ACTION_JP[request as string] ?? "アクション");
+  const ACTION_KEYS = ["TALK", "WHISPER", "VOTE", "DIVINE", "GUARD", "ATTACK"];
+  const actionName = $derived(
+    request && ACTION_KEYS.includes(request as string)
+      ? $_(`demo.action.${request}`)
+      : $_("demo.action.fallback"),
+  );
   const actionHint = $derived(
     request === Request.TALK || request === Request.WHISPER
-      ? "メッセージを入力"
+      ? $_("demo.hint.talk")
       : request === Request.VOTE
-        ? "追放する相手を選択"
+        ? $_("demo.hint.vote")
         : request === Request.DIVINE
-          ? "占う相手を選択"
+          ? $_("demo.hint.divine")
           : request === Request.GUARD
-            ? "護衛する相手を選択"
+            ? $_("demo.hint.guard")
             : request === Request.ATTACK
-              ? "襲撃する相手を選択"
-              : "対象を選択",
+              ? $_("demo.hint.attack")
+              : $_("demo.hint.fallback"),
   );
 
   // 一時停止（開始ポップアップ表示中も実質停止扱い）
@@ -155,33 +143,33 @@
   // 状態バナーの文言
   const banner = $derived.by(() => {
     if (status !== "connected") {
-      return status === "connecting" ? "接続中…" : "未接続";
+      return status === "connecting" ? $_("demo.banner.connecting") : $_("demo.banner.disconnected");
     }
     if (isMyTurn && effectivePaused) {
-      return `一時停止中（あなたの番：${actionName}）`;
+      return $_("demo.banner.pausedYourTurn", { values: { action: actionName } });
     }
     if (isMyTurn) {
-      return `あなたの番です：${actionName}（${actionHint}）`;
+      return $_("demo.banner.yourTurn", { values: { action: actionName, hint: actionHint } });
     }
     if (currentTurnAgent && currentTurnAgent !== agent) {
-      return `${currentTurnAgent} さんが入力中…`;
+      return $_("demo.banner.othersTurn", { values: { name: currentTurnAgent } });
     }
     // 自分のターンでも他者のターンでもない＝集計/夜など
     switch (request) {
       case Request.VOTE:
-        return "投票中…";
+        return $_("demo.banner.voting");
       case Request.DIVINE:
       case Request.GUARD:
       case Request.ATTACK:
-        return "夜のアクション中…";
+        return $_("demo.banner.nightAction");
       case Request.DAILY_INITIALIZE:
-        return "朝になりました";
+        return $_("demo.banner.morning");
       case Request.DAILY_FINISH:
-        return "夜になりました";
+        return $_("demo.banner.night");
       case Request.FINISH:
-        return "ゲーム終了";
+        return $_("demo.banner.finished");
       default:
-        return info ? "進行中…" : "ゲーム開始を待っています";
+        return info ? $_("demo.banner.inProgress") : $_("demo.banner.waitingStart");
     }
   });
 
@@ -274,6 +262,18 @@
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let villageSize = $state(5); // 村の人数（5 or 9）。最初のページで選択。
 
+  // ゲーム言語（AIの発話言語）。スタート画面で選択。初期値はUI言語に追従し、
+  // ユーザが明示的に変えたら追従を止める（UI言語にゲーム言語が追従する設計）。
+  let gameLanguage = $state<string>("ja");
+  let gameLangTouched = $state(false);
+  $effect(() => {
+    if (!gameLangTouched) gameLanguage = normalizeLanguage($locale, "ja");
+  });
+  function pickGameLanguage(code: string) {
+    gameLangTouched = true;
+    gameLanguage = code;
+  }
+
   async function startViaLobby() {
     lobbyPhase = "joining";
     lobbyError = null;
@@ -283,7 +283,7 @@
       const res = await fetch(`${lobbyBase}/api/join`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ size: villageSize }),
+        body: JSON.stringify({ size: villageSize, language: gameLanguage }),
       });
       if (!res.ok) throw new Error(`join failed: ${res.status}`);
       const data = await res.json();
@@ -315,7 +315,7 @@
       }
     } else if (s === "error") {
       lobbyPhase = "error";
-      lobbyError = "セッションの起動に失敗しました";
+      lobbyError = $_("demo.start.startFailed");
     }
   }
 
@@ -341,7 +341,7 @@
 
   // ゲームを中断してホーム（スタート画面）に戻る
   function leaveGame(confirmFirst = true) {
-    if (confirmFirst && !confirm("ゲームを中断してホームに戻りますか？（この卓は終了します）")) {
+    if (confirmFirst && !confirm($_("demo.leaveConfirm"))) {
       return;
     }
     if (pollTimer) {
@@ -371,7 +371,10 @@
     const token = params.get("token");
     const team = params.get("team");
     const lobbyParam = params.get("lobby");
+    const langParam = params.get("lang");
     if (lobbyParam) lobbyBase = lobbyParam.replace(/\/$/, "");
+    // 直リンクに lang が付いていれば UI 言語を卓のゲーム言語に合わせる（UI言語は後から変更可）。
+    if (langParam) language.set(normalizeLanguage(langParam, "ja"));
 
     if (url) {
       directMode = true;
@@ -407,44 +410,44 @@
   );
 </script>
 
-<svelte:head><title>人狼知能大会 自然言語部門 体験デモ</title></svelte:head>
+<svelte:head><title>{$_("demo.title")}</title></svelte:head>
 
 <main class="h-dvh flex flex-col bg-base-300">
   <!-- ヘッダ：タイトル＋自分の情報＋操作ボタン -->
   <header class="flex-none bg-base-100 px-3 py-2 flex items-center gap-2 shadow">
     <div class="flex items-center gap-2 min-w-0">
       {#if agent}
-        <button class="avatar" onclick={() => (infoOpen = true)} aria-label="自分の情報">
+        <button class="avatar" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.myInfo")}>
           <div class="w-9 rounded-full ring ring-primary ring-offset-1">
             <img src={avatarSrc(agent)} alt={agent} />
           </div>
         </button>
         <div class="leading-tight min-w-0">
-          <div class="font-bold truncate">{agent}<span class="ml-1 text-xs opacity-70">({roleJp(role)})</span></div>
-          <div class="text-xs opacity-60">{info ? `${info.day}日目` : ""}</div>
+          <div class="font-bold truncate">{agent}<span class="ml-1 text-xs opacity-70">({roleName(role)})</span></div>
+          <div class="text-xs opacity-60">{info ? $_("demo.day", { values: { day: info.day } }) : ""}</div>
         </div>
       {:else}
-        <div class="font-bold text-sm leading-tight">人狼知能大会<br />自然言語部門 体験デモ</div>
+        <div class="font-bold text-sm leading-tight">{$_("demo.titleShort")}<br />{$_("demo.subtitle")}</div>
       {/if}
     </div>
     <div class="ml-auto flex items-center gap-1.5">
       <span class="badge badge-sm {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
-        {status === "connected" ? "接続中" : status === "connecting" ? "接続中…" : "未接続"}
+        {status === "connected" ? $_("demo.status.connected") : status === "connecting" ? $_("demo.status.connecting") : $_("demo.status.disconnected")}
       </span>
       {#if status === "connected" && !finished}
         <button
           class="btn btn-xs {paused ? 'btn-success' : 'btn-ghost'}"
           onclick={() => (paused = !paused)}
-          aria-label={paused ? "再開" : "一時停止"}
+          aria-label={paused ? $_("demo.header.resume") : $_("demo.header.pause")}
         >
           <iconify-icon icon={paused ? "mdi:play" : "mdi:pause"}></iconify-icon>
-          {paused ? "再開" : "一時停止"}
+          {paused ? $_("demo.header.resume") : $_("demo.header.pause")}
         </button>
-        <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label="情報">
-          <iconify-icon icon="mdi:information-outline"></iconify-icon>情報
+        <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.info")}>
+          <iconify-icon icon="mdi:information-outline"></iconify-icon>{$_("demo.header.info")}
         </button>
-        <button class="btn btn-xs btn-error btn-outline" onclick={() => leaveGame()} aria-label="中断">
-          <iconify-icon icon="mdi:home"></iconify-icon>中断
+        <button class="btn btn-xs btn-error btn-outline" onclick={() => leaveGame()} aria-label={$_("demo.header.leave")}>
+          <iconify-icon icon="mdi:home"></iconify-icon>{$_("demo.header.leave")}
         </button>
       {/if}
     </div>
@@ -453,10 +456,10 @@
   <!-- プロフィール/役職プレビュー（ドロワー風モーダル）-->
   {#if infoOpen}
     <div class="fixed inset-0 z-50 flex">
-      <button class="absolute inset-0 bg-black/50" onclick={() => (infoOpen = false)} aria-label="閉じる"></button>
+      <button class="absolute inset-0 bg-black/50" onclick={() => (infoOpen = false)} aria-label={$_("demo.info.close")}></button>
       <div class="relative ml-auto h-full w-80 max-w-[85vw] bg-base-100 shadow-xl overflow-y-auto p-4 flex flex-col gap-4">
         <div class="flex items-center justify-between">
-          <h2 class="font-bold text-lg">プレイヤー情報</h2>
+          <h2 class="font-bold text-lg">{$_("demo.info.title")}</h2>
           <button class="btn btn-sm btn-circle btn-ghost" onclick={() => (infoOpen = false)}>✕</button>
         </div>
 
@@ -466,49 +469,49 @@
             <div class="avatar"><div class="w-14 rounded-full"><img src={avatarSrc(agent ?? "")} alt={agent} /></div></div>
             <div>
               <div class="font-bold">{agent ?? "—"}</div>
-              <div class="badge badge-primary badge-sm">役職: {roleJp(role)}</div>
+              <div class="badge badge-primary badge-sm">{$_("demo.info.role", { values: { role: roleName(role) } })}</div>
               {#if team}
-                <div class="text-xs opacity-60 mt-1">接続チーム: {team}</div>
+                <div class="text-xs opacity-60 mt-1">{$_("demo.info.team", { values: { team } })}</div>
               {/if}
             </div>
           </div>
           {#if profile}
             <div class="mt-2 text-sm whitespace-pre-wrap opacity-80">{profile}</div>
           {:else}
-            <div class="mt-2 text-xs opacity-50">プロフィール情報なし</div>
+            <div class="mt-2 text-xs opacity-50">{$_("demo.info.noProfile")}</div>
           {/if}
         </div>
 
         <!-- 参加者一覧 -->
         <div>
-          <h3 class="font-bold mb-2">参加者</h3>
+          <h3 class="font-bold mb-2">{$_("demo.info.participants")}</h3>
           <div class="flex flex-col gap-1">
             {#each Object.entries(info?.status_map ?? {}) as [name, st]}
               {@const known = info?.role_map?.[name]}
               <div class="flex items-center gap-2 p-1.5 rounded {st === Status.ALIVE ? 'bg-base-200' : 'bg-base-300 opacity-60'}">
                 <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
-                <span class="font-bold text-sm">{name}{name === agent ? "（あなた）" : ""}</span>
-                {#if known}<span class="badge badge-xs">{roleJp(known)}</span>{/if}
+                <span class="font-bold text-sm">{name}{name === agent ? $_("demo.info.you") : ""}</span>
+                {#if known}<span class="badge badge-xs">{roleName(known)}</span>{/if}
                 <span class="ml-auto badge badge-xs {st === Status.ALIVE ? 'badge-success' : 'badge-error'}">
-                  {st === Status.ALIVE ? "生存" : "死亡"}
+                  {st === Status.ALIVE ? $_("demo.info.alive") : $_("demo.info.dead")}
                 </span>
               </div>
             {/each}
           </div>
-          <p class="text-xs opacity-50 mt-2">※ 他プレイヤーの役職・プロフィールは人狼ゲームの性質上、原則非公開です。</p>
+          <p class="text-xs opacity-50 mt-2">{$_("demo.info.privacyNote")}</p>
         </div>
 
         <!-- 占い結果（占い師のみ届く。target は人狼/人間が判明）-->
         {#if divineResults.length > 0}
           <div>
-            <h3 class="font-bold mb-2">🔮 占い結果</h3>
+            <h3 class="font-bold mb-2">{$_("demo.info.divineResults")}</h3>
             <div class="flex flex-col gap-1">
               {#each divineResults as j}
                 <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
-                  <span class="text-xs opacity-60">{j.day}日目</span>
+                  <span class="text-xs opacity-60">{$_("demo.day", { values: { day: j.day } })}</span>
                   <span class="font-bold text-sm">{j.target}</span>
                   <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
-                    {speciesJp(j.result)}
+                    {speciesName(j.result)}
                   </span>
                 </div>
               {/each}
@@ -518,14 +521,14 @@
         <!-- 霊媒結果（霊媒師のみ）-->
         {#if mediumResults.length > 0}
           <div>
-            <h3 class="font-bold mb-2">🔮 霊媒結果</h3>
+            <h3 class="font-bold mb-2">{$_("demo.info.mediumResults")}</h3>
             <div class="flex flex-col gap-1">
               {#each mediumResults as j}
                 <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
-                  <span class="text-xs opacity-60">{j.day}日目</span>
+                  <span class="text-xs opacity-60">{$_("demo.day", { values: { day: j.day } })}</span>
                   <span class="font-bold text-sm">{j.target}</span>
                   <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
-                    {speciesJp(j.result)}
+                    {speciesName(j.result)}
                   </span>
                 </div>
               {/each}
@@ -541,16 +544,16 @@
     <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
       <div class="card bg-base-100 w-full max-w-sm p-5 flex flex-col items-center gap-3 text-center">
         <div class="avatar"><div class="w-24 rounded-full ring ring-primary"><img src={avatarSrc(agent)} alt={agent} /></div></div>
-        <div class="text-sm opacity-70">あなたが担当するキャラクター</div>
+        <div class="text-sm opacity-70">{$_("demo.intro.yourCharacter")}</div>
         <div class="text-2xl font-bold">{agent}</div>
-        <div class="badge badge-primary badge-lg">役職: {roleJp(role)}</div>
-        <p class="text-sm opacity-80">{role ? (ROLE_DESC[role] ?? "") : ""}</p>
+        <div class="badge badge-primary badge-lg">{$_("demo.info.role", { values: { role: roleName(role) } })}</div>
+        <p class="text-sm opacity-80">{role ? $_(`demo.roleDesc.${role}`) : ""}</p>
         {#if profile}
           <div class="text-xs whitespace-pre-wrap opacity-70 bg-base-200 rounded p-2 max-h-32 overflow-y-auto">{profile}</div>
         {/if}
-        <p class="text-sm font-bold mt-1">あなたはこのキャラクター・役職としてゲーム内で振る舞ってください。</p>
+        <p class="text-sm font-bold mt-1">{$_("demo.intro.instruction")}</p>
         <button class="btn btn-primary btn-block" onclick={startGame}>
-          ゲームを開始する
+          {$_("demo.intro.start")}
         </button>
       </div>
     </div>
@@ -560,27 +563,27 @@
   {#if finished}
     <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/70">
       <div class="card bg-base-100 w-full max-w-sm p-5 flex flex-col gap-3 max-h-[90vh] overflow-y-auto">
-        <h2 class="text-2xl font-bold text-center">🏁 ゲーム終了</h2>
+        <h2 class="text-2xl font-bold text-center">{$_("demo.result.title")}</h2>
         {#if winnerText}
           <div class="text-center text-lg font-bold">{winnerText}</div>
         {/if}
         {#if myResult}
-          <div class="text-center text-xl font-bold {myResult.includes('勝ち') ? 'text-success' : 'text-error'}">{myResult}</div>
+          <div class="text-center text-xl font-bold {iWon ? 'text-success' : 'text-error'}">{myResult}</div>
         {/if}
-        <div class="divider my-1">役職の開示</div>
+        <div class="divider my-1">{$_("demo.result.reveal")}</div>
         <div class="flex flex-col gap-1">
           {#each Object.entries(info?.role_map ?? {}) as [name, r]}
             {@const rs = r as string}
             {@const alive = (info?.status_map ?? {})[name] === Status.ALIVE}
             <div class="flex items-center gap-2 p-1.5 rounded {alive ? 'bg-base-200' : 'bg-base-300 opacity-70'}">
               <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
-              <span class="font-bold text-sm">{name}{name === agent ? "（あなた）" : ""}</span>
-              <span class="badge badge-sm {rs === 'WEREWOLF' ? 'badge-error' : ''}">{roleJp(rs)}</span>
-              <span class="ml-auto text-xs opacity-60">{alive ? "生存" : "死亡"}</span>
+              <span class="font-bold text-sm">{name}{name === agent ? $_("demo.info.you") : ""}</span>
+              <span class="badge badge-sm {rs === 'WEREWOLF' ? 'badge-error' : ''}">{roleName(rs)}</span>
+              <span class="ml-auto text-xs opacity-60">{alive ? $_("demo.info.alive") : $_("demo.info.dead")}</span>
             </div>
           {/each}
         </div>
-        <button class="btn btn-primary btn-block mt-2" onclick={() => leaveGame(false)}>ホームに戻る</button>
+        <button class="btn btn-primary btn-block mt-2" onclick={() => leaveGame(false)}>{$_("demo.result.backHome")}</button>
       </div>
     </div>
   {/if}
@@ -590,59 +593,75 @@
               {isMyTurn ? 'bg-primary text-primary-content' : 'bg-base-200'}">
     {banner}
     {#if isMyTurn && remainSec !== null}
-      <span class="ml-2 font-mono">残り {remainSec}s</span>
+      <span class="ml-2 font-mono">{$_("demo.remain", { values: { sec: remainSec } })}</span>
     {/if}
   </div>
 
   {#if showStartScreen}
     <!-- スタート/順番待ち画面（ロビー連携）-->
     <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
-      <h1 class="text-xl font-bold">人狼知能大会 自然言語部門 体験デモ</h1>
+      <h1 class="text-xl font-bold">{$_("demo.title")}</h1>
       <p class="opacity-70 text-sm max-w-xs">
-        AIエージェントと人狼ゲーム。あなたの番になったら発言できます。
+        {$_("demo.tagline")}
       </p>
 
       {#if lobbyPhase === "idle"}
         <!-- 村の人数を選択（最初のページで決定。最小/既定は5）-->
         <div class="flex flex-col items-center gap-2">
-          <div class="text-sm font-bold opacity-70">村の人数</div>
+          <div class="text-sm font-bold opacity-70">{$_("demo.start.villageSize")}</div>
           <div class="join">
             <button
               class="join-item btn {villageSize === 5 ? 'btn-primary' : 'btn-outline'}"
-              onclick={() => (villageSize = 5)}>5人村</button>
+              onclick={() => (villageSize = 5)}>{$_("demo.start.village5")}</button>
             <button
               class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}"
-              onclick={() => (villageSize = 9)}>9人村</button>
+              onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
           </div>
           <div class="text-xs opacity-60 max-w-xs text-center">
             {#if villageSize === 5}
-              村人2・占い師・人狼・狂人（あなた＋AI4体）
+              {$_("demo.start.comp5")}
             {:else}
-              村人3・占い師・騎士・霊媒師・人狼2・狂人（あなた＋AI8体）
+              {$_("demo.start.comp9")}
             {/if}
           </div>
         </div>
-        <button class="btn btn-primary btn-lg" onclick={startViaLobby}>ゲーム開始</button>
+
+        <!-- ゲームの言語（AIの発話言語）。初期値はUI言語に追従。-->
+        <div class="flex flex-col items-center gap-2">
+          <div class="text-sm font-bold opacity-70">{$_("demo.start.gameLanguage")}</div>
+          <select
+            class="select select-bordered select-sm"
+            value={gameLanguage}
+            onchange={(e) => pickGameLanguage((e.target as HTMLSelectElement).value)}
+          >
+            {#each LANGUAGES as { code, label }}
+              <option value={code}>{label}</option>
+            {/each}
+          </select>
+          <div class="text-xs opacity-50 max-w-xs text-center">{$_("demo.start.gameLanguageHint")}</div>
+        </div>
+
+        <button class="btn btn-primary btn-lg" onclick={startViaLobby}>{$_("demo.start.start")}</button>
       {:else if lobbyPhase === "joining"}
         <span class="loading loading-spinner loading-lg"></span>
-        <div>参加を要求しています…</div>
+        <div>{$_("demo.start.joining")}</div>
       {:else if lobbyPhase === "queued"}
         <span class="loading loading-dots loading-lg"></span>
-        <div class="text-lg font-bold">順番待ち</div>
-        <div>あなたは <span class="text-primary font-bold">{queuePos}</span> 番目です</div>
-        <div class="text-xs opacity-60">空き卓ができ次第、自動で開始します</div>
+        <div class="text-lg font-bold">{$_("demo.start.queued")}</div>
+        <div>{$_("demo.start.queuePosition", { values: { pos: queuePos } })}</div>
+        <div class="text-xs opacity-60">{$_("demo.start.queueNote")}</div>
       {:else if lobbyPhase === "starting"}
         <span class="loading loading-spinner loading-lg"></span>
-        <div>卓を準備しています…</div>
+        <div>{$_("demo.start.preparing")}</div>
       {:else if lobbyPhase === "error"}
         <div class="alert alert-error">
-          <span>エラー: {lobbyError ?? "不明なエラー"}</span>
+          <span>{$_("demo.start.error", { values: { message: lobbyError ?? $_("demo.start.unknownError") } })}</span>
         </div>
-        <button class="btn" onclick={startViaLobby}>再試行</button>
+        <button class="btn" onclick={startViaLobby}>{$_("demo.start.retry")}</button>
       {/if}
 
       {#if displayName}
-        <div class="text-xs opacity-50">あなたの表示名: {displayName}</div>
+        <div class="text-xs opacity-50">{$_("demo.start.displayName", { values: { name: displayName } })}</div>
       {/if}
     </div>
   {:else}
@@ -651,9 +670,9 @@
     {#if feed.length === 0}
       <div class="m-auto text-center opacity-50">
         {#if status === "connected"}
-          ゲームの開始を待っています…
+          {$_("demo.feed.waitingStart")}
         {:else}
-          接続待ち。QRリンク（?url=…&team=…）から開いてください。
+          {$_("demo.feed.waitingConnect")}
         {/if}
       </div>
     {/if}
@@ -678,9 +697,9 @@
           {/if}
           <div class="chat-header text-xs opacity-70">{talk.agent}</div>
           {#if talk.over}
-            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（発言終了）</div>
+            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">{$_("demo.feed.talkOver")}</div>
           {:else if talk.skip}
-            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">（スキップ）</div>
+            <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">{$_("demo.feed.talkSkip")}</div>
           {:else}
             <div class="chat-bubble {mine ? 'chat-bubble-primary' : ''} break-words">{talk.text}</div>
           {/if}
@@ -703,47 +722,46 @@
   <footer class="flex-none bg-base-200 p-3">
     {#if isMyTurn && effectivePaused}
       <div class="flex items-center justify-center gap-3 py-2">
-        <span class="text-sm opacity-70">⏸ 一時停止中（あなたの番：{actionName}）</span>
+        <span class="text-sm opacity-70">{$_("demo.footer.pausedYourTurn", { values: { action: actionName } })}</span>
         <button class="btn btn-sm btn-success" onclick={() => (paused = false)}>
-          <iconify-icon icon="mdi:play"></iconify-icon>再開して入力
+          <iconify-icon icon="mdi:play"></iconify-icon>{$_("demo.footer.resumeInput")}
         </button>
       </div>
     {:else if isSelection}
       <!-- 投票/占い/護衛/襲撃：生存対象ボタン -->
-      <div class="text-xs font-bold opacity-70 mb-1">{actionName}：{actionHint}</div>
+      <div class="text-xs font-bold opacity-70 mb-1">{$_("demo.footer.actionHint", { values: { action: actionName, hint: actionHint } })}</div>
       <div class="flex flex-wrap gap-2">
         {#each aliveTargets as t}
           <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue(t)}>{t}</button>
         {/each}
         {#if request === Request.ATTACK && setting?.attack_vote?.allow_no_target}
-          <button class="btn btn-sm btn-ghost" disabled={!canAct} onclick={() => sendValue("")}>対象なし</button>
+          <button class="btn btn-sm btn-ghost" disabled={!canAct} onclick={() => sendValue("")}>{$_("demo.footer.noTarget")}</button>
         {/if}
       </div>
     {:else}
       <div class="flex items-end gap-2">
         <div class="flex gap-1">
           {#if isTalk && (info?.remain_skip ?? 0) > 0}
-            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Skip")}>スキップ</button>
+            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Skip")}>{$_("demo.footer.skip")}</button>
           {/if}
           {#if isTalk}
-            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Over")}>終了</button>
+            <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue("Over")}>{$_("demo.footer.over")}</button>
           {/if}
         </div>
         <textarea
           class="textarea textarea-bordered grow resize-none"
           rows="1"
-          placeholder={isTalk ? "メッセージを入力（Enterで送信）" : "あなたの番になると入力できます"}
+          placeholder={isTalk ? $_("demo.footer.talkPlaceholder") : $_("demo.footer.lockedPlaceholder")}
           bind:value={message}
           onkeydown={onKeydown}
           disabled={!canAct || !isTalk}
         ></textarea>
         <button class="btn btn-primary" disabled={!canAct || !isTalk || message.trim() === ""} onclick={handleSend}>
-          送信
+          {$_("demo.footer.send")}
         </button>
       </div>
       <p class="text-[11px] opacity-60 mt-1 px-1">
-        💡「終了」=本日の発言を終える ／「スキップ」=今回はパス。
-        手入力する場合は大文字始まりの <code>Over</code> / <code>Skip</code>（小文字 over/skip は通常の発言になります）。
+        {$_("demo.footer.help")}
       </p>
     {/if}
   </footer>

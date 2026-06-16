@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "id",
+    "name": "Indonesian",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "Beranda",
+    "realtime": "Log Real-time",
+    "archive": "Log Arsip",
+    "agent": "Agen",
+    "token": "Pembuatan Token",
+    "statistics": "Statistik"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "Log Real-time",
+      "description": "Menampilkan log permainan secara real-time\nMendukung berkas format JSONL"
+    },
+    "archiveLog": {
+      "title": "Log Arsip",
+      "description": "Menampilkan log permainan yang diarsipkan\nMendukung berkas format LOG"
+    },
+    "agent": {
+      "title": "Agen",
+      "description": "Terhubung ke server permainan dan ikut serta sebagai agen"
+    },
+    "sourceCode": "Kode Sumber",
+    "gameServer": "Server Permainan",
+    "sampleAgent": "Agen Contoh",
+    "sampleAgentLLM": "Agen Contoh (LLM)",
+    "viewer": "Penampil"
+  },
+  "realtime": {
+    "connect": "Hubungkan",
+    "disconnect": "Putuskan",
+    "settings": "Pengaturan",
+    "pasteFromClipboard": "Tempel dari Papan Klip",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "Opsional",
+    "displaySettings": "Pengaturan Tampilan",
+    "canvasAgentInfo": "Informasi Agen pada Kanvas",
+    "messageBoxAgentInfo": "Informasi Agen pada Kotak Pesan",
+    "listAgentInfo": "Informasi Agen pada Daftar",
+    "largeScreen": "Layar Besar",
+    "name": "Nama",
+    "teamName": "Nama Tim",
+    "role": "Peran",
+    "enable": "Aktif",
+    "notConnected": "Tidak Terhubung",
+    "day": "Hari {day}",
+    "daytime": "Siang",
+    "nighttime": "Malam",
+    "events": {
+      "disconnected": "Tidak Terhubung",
+      "whispered": "Berbisik",
+      "attack_voted_with_target": "{from} memilih untuk menyerang {to}",
+      "attack_voted": "Memilih untuk menyerang",
+      "voted_with_target": "{from} memilih {to}",
+      "voted": "{from} memberikan suara",
+      "no_execute": "Tidak ada yang dieksekusi",
+      "executed": "{target} telah dieksekusi",
+      "no_attack": "Tidak ada yang diserang",
+      "attacked_but_guarded": "{target} diserang tetapi terlindungi",
+      "attacked": "{target} telah diserang",
+      "divined_with_result": "{from} meramal {to} dan mendapati bahwa mereka {result}",
+      "divined": "Meramal",
+      "guarded_with_target": "{from} menetapkan {to} sebagai sasaran pengawalan",
+      "guarded": "Mengawal",
+      "game_ended": "{winner} menang",
+      "unknown": "Peristiwa tidak diketahui"
+    },
+    "eventTypes": {
+      "未接続": "Tidak Terhubung",
+      "トーク": "Bicara",
+      "囁き": "Bisikan",
+      "投票": "Pemungutan Suara",
+      "襲撃投票": "Suara Serangan",
+      "追放": "Eksekusi",
+      "襲撃": "Serangan",
+      "占い": "Ramalan",
+      "護衛": "Pengawalan",
+      "終了": "Selesai"
+    }
+  },
+  "archive": {
+    "selectFolder": "Pilih Folder",
+    "selectLog": "Pilih Log",
+    "pasteFromClipboard": "Tempel dari Papan Klip",
+    "agents": "Agen",
+    "whispers": "Bisikan",
+    "talk": "Bicara",
+    "voting": "Pemungutan Suara",
+    "votedFor": " memilih ",
+    "execute": "Eksekusi",
+    "wasExecuted": " telah dieksekusi",
+    "divination": "Ramalan",
+    "divined": " meramal: ",
+    "guard": "Pengawalan",
+    "protected": " melindungi ",
+    "attackVotes": "Suara Serangan",
+    "attack": "Serangan",
+    "wasAttacked": " telah diserang: ",
+    "success": "Berhasil",
+    "failure": "Gagal",
+    "noAttackTarget": "Tidak ada sasaran serangan",
+    "result": "Hasil",
+    "won": " menang",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "Riwayat Bicara",
+    "whisperHistory": "Riwayat Bisikan",
+    "agentSettings": "Pengaturan Agen",
+    "teamName": "Nama Tim",
+    "notConnected": "Tidak Terhubung",
+    "selectTarget": "Silakan pilih sasaran",
+    "enterContent": "Silakan masukkan isi",
+    "remainingChars": "Sisa {count} karakter",
+    "exceededChars": "Melebihi {count} karakter",
+    "send": "Kirim"
+  },
+  "statistics": {
+    "downloadCsv": "Unduh sebagai CSV"
+  },
+  "token": {
+    "title": "Pembuatan Token",
+    "description": "Membuat token yang diperlukan saat autentikasi koneksi diaktifkan pada server permainan. Kunci rahasia dibuat di peramban dan tidak pernah dikirim ke server.",
+    "agentDescription": "Jika terhubung sebagai agen, silakan masukkan nama tim.",
+    "generateSecret": "Buat Kunci Rahasia",
+    "secretKey": "Kunci Rahasia",
+    "agent": "Agen",
+    "realtimeLog": "Log Real-time",
+    "teamName": "Nama Tim",
+    "copyToken": "Salin Token",
+    "errorOccurred": "Terjadi kesalahan"
+  },
+  "common": {
+    "close": "Tutup",
+    "language": "Bahasa"
+  },
+  "displaySettings": {
+    "title": "Pengaturan Item Tampilan",
+    "selectAll": "Pilih Semua",
+    "deselectAll": "Batalkan Semua",
+    "reset": "Atur Ulang",
+    "before": "Sebelum",
+    "after": "Sesudah",
+    "allFields": "Semua Bidang",
+    "noFields": "Tanpa Bidang",
+    "fields": {
+      "agents": {
+        "gameName": "Nama Agen",
+        "originalName": "Nama Asli",
+        "role": "Peran",
+        "status": "Status"
+      },
+      "beforeWhisper": {
+        "agentName": "Nama Agen",
+        "originalName": "Nama Asli",
+        "text": "Teks",
+        "talkIdx": "ID Bicara",
+        "turnIdx": "Giliran",
+        "timestamp": "Stempel Waktu"
+      },
+      "talks": {
+        "agentName": "Nama Agen",
+        "originalName": "Nama Asli",
+        "text": "Teks",
+        "talkIdx": "ID Bicara",
+        "turnIdx": "Giliran",
+        "timestamp": "Stempel Waktu"
+      },
+      "votes": {
+        "voterName": "Pemilih",
+        "targetName": "Sasaran"
+      },
+      "execution": {
+        "agentName": "Agen yang Dieksekusi",
+        "role": "Peran"
+      },
+      "divine": {
+        "seerName": "Peramal",
+        "targetName": "Sasaran",
+        "result": "Hasil"
+      },
+      "afterWhisper": {
+        "agentName": "Nama Agen",
+        "originalName": "Nama Asli",
+        "text": "Teks",
+        "talkIdx": "ID Bicara",
+        "turnIdx": "Giliran",
+        "timestamp": "Stempel Waktu"
+      },
+      "guard": {
+        "guardName": "Pengawal",
+        "targetName": "Sasaran",
+        "result": "Hasil"
+      },
+      "attackVotes": {
+        "voterName": "Pemilih",
+        "targetName": "Sasaran"
+      },
+      "attack": {
+        "targetName": "Sasaran",
+        "result": "Hasil"
+      },
+      "result": {
+        "winSide": "Pihak Pemenang",
+        "villagers": "Jumlah Penduduk Desa",
+        "werewolves": "Jumlah Manusia Serigala"
+      }
+    }
+  },
+  "audio": {
+    "play": "Putar",
+    "stop": "Berhenti"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "Manusia Serigala",
+      "POSSESSED": "Kerasukan",
+      "SEER": "Peramal",
+      "BODYGUARD": "Pengawal",
+      "VILLAGER": "Penduduk Desa",
+      "MEDIUM": "Cenayang"
+    },
+    "species": {
+      "HUMAN": "Manusia",
+      "WEREWOLF": "Manusia Serigala"
+    },
+    "status": {
+      "ALIVE": "Hidup",
+      "DEAD": "Mati"
+    },
+    "teams": {
+      "VILLAGER": "Tim Penduduk Desa",
+      "WEREWOLF": "Tim Manusia Serigala"
+    },
+    "request": {
+      "NAME": "Nama",
+      "TALK": "Bicara",
+      "WHISPER": "Bisikan",
+      "VOTE": "Pemungutan Suara",
+      "DIVINE": "Ramalan",
+      "GUARD": "Pengawalan",
+      "ATTACK": "Serangan",
+      "INITIALIZE": "Mulai Permainan",
+      "DAILY_INITIALIZE": "Mulai Hari",
+      "DAILY_FINISH": "Akhir Hari",
+      "FINISH": "Akhir Permainan"
+    }
+  },
+  "demo": {
+    "title": "Kontes AIWolf — Demo Divisi Bahasa Alami",
+    "titleShort": "Kontes AIWolf",
+    "subtitle": "Demo Divisi Bahasa Alami",
+    "tagline": "Mainkan Werewolf bersama agen AI. Anda dapat berbicara saat giliran Anda tiba.",
+    "status": {
+      "connected": "Terhubung",
+      "connecting": "Menghubungkan…",
+      "disconnected": "Tidak Terhubung"
+    },
+    "header": {
+      "pause": "Jeda",
+      "resume": "Lanjutkan",
+      "info": "Info",
+      "leave": "Keluar",
+      "myInfo": "Info saya"
+    },
+    "day": "Hari {day}",
+    "banner": {
+      "connecting": "Menghubungkan…",
+      "disconnected": "Tidak Terhubung",
+      "pausedYourTurn": "Dijeda (giliran Anda: {action})",
+      "yourTurn": "Giliran Anda: {action} ({hint})",
+      "othersTurn": "{name} sedang mengetik…",
+      "voting": "Pemungutan suara…",
+      "nightAction": "Aksi malam sedang berlangsung…",
+      "morning": "Pagi telah tiba",
+      "night": "Malam telah tiba",
+      "finished": "Permainan selesai",
+      "inProgress": "Sedang berlangsung…",
+      "waitingStart": "Menunggu permainan dimulai"
+    },
+    "remain": "Sisa {sec}d",
+    "action": {
+      "TALK": "Bicara",
+      "WHISPER": "Bisikan",
+      "VOTE": "Pemungutan Suara",
+      "DIVINE": "Ramalan",
+      "GUARD": "Pengawalan",
+      "ATTACK": "Serangan",
+      "fallback": "Aksi"
+    },
+    "hint": {
+      "talk": "Ketik pesan",
+      "vote": "Pilih siapa yang akan dieksekusi",
+      "divine": "Pilih siapa yang akan diramal",
+      "guard": "Pilih siapa yang akan dikawal",
+      "attack": "Pilih siapa yang akan diserang",
+      "fallback": "Pilih sasaran"
+    },
+    "roleDesc": {
+      "VILLAGER": "Anda tidak memiliki kemampuan khusus. Temukan manusia serigala melalui diskusi dan pemungutan suara.",
+      "WEREWOLF": "Anda adalah manusia serigala. Sembunyikan jati diri Anda dan menyeranglah bersama sekutu Anda pada malam hari. Tipu para penduduk desa.",
+      "SEER": "Setiap malam Anda meramal satu orang untuk mengetahui apakah mereka manusia serigala atau manusia. Gunakan untuk memandu desa.",
+      "MEDIUM": "Setiap malam Anda mengetahui apakah pemain yang dieksekusi adalah manusia serigala.",
+      "BODYGUARD": "Setiap malam Anda mengawal satu orang dan melindunginya dari serangan manusia serigala.",
+      "POSSESSED": "Anda adalah si kerasukan (tampak seperti manusia tetapi memihak manusia serigala). Bantu manusia serigala menang."
+    },
+    "result": {
+      "villagerWin": "Tim penduduk desa menang",
+      "werewolfWin": "Tim manusia serigala menang",
+      "youWin": "Anda menang 🎉",
+      "youLose": "Anda kalah…",
+      "title": "🏁 Permainan selesai",
+      "reveal": "Peran terungkap",
+      "backHome": "Kembali ke beranda"
+    },
+    "info": {
+      "title": "Info pemain",
+      "role": "Peran: {role}",
+      "team": "Tim: {team}",
+      "noProfile": "Tanpa profil",
+      "participants": "Peserta",
+      "you": " (Anda)",
+      "alive": "Hidup",
+      "dead": "Mati",
+      "privacyNote": "Catatan: peran dan profil pemain lain dirahasiakan, sebagaimana sifat permainan Werewolf.",
+      "divineResults": "🔮 Hasil ramalan",
+      "mediumResults": "🔮 Hasil cenayang",
+      "close": "Tutup"
+    },
+    "intro": {
+      "yourCharacter": "Karakter yang Anda mainkan",
+      "instruction": "Silakan berperan sebagai karakter dan peran ini selama permainan.",
+      "start": "Mulai permainan"
+    },
+    "start": {
+      "villageSize": "Ukuran desa",
+      "village5": "5 pemain",
+      "village9": "9 pemain",
+      "comp5": "2 penduduk desa, peramal, manusia serigala, kerasukan (Anda + 4 AI)",
+      "comp9": "3 penduduk desa, peramal, pengawal, cenayang, 2 manusia serigala, kerasukan (Anda + 8 AI)",
+      "gameLanguage": "Bahasa permainan",
+      "gameLanguageHint": "Bahasa yang digunakan AI (ganti bahasa layar di kanan atas).",
+      "start": "Mulai permainan",
+      "joining": "Meminta untuk bergabung…",
+      "queued": "Dalam antrean",
+      "queuePosition": "Anda berada di urutan {pos}",
+      "queueNote": "Permainan dimulai otomatis ketika ada meja yang kosong",
+      "preparing": "Menyiapkan meja…",
+      "error": "Kesalahan: {message}",
+      "retry": "Coba lagi",
+      "displayName": "Nama tampilan Anda: {name}",
+      "unknownError": "Kesalahan tidak diketahui",
+      "startFailed": "Gagal memulai sesi"
+    },
+    "feed": {
+      "waitingStart": "Menunggu permainan dimulai…",
+      "waitingConnect": "Menunggu koneksi. Buka dari tautan QR (?url=…&team=…).",
+      "talkOver": "(akhir bicara)",
+      "talkSkip": "(dilewati)"
+    },
+    "footer": {
+      "skip": "Lewati",
+      "over": "Selesai",
+      "send": "Kirim",
+      "pausedYourTurn": "⏸ Dijeda (giliran Anda: {action})",
+      "resumeInput": "Lanjutkan dan ketik",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Ketik pesan (Enter untuk mengirim)",
+      "lockedPlaceholder": "Anda dapat mengetik saat giliran Anda tiba",
+      "help": "💡 \"Over\" = selesai berbicara untuk hari ini / \"Skip\" = lewati kali ini. Jika mengetik manual, gunakan Over / Skip dengan huruf kapital di awal (over/skip huruf kecil akan menjadi pesan biasa).",
+      "noTarget": "Tanpa sasaran"
+    },
+    "leaveConfirm": "Keluar dari permainan dan kembali ke beranda? (Meja ini akan berakhir.)"
+  }
+}

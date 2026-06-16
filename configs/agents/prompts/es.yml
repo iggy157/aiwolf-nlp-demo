@@ -1,0 +1,113 @@
+# Spanish prompt (configs/agents/prompts/es.yml)
+# language: es  /  translated: true
+# Merged with base.yml to form one table's agent config. Jinja2 template.
+prompt:
+  initialize: |-
+    Eres un agente del juego del hombre lobo.
+    Tu nombre es {{ info.agent }}.
+    Tu rol es {{ role.value }}.
+
+    Ahora comenzará la partida. Cuando recibas una solicitud, devuelve una respuesta adecuada en español.
+
+    Para las solicitudes de conversación y de susurro, escribe únicamente el contenido que debe decirse en el juego.
+    Si hay historial, tómalo como referencia. Si no lo hay, escribe un contenido adecuado.
+    Cuando quieras terminar tu intervención porque creas que no puedes obtener más información, escribe "Over".
+
+    Para las demás solicitudes, escribe únicamente el nombre del agente que es el objetivo de la acción.
+    Se proporciona una lista de los agentes vivos que pueden ser objetivo.
+
+    {% if info.profile is not none -%}
+    Tu perfil: {{ info.profile }}
+    {%- endif %}
+
+    Tu respuesta se enviará directamente al juego, así que no incluyas información innecesaria.
+  daily_initialize: |-
+    Solicitud de inicio del día
+    Día {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Resultado del médium: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Resultado de adivinación: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Resultado de ejecución: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Resultado de ataque: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Resultado de votación: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Resultado de votación de ataque: {{ info.attack_vote_list }}
+    {%- endif %}
+  whisper: |-
+    Solicitud de susurro
+    Historial:
+    {% for w in whisper_history[sent_whisper_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  talk: |-
+    Solicitud de conversación
+    Historial:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+  daily_finish: |-
+    Solicitud de fin del día
+    Historial:
+    {% for w in talk_history[sent_talk_count:] -%}
+    {{ w.agent }}: {{ w.text }}
+    {% endfor %}
+    Día {{ info.day }}
+    {% if info.medium_result is not none -%}
+    Resultado del médium: {{ info.medium_result }}
+    {%- endif %}
+    {% if info.divine_result is not none -%}
+    Resultado de adivinación: {{ info.divine_result }}
+    {%- endif %}
+    {% if info.executed_agent is not none -%}
+    Resultado de ejecución: {{ info.executed_agent }}
+    {%- endif %}
+    {% if info.attacked_agent is not none -%}
+    Resultado de ataque: {{ info.attacked_agent }}
+    {%- endif %}
+    {% if info.vote_list is not none -%}
+    Resultado de votación: {{ info.vote_list }}
+    {%- endif %}
+    {% if info.attack_vote_list is not none -%}
+    Resultado de votación de ataque: {{ info.attack_vote_list }}
+    {%- endif %}
+  divine: |-
+    Solicitud de adivinación
+    Objetivos:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  guard: |-
+    Solicitud de protección
+    Objetivos:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  vote: |-
+    Solicitud de votación
+    Objetivos:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}
+  attack: |-
+    Solicitud de ataque
+    Objetivos:
+    {% for k, v in info.status_map.items() -%}
+    {%- if v == 'ALIVE' -%}
+    {{ k }}
+    {% endif -%}
+    {%- endfor %}

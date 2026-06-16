@@ -1,0 +1,62 @@
+# aiwolf-nlp-demo: AIエージェント設定ベース（configs/agents/base.yml）
+# ベース: repos/aiwolf-nlp-agent-llm/config/config.jp.yml.example
+#
+# 言語に依存しない共通設定（接続/エージェント数/LLM/ログ）だけをここに置く。
+# 言語ごとに変わるのは prompt: ブロックだけで、これは configs/agents/prompts/<lang>.yml に分離した。
+# lobby backend は base.yml ＋ prompts/<lang>.yml ＋ 実行時上書き(URL/team/num/LLM) をマージして
+# 各卓の最終 config を生成する（lobby/prompt_provider.py: FilePromptProvider）。
+#
+# 将来ユーザがUIでプロンプトを編集・保存して戦えるようにする場合は、prompts/<lang>.yml の中身を
+# そのまま「プロンプトレコード1件」とみなし、FilePromptProvider を DbPromptProvider に差し替えるだけで済む。
+#
+# APIキーは repos/aiwolf-nlp-agent-llm/config/.env（OPENAI_API_KEY 等）から読まれる。
+# LLM切替は llm.type を openai|google|ollama|vllm で指定。
+
+web_socket:
+  url: ws://127.0.0.1:8080/ws
+  token:
+  auto_reconnect: false
+
+agent:
+  num: 4            # 人間1枠を除いた AI 体数（agent_count:5 のうち4体）
+  team: test        # サーバ側は末尾数字を除去して team 名を抽出 -> "test"
+  kill_on_timeout: true
+
+llm:
+  type: openai      # .env の LLM_PROVIDER 既定に合わせる（openai|google|ollama|vllm）
+  sleep_time: 0
+
+openai:
+  model: gpt-4o-mini
+  temperature: 0.7
+  # vLLM等のOpenAI互換エンドポイントを使う場合に指定（商用OpenAIは未指定=直接APIへ）。
+  # 環境変数 OPENAI_BASE_URL でも指定可。llm.type は openai/vllm どちらでも本セクションを参照。
+  # base_url: http://localhost:8000/v1
+
+google:
+  model: gemini-2.0-flash-lite
+  temperature: 0.7
+
+ollama:
+  model: llama3.1
+  temperature: 0.7
+  base_url: http://localhost:11434
+
+log:
+  console_output: true
+  file_output: true
+  output_dir: ./log
+  level: debug
+
+  request:
+    name: false
+    initialize: false
+    daily_initialize: false
+    whisper: true
+    talk: true
+    daily_finish: false
+    divine: true
+    guard: true
+    vote: true
+    attack: true
+    finish: false

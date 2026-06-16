@@ -21,7 +21,9 @@ aiwolf-nlp-demo/
 │   └── cloudflared     # 同梱トンネルバイナリ（make public が自動検出）
 ├── configs/
 │   ├── server.yml      # ゲームサーバ設定（room_match, agent_count:5, turn-based, TTS無効）
-│   └── agent.yml       # AI設定テンプレ（lobby が動的生成のベース）
+│   └── agents/         # AI設定（lobby が動的生成のベース）
+│       ├── base.yml    #   言語非依存（接続/num/team/LLM/ログ）
+│       └── prompts/    #   言語別プロンプト（<lang>.yml × 14言語。ja/en は本物）
 ├── lobby/              # 採番・キュー・AI spawn（FastAPI, agent-llm 同梱）
 └── repos/
     ├── aiwolf-nlp-server/     # ゲーム本体（Go）★逐次push+ターンマーカー追加

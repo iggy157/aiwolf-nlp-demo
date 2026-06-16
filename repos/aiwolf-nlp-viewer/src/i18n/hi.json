@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "hi",
+    "name": "Hindi",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "होम",
+    "realtime": "रियल-टाइम लॉग",
+    "archive": "आर्काइव लॉग",
+    "agent": "एजेंट",
+    "token": "टोकन जनरेशन",
+    "statistics": "आँकड़े"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "रियल-टाइम लॉग",
+      "description": "गेम लॉग को रियल-टाइम में दिखाएँ\nJSONL फ़ॉर्मैट की फ़ाइलों का समर्थन करता है"
+    },
+    "archiveLog": {
+      "title": "आर्काइव लॉग",
+      "description": "आर्काइव किए गए गेम लॉग दिखाएँ\nLOG फ़ॉर्मैट की फ़ाइलों का समर्थन करता है"
+    },
+    "agent": {
+      "title": "एजेंट",
+      "description": "गेम सर्वर से कनेक्ट करें और एक एजेंट के रूप में भाग लें"
+    },
+    "sourceCode": "सोर्स कोड",
+    "gameServer": "गेम सर्वर",
+    "sampleAgent": "सैंपल एजेंट",
+    "sampleAgentLLM": "सैंपल एजेंट (LLM)",
+    "viewer": "व्यूअर"
+  },
+  "realtime": {
+    "connect": "कनेक्ट करें",
+    "disconnect": "डिस्कनेक्ट करें",
+    "settings": "सेटिंग्स",
+    "pasteFromClipboard": "क्लिपबोर्ड से पेस्ट करें",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "वैकल्पिक",
+    "displaySettings": "डिस्प्ले सेटिंग्स",
+    "canvasAgentInfo": "कैनवास पर एजेंट जानकारी",
+    "messageBoxAgentInfo": "मैसेज बॉक्स पर एजेंट जानकारी",
+    "listAgentInfo": "सूची में एजेंट जानकारी",
+    "largeScreen": "बड़ी स्क्रीन",
+    "name": "नाम",
+    "teamName": "टीम का नाम",
+    "role": "भूमिका",
+    "enable": "सक्षम करें",
+    "notConnected": "कनेक्ट नहीं है",
+    "day": "दिन {day}",
+    "daytime": "दिन",
+    "nighttime": "रात",
+    "events": {
+      "disconnected": "कनेक्ट नहीं है",
+      "whispered": "फुसफुसाया",
+      "attack_voted_with_target": "{from} ने {to} पर हमले के लिए वोट किया",
+      "attack_voted": "हमले के लिए वोट किया",
+      "voted_with_target": "{from} ने {to} को वोट दिया",
+      "voted": "{from} ने वोट दिया",
+      "no_execute": "किसी को भी निष्कासित नहीं किया गया",
+      "executed": "{target} को निष्कासित किया गया",
+      "no_attack": "किसी पर भी हमला नहीं हुआ",
+      "attacked_but_guarded": "{target} पर हमला हुआ लेकिन उसकी रक्षा हुई",
+      "attacked": "{target} पर हमला हुआ",
+      "divined_with_result": "{from} ने {to} की भविष्यवाणी की और उसे {result} पाया",
+      "divined": "भविष्यवाणी की",
+      "guarded_with_target": "{from} ने {to} को रक्षा का लक्ष्य बनाया",
+      "guarded": "रक्षा की",
+      "game_ended": "{winner} जीते",
+      "unknown": "अज्ञात इवेंट"
+    },
+    "eventTypes": {
+      "未接続": "कनेक्ट नहीं है",
+      "トーク": "बातचीत",
+      "囁き": "फुसफुसाहट",
+      "投票": "वोट",
+      "襲撃投票": "हमले का वोट",
+      "追放": "निष्कासन",
+      "襲撃": "हमला",
+      "占い": "भविष्यवाणी",
+      "護衛": "रक्षा",
+      "終了": "समाप्ति"
+    }
+  },
+  "archive": {
+    "selectFolder": "फ़ोल्डर चुनें",
+    "selectLog": "लॉग चुनें",
+    "pasteFromClipboard": "क्लिपबोर्ड से पेस्ट करें",
+    "agents": "एजेंट",
+    "whispers": "फुसफुसाहट",
+    "talk": "बातचीत",
+    "voting": "मतदान",
+    "votedFor": " ने वोट दिया ",
+    "execute": "निष्कासन",
+    "wasExecuted": " को निष्कासित किया गया",
+    "divination": "भविष्यवाणी",
+    "divined": " की भविष्यवाणी की: ",
+    "guard": "रक्षा",
+    "protected": " की रक्षा की ",
+    "attackVotes": "हमले के वोट",
+    "attack": "हमला",
+    "wasAttacked": " पर हमला हुआ: ",
+    "success": "सफल",
+    "failure": "असफल",
+    "noAttackTarget": "हमले का कोई लक्ष्य नहीं",
+    "result": "परिणाम",
+    "won": " जीते",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "बातचीत का इतिहास",
+    "whisperHistory": "फुसफुसाहट का इतिहास",
+    "agentSettings": "एजेंट सेटिंग्स",
+    "teamName": "टीम का नाम",
+    "notConnected": "कनेक्ट नहीं है",
+    "selectTarget": "कृपया एक लक्ष्य चुनें",
+    "enterContent": "कृपया सामग्री दर्ज करें",
+    "remainingChars": "{count} अक्षर शेष",
+    "exceededChars": "{count} अक्षर अधिक हो गए",
+    "send": "भेजें"
+  },
+  "statistics": {
+    "downloadCsv": "CSV के रूप में डाउनलोड करें"
+  },
+  "token": {
+    "title": "टोकन जनरेशन",
+    "description": "जब गेम सर्वर पर कनेक्शन प्रमाणीकरण सक्षम हो तब आवश्यक टोकन जनरेट करें। सीक्रेट की ब्राउज़र में जनरेट होती है और कभी भी सर्वर को नहीं भेजी जाती।",
+    "agentDescription": "यदि एजेंट के रूप में कनेक्ट कर रहे हैं, तो कृपया टीम का नाम दर्ज करें।",
+    "generateSecret": "सीक्रेट की जनरेट करें",
+    "secretKey": "सीक्रेट की",
+    "agent": "एजेंट",
+    "realtimeLog": "रियल-टाइम लॉग",
+    "teamName": "टीम का नाम",
+    "copyToken": "टोकन कॉपी करें",
+    "errorOccurred": "एक त्रुटि हुई"
+  },
+  "common": {
+    "close": "बंद करें",
+    "language": "भाषा"
+  },
+  "displaySettings": {
+    "title": "डिस्प्ले आइटम सेटिंग्स",
+    "selectAll": "सभी चुनें",
+    "deselectAll": "सभी अचयनित करें",
+    "reset": "रीसेट करें",
+    "before": "पहले",
+    "after": "बाद में",
+    "allFields": "सभी फ़ील्ड",
+    "noFields": "कोई फ़ील्ड नहीं",
+    "fields": {
+      "agents": {
+        "gameName": "एजेंट का नाम",
+        "originalName": "मूल नाम",
+        "role": "भूमिका",
+        "status": "स्थिति"
+      },
+      "beforeWhisper": {
+        "agentName": "एजेंट का नाम",
+        "originalName": "मूल नाम",
+        "text": "टेक्स्ट",
+        "talkIdx": "बातचीत ID",
+        "turnIdx": "टर्न",
+        "timestamp": "टाइमस्टैम्प"
+      },
+      "talks": {
+        "agentName": "एजेंट का नाम",
+        "originalName": "मूल नाम",
+        "text": "टेक्स्ट",
+        "talkIdx": "बातचीत ID",
+        "turnIdx": "टर्न",
+        "timestamp": "टाइमस्टैम्प"
+      },
+      "votes": {
+        "voterName": "मतदाता",
+        "targetName": "लक्ष्य"
+      },
+      "execution": {
+        "agentName": "निष्कासित एजेंट",
+        "role": "भूमिका"
+      },
+      "divine": {
+        "seerName": "भविष्यवक्ता",
+        "targetName": "लक्ष्य",
+        "result": "परिणाम"
+      },
+      "afterWhisper": {
+        "agentName": "एजेंट का नाम",
+        "originalName": "मूल नाम",
+        "text": "टेक्स्ट",
+        "talkIdx": "बातचीत ID",
+        "turnIdx": "टर्न",
+        "timestamp": "टाइमस्टैम्प"
+      },
+      "guard": {
+        "guardName": "रक्षक",
+        "targetName": "लक्ष्य",
+        "result": "परिणाम"
+      },
+      "attackVotes": {
+        "voterName": "मतदाता",
+        "targetName": "लक्ष्य"
+      },
+      "attack": {
+        "targetName": "लक्ष्य",
+        "result": "परिणाम"
+      },
+      "result": {
+        "winSide": "विजयी पक्ष",
+        "villagers": "ग्रामीणों की संख्या",
+        "werewolves": "वेयरवुल्फ़ की संख्या"
+      }
+    }
+  },
+  "audio": {
+    "play": "चलाएँ",
+    "stop": "रोकें"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "वेयरवुल्फ",
+      "POSSESSED": "उन्मादी",
+      "SEER": "भविष्यवक्ता",
+      "BODYGUARD": "अंगरक्षक",
+      "VILLAGER": "ग्रामीण",
+      "MEDIUM": "माध्यम"
+    },
+    "species": {
+      "HUMAN": "मानव",
+      "WEREWOLF": "वेयरवुल्फ"
+    },
+    "status": {
+      "ALIVE": "जीवित",
+      "DEAD": "मृत"
+    },
+    "teams": {
+      "VILLAGER": "ग्रामीण टीम",
+      "WEREWOLF": "वेयरवुल्फ टीम"
+    },
+    "request": {
+      "NAME": "नाम",
+      "TALK": "बातचीत",
+      "WHISPER": "फुसफुसाहट",
+      "VOTE": "वोट",
+      "DIVINE": "भविष्यवाणी",
+      "GUARD": "रक्षा",
+      "ATTACK": "हमला",
+      "INITIALIZE": "गेम शुरू",
+      "DAILY_INITIALIZE": "दिन शुरू",
+      "DAILY_FINISH": "दिन समाप्त",
+      "FINISH": "गेम समाप्त"
+    }
+  },
+  "demo": {
+    "title": "AIWolf प्रतियोगिता — प्राकृतिक भाषा वर्ग डेमो",
+    "titleShort": "AIWolf प्रतियोगिता",
+    "subtitle": "प्राकृतिक भाषा वर्ग डेमो",
+    "tagline": "AI एजेंट के साथ वेयरवुल्फ खेलें। जब आपकी बारी हो तब आप बोल सकते हैं।",
+    "status": {
+      "connected": "कनेक्ट है",
+      "connecting": "कनेक्ट हो रहा है…",
+      "disconnected": "कनेक्ट नहीं है"
+    },
+    "header": {
+      "pause": "रोकें",
+      "resume": "फिर से शुरू करें",
+      "info": "जानकारी",
+      "leave": "छोड़ें",
+      "myInfo": "मेरी जानकारी"
+    },
+    "day": "दिन {day}",
+    "banner": {
+      "connecting": "कनेक्ट हो रहा है…",
+      "disconnected": "कनेक्ट नहीं है",
+      "pausedYourTurn": "रुका हुआ (आपकी बारी: {action})",
+      "yourTurn": "आपकी बारी: {action} ({hint})",
+      "othersTurn": "{name} टाइप कर रहे हैं…",
+      "voting": "मतदान हो रहा है…",
+      "nightAction": "रात की कार्रवाई चल रही है…",
+      "morning": "सुबह हो गई है",
+      "night": "रात हो गई है",
+      "finished": "गेम समाप्त",
+      "inProgress": "चल रहा है…",
+      "waitingStart": "गेम शुरू होने की प्रतीक्षा है"
+    },
+    "remain": "{sec}से शेष",
+    "action": {
+      "TALK": "बातचीत",
+      "WHISPER": "फुसफुसाहट",
+      "VOTE": "वोट",
+      "DIVINE": "भविष्यवाणी",
+      "GUARD": "रक्षा",
+      "ATTACK": "हमला",
+      "fallback": "कार्रवाई"
+    },
+    "hint": {
+      "talk": "एक संदेश टाइप करें",
+      "vote": "चुनें किसे निष्कासित करना है",
+      "divine": "चुनें किसकी भविष्यवाणी करनी है",
+      "guard": "चुनें किसकी रक्षा करनी है",
+      "attack": "चुनें किस पर हमला करना है",
+      "fallback": "एक लक्ष्य चुनें"
+    },
+    "roleDesc": {
+      "VILLAGER": "आपके पास कोई विशेष क्षमता नहीं है। चर्चा और मतदान के ज़रिए वेयरवुल्फ़ को खोजें।",
+      "WEREWOLF": "आप एक वेयरवुल्फ हैं। अपनी पहचान छिपाएँ और रात में अपने साथियों के साथ हमला करें। ग्रामीणों को धोखा दें।",
+      "SEER": "हर रात आप एक व्यक्ति की भविष्यवाणी करते हैं ताकि जान सकें कि वह वेयरवुल्फ है या मानव। इसका उपयोग गाँव का मार्गदर्शन करने के लिए करें।",
+      "MEDIUM": "हर रात आप जानते हैं कि निष्कासित किया गया खिलाड़ी वेयरवुल्फ था या नहीं।",
+      "BODYGUARD": "हर रात आप एक व्यक्ति की रक्षा करते हैं और उसे वेयरवुल्फ़ के हमले से बचाते हैं।",
+      "POSSESSED": "आप उन्मादी हैं (दिखने में मानव लेकिन वेयरवुल्फ़ के पक्ष में)। वेयरवुल्फ़ की जीत में मदद करें।"
+    },
+    "result": {
+      "villagerWin": "ग्रामीण टीम जीती",
+      "werewolfWin": "वेयरवुल्फ टीम जीती",
+      "youWin": "आप जीते 🎉",
+      "youLose": "आप हारे…",
+      "title": "🏁 गेम समाप्त",
+      "reveal": "भूमिकाएँ प्रकट हुईं",
+      "backHome": "होम पर वापस जाएँ"
+    },
+    "info": {
+      "title": "खिलाड़ी की जानकारी",
+      "role": "भूमिका: {role}",
+      "team": "टीम: {team}",
+      "noProfile": "कोई प्रोफ़ाइल नहीं",
+      "participants": "प्रतिभागी",
+      "you": " (आप)",
+      "alive": "जीवित",
+      "dead": "मृत",
+      "privacyNote": "नोट: अन्य खिलाड़ियों की भूमिकाएँ और प्रोफ़ाइल छिपी रखी जाती हैं, जैसा कि वेयरवुल्फ की प्रकृति है।",
+      "divineResults": "🔮 भविष्यवाणी के परिणाम",
+      "mediumResults": "🔮 माध्यम के परिणाम",
+      "close": "बंद करें"
+    },
+    "intro": {
+      "yourCharacter": "जो किरदार आप निभाते हैं",
+      "instruction": "कृपया गेम के दौरान इसी किरदार और भूमिका के रूप में व्यवहार करें।",
+      "start": "गेम शुरू करें"
+    },
+    "start": {
+      "villageSize": "गाँव का आकार",
+      "village5": "5 खिलाड़ी",
+      "village9": "9 खिलाड़ी",
+      "comp5": "2 ग्रामीण, भविष्यवक्ता, वेयरवुल्फ, उन्मादी (आप + 4 AI)",
+      "comp9": "3 ग्रामीण, भविष्यवक्ता, अंगरक्षक, माध्यम, 2 वेयरवुल्फ, उन्मादी (आप + 8 AI)",
+      "gameLanguage": "गेम की भाषा",
+      "gameLanguageHint": "वह भाषा जिसमें AI बोलता है (स्क्रीन की भाषा ऊपर दाईं ओर से बदलें)।",
+      "start": "गेम शुरू करें",
+      "joining": "शामिल होने का अनुरोध किया जा रहा है…",
+      "queued": "कतार में",
+      "queuePosition": "आप नंबर {pos} पर हैं",
+      "queueNote": "जैसे ही कोई टेबल खाली होती है गेम अपने आप शुरू हो जाता है",
+      "preparing": "टेबल तैयार की जा रही है…",
+      "error": "त्रुटि: {message}",
+      "retry": "फिर से प्रयास करें",
+      "displayName": "आपका प्रदर्शित नाम: {name}",
+      "unknownError": "अज्ञात त्रुटि",
+      "startFailed": "सेशन शुरू करने में विफल"
+    },
+    "feed": {
+      "waitingStart": "गेम शुरू होने की प्रतीक्षा है…",
+      "waitingConnect": "कनेक्ट होने की प्रतीक्षा है। QR लिंक (?url=…&team=…) से खोलें।",
+      "talkOver": "(बातचीत समाप्त)",
+      "talkSkip": "(छोड़ा गया)"
+    },
+    "footer": {
+      "skip": "छोड़ें",
+      "over": "समाप्त",
+      "send": "भेजें",
+      "pausedYourTurn": "⏸ रुका हुआ (आपकी बारी: {action})",
+      "resumeInput": "फिर से शुरू करें और टाइप करें",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "एक संदेश टाइप करें (भेजने के लिए Enter)",
+      "lockedPlaceholder": "जब आपकी बारी हो तब आप टाइप कर सकते हैं",
+      "help": "💡 \"Over\" = आज के लिए बोलना समाप्त करें / \"Skip\" = इस बार पास करें। यदि मैन्युअल रूप से टाइप कर रहे हैं, तो बड़े अक्षर वाले Over / Skip का उपयोग करें (छोटे अक्षर वाले over/skip सामान्य संदेश बन जाते हैं)।",
+      "noTarget": "कोई लक्ष्य नहीं"
+    },
+    "leaveConfirm": "गेम छोड़कर होम पर वापस जाएँ? (यह टेबल समाप्त हो जाएगी।)"
+  }
+}

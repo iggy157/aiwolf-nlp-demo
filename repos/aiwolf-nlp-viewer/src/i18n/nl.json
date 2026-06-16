@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "nl",
+    "name": "Dutch",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "Home",
+    "realtime": "Realtime-log",
+    "archive": "Archieflog",
+    "agent": "Agent",
+    "token": "Token genereren",
+    "statistics": "Statistieken"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "Realtime-log",
+      "description": "Toon spellogs in realtime\nOndersteunt bestanden in JSONL-formaat"
+    },
+    "archiveLog": {
+      "title": "Archieflog",
+      "description": "Toon gearchiveerde spellogs\nOndersteunt bestanden in LOG-formaat"
+    },
+    "agent": {
+      "title": "Agent",
+      "description": "Maak verbinding met de spelserver en doe mee als agent"
+    },
+    "sourceCode": "Broncode",
+    "gameServer": "Spelserver",
+    "sampleAgent": "Voorbeeldagent",
+    "sampleAgentLLM": "Voorbeeldagent (LLM)",
+    "viewer": "Viewer"
+  },
+  "realtime": {
+    "connect": "Verbinden",
+    "disconnect": "Verbreken",
+    "settings": "Instellingen",
+    "pasteFromClipboard": "Plakken vanaf klembord",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Autorisatiesleutel",
+    "optional": "Optioneel",
+    "displaySettings": "Weergave-instellingen",
+    "canvasAgentInfo": "Agentinformatie op canvas",
+    "messageBoxAgentInfo": "Agentinformatie in berichtenvak",
+    "listAgentInfo": "Agentinformatie in lijst",
+    "largeScreen": "Groot scherm",
+    "name": "Naam",
+    "teamName": "Teamnaam",
+    "role": "Rol",
+    "enable": "Inschakelen",
+    "notConnected": "Niet verbonden",
+    "day": "Dag {day}",
+    "daytime": "Dag",
+    "nighttime": "Nacht",
+    "events": {
+      "disconnected": "Niet verbonden",
+      "whispered": "Fluisterde",
+      "attack_voted_with_target": "{from} stemde om {to} aan te vallen",
+      "attack_voted": "Stemde voor de aanval",
+      "voted_with_target": "{from} stemde op {to}",
+      "voted": "{from} stemde",
+      "no_execute": "Er werd niemand geëxecuteerd",
+      "executed": "{target} werd geëxecuteerd",
+      "no_attack": "Er werd niemand aangevallen",
+      "attacked_but_guarded": "{target} werd aangevallen maar beschermd",
+      "attacked": "{target} werd aangevallen",
+      "divined_with_result": "{from} schouwde {to} en stelde vast dat deze {result} is",
+      "divined": "Schouwde",
+      "guarded_with_target": "{from} koos {to} als beschermdoelwit",
+      "guarded": "Beschermd",
+      "game_ended": "{winner} heeft gewonnen",
+      "unknown": "Onbekende gebeurtenis"
+    },
+    "eventTypes": {
+      "未接続": "Niet verbonden",
+      "トーク": "Gesprek",
+      "囁き": "Gefluister",
+      "投票": "Stemming",
+      "襲撃投票": "Aanvalsstemming",
+      "追放": "Executie",
+      "襲撃": "Aanval",
+      "占い": "Schouwen",
+      "護衛": "Beschermen",
+      "終了": "Einde"
+    }
+  },
+  "archive": {
+    "selectFolder": "Map selecteren",
+    "selectLog": "Log selecteren",
+    "pasteFromClipboard": "Plakken vanaf klembord",
+    "agents": "Agents",
+    "whispers": "Gefluister",
+    "talk": "Gesprek",
+    "voting": "Stemming",
+    "votedFor": " stemde op ",
+    "execute": "Executie",
+    "wasExecuted": " werd geëxecuteerd",
+    "divination": "Schouwing",
+    "divined": " schouwde ",
+    "guard": "Beschermen",
+    "protected": " beschermde ",
+    "attackVotes": "Aanvalsstemmen",
+    "attack": "Aanval",
+    "wasAttacked": " werd aangevallen: ",
+    "success": "Geslaagd",
+    "failure": "Mislukt",
+    "noAttackTarget": "Geen aanvalsdoelwit",
+    "result": "Resultaat",
+    "won": " heeft gewonnen",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "Gespreksgeschiedenis",
+    "whisperHistory": "Fluistergeschiedenis",
+    "agentSettings": "Agentinstellingen",
+    "teamName": "Teamnaam",
+    "notConnected": "Niet verbonden",
+    "selectTarget": "Selecteer een doelwit",
+    "enterContent": "Voer inhoud in",
+    "remainingChars": "Nog {count} tekens",
+    "exceededChars": "{count} tekens te veel",
+    "send": "Verzenden"
+  },
+  "statistics": {
+    "downloadCsv": "Downloaden als CSV"
+  },
+  "token": {
+    "title": "Token genereren",
+    "description": "Genereer de token die nodig is wanneer verbindingsauthenticatie is ingeschakeld op de spelserver. De geheime sleutel wordt in de browser gegenereerd en wordt nooit naar de server verzonden.",
+    "agentDescription": "Voer een teamnaam in als je als agent verbinding maakt.",
+    "generateSecret": "Geheime sleutel genereren",
+    "secretKey": "Geheime sleutel",
+    "agent": "Agent",
+    "realtimeLog": "Realtime-log",
+    "teamName": "Teamnaam",
+    "copyToken": "Token kopiëren",
+    "errorOccurred": "Er is een fout opgetreden"
+  },
+  "common": {
+    "close": "Sluiten",
+    "language": "Taal"
+  },
+  "displaySettings": {
+    "title": "Instellingen weergave-items",
+    "selectAll": "Alles selecteren",
+    "deselectAll": "Alles deselecteren",
+    "reset": "Resetten",
+    "before": "Voor",
+    "after": "Na",
+    "allFields": "Alle velden",
+    "noFields": "Geen velden",
+    "fields": {
+      "agents": {
+        "gameName": "Agentnaam",
+        "originalName": "Oorspronkelijke naam",
+        "role": "Rol",
+        "status": "Status"
+      },
+      "beforeWhisper": {
+        "agentName": "Agentnaam",
+        "originalName": "Oorspronkelijke naam",
+        "text": "Tekst",
+        "talkIdx": "Gespreks-ID",
+        "turnIdx": "Beurt",
+        "timestamp": "Tijdstempel"
+      },
+      "talks": {
+        "agentName": "Agentnaam",
+        "originalName": "Oorspronkelijke naam",
+        "text": "Tekst",
+        "talkIdx": "Gespreks-ID",
+        "turnIdx": "Beurt",
+        "timestamp": "Tijdstempel"
+      },
+      "votes": {
+        "voterName": "Stemmer",
+        "targetName": "Doelwit"
+      },
+      "execution": {
+        "agentName": "Geëxecuteerde agent",
+        "role": "Rol"
+      },
+      "divine": {
+        "seerName": "Ziener",
+        "targetName": "Doelwit",
+        "result": "Resultaat"
+      },
+      "afterWhisper": {
+        "agentName": "Agentnaam",
+        "originalName": "Oorspronkelijke naam",
+        "text": "Tekst",
+        "talkIdx": "Gespreks-ID",
+        "turnIdx": "Beurt",
+        "timestamp": "Tijdstempel"
+      },
+      "guard": {
+        "guardName": "Beschermer",
+        "targetName": "Doelwit",
+        "result": "Resultaat"
+      },
+      "attackVotes": {
+        "voterName": "Stemmer",
+        "targetName": "Doelwit"
+      },
+      "attack": {
+        "targetName": "Doelwit",
+        "result": "Resultaat"
+      },
+      "result": {
+        "winSide": "Winnende partij",
+        "villagers": "Aantal dorpelingen",
+        "werewolves": "Aantal weerwolven"
+      }
+    }
+  },
+  "audio": {
+    "play": "Afspelen",
+    "stop": "Stoppen"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "Weerwolf",
+      "POSSESSED": "Bezetene",
+      "SEER": "Ziener",
+      "BODYGUARD": "Lijfwacht",
+      "VILLAGER": "Dorpeling",
+      "MEDIUM": "Medium"
+    },
+    "species": {
+      "HUMAN": "Mens",
+      "WEREWOLF": "Weerwolf"
+    },
+    "status": {
+      "ALIVE": "In leven",
+      "DEAD": "Dood"
+    },
+    "teams": {
+      "VILLAGER": "Dorpelingenteam",
+      "WEREWOLF": "Weerwolfteam"
+    },
+    "request": {
+      "NAME": "Naam",
+      "TALK": "Gesprek",
+      "WHISPER": "Gefluister",
+      "VOTE": "Stemming",
+      "DIVINE": "Schouwen",
+      "GUARD": "Beschermen",
+      "ATTACK": "Aanval",
+      "INITIALIZE": "Spelstart",
+      "DAILY_INITIALIZE": "Dagstart",
+      "DAILY_FINISH": "Dageinde",
+      "FINISH": "Speleinde"
+    }
+  },
+  "demo": {
+    "title": "AIWolf Contest — Demo afdeling Natuurlijke Taal",
+    "titleShort": "AIWolf Contest",
+    "subtitle": "Demo afdeling Natuurlijke Taal",
+    "tagline": "Speel Weerwolven met AI-agents. Je mag spreken wanneer je aan de beurt bent.",
+    "status": {
+      "connected": "Verbonden",
+      "connecting": "Verbinden…",
+      "disconnected": "Niet verbonden"
+    },
+    "header": {
+      "pause": "Pauzeren",
+      "resume": "Hervatten",
+      "info": "Info",
+      "leave": "Stoppen",
+      "myInfo": "Mijn info"
+    },
+    "day": "Dag {day}",
+    "banner": {
+      "connecting": "Verbinden…",
+      "disconnected": "Niet verbonden",
+      "pausedYourTurn": "Gepauzeerd (jouw beurt: {action})",
+      "yourTurn": "Jouw beurt: {action} ({hint})",
+      "othersTurn": "{name} is aan het typen…",
+      "voting": "Stemmen…",
+      "nightAction": "Nachtactie bezig…",
+      "morning": "De ochtend is aangebroken",
+      "night": "De nacht is gevallen",
+      "finished": "Spel afgelopen",
+      "inProgress": "Bezig…",
+      "waitingStart": "Wachten tot het spel begint"
+    },
+    "remain": "Nog {sec}s",
+    "action": {
+      "TALK": "Spreken",
+      "WHISPER": "Fluisteren",
+      "VOTE": "Stemmen",
+      "DIVINE": "Schouwen",
+      "GUARD": "Beschermen",
+      "ATTACK": "Aanvallen",
+      "fallback": "Actie"
+    },
+    "hint": {
+      "talk": "Typ een bericht",
+      "vote": "Kies wie er geëxecuteerd wordt",
+      "divine": "Kies wie je wilt schouwen",
+      "guard": "Kies wie je wilt beschermen",
+      "attack": "Kies wie je wilt aanvallen",
+      "fallback": "Kies een doelwit"
+    },
+    "roleDesc": {
+      "VILLAGER": "Je hebt geen speciale gave. Spoor de weerwolven op door overleg en stemming.",
+      "WEREWOLF": "Je bent een weerwolf. Verberg je identiteit en val 's nachts samen met je bondgenoten aan. Misleid de dorpelingen.",
+      "SEER": "Elke nacht schouw je één persoon om te weten of die een weerwolf of een mens is. Gebruik die kennis om het dorp te leiden.",
+      "MEDIUM": "Elke nacht kom je te weten of de geëxecuteerde speler een weerwolf was.",
+      "BODYGUARD": "Elke nacht bescherm je één persoon tegen de aanval van de weerwolven.",
+      "POSSESSED": "Je bent de bezetene (lijkt menselijk maar staat aan de kant van de weerwolven). Help de weerwolven winnen."
+    },
+    "result": {
+      "villagerWin": "Het dorpelingenteam wint",
+      "werewolfWin": "Het weerwolfteam wint",
+      "youWin": "Je wint 🎉",
+      "youLose": "Je verliest…",
+      "title": "🏁 Spel afgelopen",
+      "reveal": "Rollen onthuld",
+      "backHome": "Terug naar home"
+    },
+    "info": {
+      "title": "Spelerinformatie",
+      "role": "Rol: {role}",
+      "team": "Team: {team}",
+      "noProfile": "Geen profiel",
+      "participants": "Deelnemers",
+      "you": " (jij)",
+      "alive": "In leven",
+      "dead": "Dood",
+      "privacyNote": "Let op: de rollen en profielen van andere spelers blijven verborgen, zoals het hoort bij Weerwolven.",
+      "divineResults": "🔮 Schouwresultaten",
+      "mediumResults": "🔮 Mediumresultaten",
+      "close": "Sluiten"
+    },
+    "intro": {
+      "yourCharacter": "Het personage dat je speelt",
+      "instruction": "Gedraag je tijdens het spel als dit personage en deze rol.",
+      "start": "Start het spel"
+    },
+    "start": {
+      "villageSize": "Dorpsgrootte",
+      "village5": "5 spelers",
+      "village9": "9 spelers",
+      "comp5": "2 dorpelingen, ziener, weerwolf, bezetene (jij + 4 AI)",
+      "comp9": "3 dorpelingen, ziener, lijfwacht, medium, 2 weerwolven, bezetene (jij + 8 AI)",
+      "gameLanguage": "Speltaal",
+      "gameLanguageHint": "De taal die de AI spreekt (wissel de schermtaal rechtsboven).",
+      "start": "Spel starten",
+      "joining": "Verzoek om deel te nemen…",
+      "queued": "In de wachtrij",
+      "queuePosition": "Je bent nummer {pos}",
+      "queueNote": "Het spel start automatisch zodra er een tafel vrijkomt",
+      "preparing": "De tafel wordt voorbereid…",
+      "error": "Fout: {message}",
+      "retry": "Opnieuw proberen",
+      "displayName": "Je weergavenaam: {name}",
+      "unknownError": "Onbekende fout",
+      "startFailed": "Het starten van de sessie is mislukt"
+    },
+    "feed": {
+      "waitingStart": "Wachten tot het spel begint…",
+      "waitingConnect": "Wachten op verbinding. Open via de QR-link (?url=…&team=…).",
+      "talkOver": "(einde van gesprek)",
+      "talkSkip": "(overgeslagen)"
+    },
+    "footer": {
+      "skip": "Skip",
+      "over": "Over",
+      "send": "Verzenden",
+      "pausedYourTurn": "⏸ Gepauzeerd (jouw beurt: {action})",
+      "resumeInput": "Hervatten en typen",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "Typ een bericht (Enter om te verzenden)",
+      "lockedPlaceholder": "Je kunt typen wanneer je aan de beurt bent",
+      "help": "💡 \"Over\" = klaar met spreken voor vandaag / \"Skip\" = sla deze beurt over. Als je handmatig typt, gebruik dan Over / Skip met een hoofdletter (kleine letters over/skip worden gewone berichten).",
+      "noTarget": "Geen doelwit"
+    },
+    "leaveConfirm": "Het spel stoppen en terugkeren naar home? (Deze tafel wordt beëindigd.)"
+  }
+}

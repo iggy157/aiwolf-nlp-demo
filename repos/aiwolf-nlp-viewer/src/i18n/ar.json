@@ -1,0 +1,383 @@
+{
+  "_meta": {
+    "language": "ar",
+    "name": "Arabic",
+    "translated": true
+  },
+  "appName": "aiwolf-nlp-viewer",
+  "navigation": {
+    "home": "الرئيسية",
+    "realtime": "السجل الفوري",
+    "archive": "سجل الأرشيف",
+    "agent": "الوكيل",
+    "token": "توليد الرمز",
+    "statistics": "الإحصائيات"
+  },
+  "home": {
+    "title": "aiwolf-nlp-viewer",
+    "realtimeLog": {
+      "title": "السجل الفوري",
+      "description": "عرض سجلات اللعبة في الوقت الفعلي\nيدعم ملفات بصيغة JSONL"
+    },
+    "archiveLog": {
+      "title": "سجل الأرشيف",
+      "description": "عرض سجلات اللعبة المؤرشفة\nيدعم ملفات بصيغة LOG"
+    },
+    "agent": {
+      "title": "الوكيل",
+      "description": "الاتصال بخادم اللعبة والمشاركة كوكيل"
+    },
+    "sourceCode": "الشيفرة المصدرية",
+    "gameServer": "خادم اللعبة",
+    "sampleAgent": "وكيل نموذجي",
+    "sampleAgentLLM": "وكيل نموذجي (LLM)",
+    "viewer": "العارض"
+  },
+  "realtime": {
+    "connect": "اتصال",
+    "disconnect": "قطع الاتصال",
+    "settings": "الإعدادات",
+    "pasteFromClipboard": "لصق من الحافظة",
+    "websocketUrl": "WebSocket URL",
+    "authKey": "Authorization Key",
+    "optional": "اختياري",
+    "displaySettings": "إعدادات العرض",
+    "canvasAgentInfo": "معلومات الوكيل على اللوحة",
+    "messageBoxAgentInfo": "معلومات الوكيل في صندوق الرسائل",
+    "listAgentInfo": "معلومات الوكيل في القائمة",
+    "largeScreen": "للشاشات الكبيرة",
+    "name": "الاسم",
+    "teamName": "اسم الفريق",
+    "role": "الدور",
+    "enable": "تفعيل",
+    "notConnected": "غير متصل",
+    "day": "اليوم {day}",
+    "daytime": "النهار",
+    "nighttime": "الليل",
+    "events": {
+      "disconnected": "غير متصل",
+      "whispered": "همس",
+      "attack_voted_with_target": "صوّت {from} لمهاجمة {to}",
+      "attack_voted": "صوّت للهجوم",
+      "voted_with_target": "صوّت {from} ضد {to}",
+      "voted": "صوّت {from}",
+      "no_execute": "لم يُطرد أحد",
+      "executed": "تم طرد {target}",
+      "no_attack": "لم يُهاجَم أحد",
+      "attacked_but_guarded": "تعرّض {target} للهجوم لكنه كان محروسًا",
+      "attacked": "تعرّض {target} للهجوم",
+      "divined_with_result": "تكهّن {from} بشأن {to} فتبيّن أنه {result}",
+      "divined": "تكهّن",
+      "guarded_with_target": "اختار {from} حراسة {to}",
+      "guarded": "حرس",
+      "game_ended": "فاز {winner}",
+      "unknown": "حدث غير معروف"
+    },
+    "eventTypes": {
+      "未接続": "غير متصل",
+      "トーク": "محادثة",
+      "囁き": "همس",
+      "投票": "تصويت",
+      "襲撃投票": "تصويت الهجوم",
+      "追放": "طرد",
+      "襲撃": "هجوم",
+      "占い": "تكهّن",
+      "護衛": "حراسة",
+      "終了": "انتهاء"
+    }
+  },
+  "archive": {
+    "selectFolder": "اختر مجلدًا",
+    "selectLog": "اختر سجلًا",
+    "pasteFromClipboard": "لصق من الحافظة",
+    "agents": "الوكلاء",
+    "whispers": "الهمسات",
+    "talk": "المحادثة",
+    "voting": "التصويت",
+    "votedFor": " صوّت ضد ",
+    "execute": "طرد",
+    "wasExecuted": " تم طرده",
+    "divination": "التكهّن",
+    "divined": " تكهّن بشأن: ",
+    "guard": "الحراسة",
+    "protected": " حرس ",
+    "attackVotes": "تصويتات الهجوم",
+    "attack": "الهجوم",
+    "wasAttacked": " تعرّض للهجوم: ",
+    "success": "نجاح",
+    "failure": "فشل",
+    "noAttackTarget": "لا يوجد هدف للهجوم",
+    "result": "النتيجة",
+    "won": " فاز",
+    "particle": ""
+  },
+  "agent": {
+    "talkHistory": "سجل المحادثة",
+    "whisperHistory": "سجل الهمس",
+    "agentSettings": "إعدادات الوكيل",
+    "teamName": "اسم الفريق",
+    "notConnected": "غير متصل",
+    "selectTarget": "يرجى اختيار هدف",
+    "enterContent": "يرجى إدخال المحتوى",
+    "remainingChars": "تبقّى {count} حرف",
+    "exceededChars": "تجاوزت {count} حرف",
+    "send": "إرسال"
+  },
+  "statistics": {
+    "downloadCsv": "تنزيل بصيغة CSV"
+  },
+  "token": {
+    "title": "توليد الرمز",
+    "description": "يولّد الرمز المطلوب عند تفعيل مصادقة الاتصال على خادم اللعبة. يُولَّد المفتاح السري داخل المتصفح ولا يُرسَل إلى الخادم أبدًا.",
+    "agentDescription": "إذا كنت تتصل كوكيل، فيرجى إدخال اسم الفريق.",
+    "generateSecret": "توليد المفتاح السري",
+    "secretKey": "المفتاح السري",
+    "agent": "الوكيل",
+    "realtimeLog": "السجل الفوري",
+    "teamName": "اسم الفريق",
+    "copyToken": "نسخ الرمز",
+    "errorOccurred": "حدث خطأ"
+  },
+  "common": {
+    "close": "إغلاق",
+    "language": "اللغة"
+  },
+  "displaySettings": {
+    "title": "إعدادات عناصر العرض",
+    "selectAll": "تحديد الكل",
+    "deselectAll": "إلغاء تحديد الكل",
+    "reset": "إعادة تعيين",
+    "before": "قبل",
+    "after": "بعد",
+    "allFields": "كل الحقول",
+    "noFields": "لا حقول",
+    "fields": {
+      "agents": {
+        "gameName": "اسم الوكيل",
+        "originalName": "الاسم الأصلي",
+        "role": "الدور",
+        "status": "الحالة"
+      },
+      "beforeWhisper": {
+        "agentName": "اسم الوكيل",
+        "originalName": "الاسم الأصلي",
+        "text": "النص",
+        "talkIdx": "معرّف المحادثة",
+        "turnIdx": "الدور",
+        "timestamp": "الطابع الزمني"
+      },
+      "talks": {
+        "agentName": "اسم الوكيل",
+        "originalName": "الاسم الأصلي",
+        "text": "النص",
+        "talkIdx": "معرّف المحادثة",
+        "turnIdx": "الدور",
+        "timestamp": "الطابع الزمني"
+      },
+      "votes": {
+        "voterName": "المصوّت",
+        "targetName": "الهدف"
+      },
+      "execution": {
+        "agentName": "الوكيل المطرود",
+        "role": "الدور"
+      },
+      "divine": {
+        "seerName": "العرّاف",
+        "targetName": "الهدف",
+        "result": "النتيجة"
+      },
+      "afterWhisper": {
+        "agentName": "اسم الوكيل",
+        "originalName": "الاسم الأصلي",
+        "text": "النص",
+        "talkIdx": "معرّف المحادثة",
+        "turnIdx": "الدور",
+        "timestamp": "الطابع الزمني"
+      },
+      "guard": {
+        "guardName": "الحارس",
+        "targetName": "الهدف",
+        "result": "النتيجة"
+      },
+      "attackVotes": {
+        "voterName": "المصوّت",
+        "targetName": "الهدف"
+      },
+      "attack": {
+        "targetName": "الهدف",
+        "result": "النتيجة"
+      },
+      "result": {
+        "winSide": "الفريق الفائز",
+        "villagers": "عدد القرويين",
+        "werewolves": "عدد المستذئبين"
+      }
+    }
+  },
+  "audio": {
+    "play": "تشغيل",
+    "stop": "إيقاف"
+  },
+  "game": {
+    "role": {
+      "WEREWOLF": "المستذئب",
+      "POSSESSED": "الممسوس",
+      "SEER": "العرّاف",
+      "BODYGUARD": "الحارس",
+      "VILLAGER": "القروي",
+      "MEDIUM": "الوسيط"
+    },
+    "species": {
+      "HUMAN": "إنسان",
+      "WEREWOLF": "مستذئب"
+    },
+    "status": {
+      "ALIVE": "حيّ",
+      "DEAD": "ميّت"
+    },
+    "teams": {
+      "VILLAGER": "فريق القرويين",
+      "WEREWOLF": "فريق المستذئبين"
+    },
+    "request": {
+      "NAME": "الاسم",
+      "TALK": "محادثة",
+      "WHISPER": "همس",
+      "VOTE": "تصويت",
+      "DIVINE": "تكهّن",
+      "GUARD": "حراسة",
+      "ATTACK": "هجوم",
+      "INITIALIZE": "بدء اللعبة",
+      "DAILY_INITIALIZE": "بداية النهار",
+      "DAILY_FINISH": "نهاية النهار",
+      "FINISH": "انتهاء اللعبة"
+    }
+  },
+  "demo": {
+    "title": "مسابقة AIWolf — العرض التجريبي لقسم اللغة الطبيعية",
+    "titleShort": "مسابقة AIWolf",
+    "subtitle": "العرض التجريبي لقسم اللغة الطبيعية",
+    "tagline": "العب لعبة المستذئب مع وكلاء الذكاء الاصطناعي. يمكنك التحدّث عندما يحين دورك.",
+    "status": {
+      "connected": "متصل",
+      "connecting": "جارٍ الاتصال…",
+      "disconnected": "غير متصل"
+    },
+    "header": {
+      "pause": "إيقاف مؤقت",
+      "resume": "استئناف",
+      "info": "معلومات",
+      "leave": "إنهاء",
+      "myInfo": "معلوماتي"
+    },
+    "day": "اليوم {day}",
+    "banner": {
+      "connecting": "جارٍ الاتصال…",
+      "disconnected": "غير متصل",
+      "pausedYourTurn": "متوقّف مؤقتًا (دورك: {action})",
+      "yourTurn": "دورك: {action} ({hint})",
+      "othersTurn": "{name} يكتب الآن…",
+      "voting": "جارٍ التصويت…",
+      "nightAction": "جارٍ تنفيذ أعمال الليل…",
+      "morning": "أشرق الصباح",
+      "night": "حلّ الليل",
+      "finished": "انتهت اللعبة",
+      "inProgress": "قيد التقدّم…",
+      "waitingStart": "بانتظار بدء اللعبة"
+    },
+    "remain": "تبقّى {sec}ث",
+    "action": {
+      "TALK": "تحدّث",
+      "WHISPER": "همس",
+      "VOTE": "تصويت",
+      "DIVINE": "تكهّن",
+      "GUARD": "حراسة",
+      "ATTACK": "هجوم",
+      "fallback": "إجراء"
+    },
+    "hint": {
+      "talk": "اكتب رسالة",
+      "vote": "اختر من يُطرَد",
+      "divine": "اختر من تتكهّن بشأنه",
+      "guard": "اختر من تحرسه",
+      "attack": "اختر من تهاجمه",
+      "fallback": "اختر هدفًا"
+    },
+    "roleDesc": {
+      "VILLAGER": "ليست لديك قدرة خاصة. اكشف المستذئبين عبر النقاش والتصويت.",
+      "WEREWOLF": "أنت مستذئب. أخفِ هويتك وهاجم مع حلفائك في الليل. اخدع القرويين.",
+      "SEER": "في كل ليلة تتكهّن بشأن شخص واحد لتعرف إن كان مستذئبًا أم إنسانًا. استغل ذلك لإرشاد القرية.",
+      "MEDIUM": "في كل ليلة تعرف ما إذا كان اللاعب المطرود مستذئبًا.",
+      "BODYGUARD": "في كل ليلة تحرس شخصًا واحدًا وتحميه من هجوم المستذئبين.",
+      "POSSESSED": "أنت الممسوس (تبدو إنسانًا لكنك في صف المستذئبين). ساعد المستذئبين على الفوز."
+    },
+    "result": {
+      "villagerWin": "فاز فريق القرويين",
+      "werewolfWin": "فاز فريق المستذئبين",
+      "youWin": "لقد فزت 🎉",
+      "youLose": "لقد خسرت…",
+      "title": "🏁 انتهت اللعبة",
+      "reveal": "كشف الأدوار",
+      "backHome": "العودة إلى الرئيسية"
+    },
+    "info": {
+      "title": "معلومات اللاعب",
+      "role": "الدور: {role}",
+      "team": "الفريق: {team}",
+      "noProfile": "لا يوجد ملف تعريف",
+      "participants": "المشاركون",
+      "you": " (أنت)",
+      "alive": "حيّ",
+      "dead": "ميّت",
+      "privacyNote": "ملاحظة: تبقى أدوار اللاعبين الآخرين وملفاتهم التعريفية مخفية، كما تقتضي طبيعة لعبة المستذئب.",
+      "divineResults": "🔮 نتائج التكهّن",
+      "mediumResults": "🔮 نتائج الوساطة",
+      "close": "إغلاق"
+    },
+    "intro": {
+      "yourCharacter": "الشخصية التي تؤدّيها",
+      "instruction": "يرجى التصرّف بصفتك هذه الشخصية وهذا الدور أثناء اللعبة.",
+      "start": "ابدأ اللعبة"
+    },
+    "start": {
+      "villageSize": "حجم القرية",
+      "village5": "5 لاعبين",
+      "village9": "9 لاعبين",
+      "comp5": "قرويان، عرّاف، مستذئب، ممسوس (أنت + 4 ذكاء اصطناعي)",
+      "comp9": "3 قرويين، عرّاف، حارس، وسيط، مستذئبان، ممسوس (أنت + 8 ذكاء اصطناعي)",
+      "gameLanguage": "لغة اللعبة",
+      "gameLanguageHint": "اللغة التي يتحدّث بها الذكاء الاصطناعي (يمكنك تبديل لغة الشاشة من أعلى اليمين).",
+      "start": "ابدأ اللعبة",
+      "joining": "جارٍ طلب الانضمام…",
+      "queued": "في قائمة الانتظار",
+      "queuePosition": "أنت رقم {pos}",
+      "queueNote": "تبدأ اللعبة تلقائيًا عند توفّر طاولة",
+      "preparing": "جارٍ تجهيز الطاولة…",
+      "error": "خطأ: {message}",
+      "retry": "إعادة المحاولة",
+      "displayName": "اسمك المعروض: {name}",
+      "unknownError": "خطأ غير معروف",
+      "startFailed": "فشل بدء الجلسة"
+    },
+    "feed": {
+      "waitingStart": "بانتظار بدء اللعبة…",
+      "waitingConnect": "بانتظار الاتصال. افتح من رابط QR (‎?url=…&team=…‎).",
+      "talkOver": "(انتهاء الكلام)",
+      "talkSkip": "(تم التخطّي)"
+    },
+    "footer": {
+      "skip": "تخطّي",
+      "over": "إنهاء",
+      "send": "إرسال",
+      "pausedYourTurn": "⏸ متوقّف مؤقتًا (دورك: {action})",
+      "resumeInput": "استأنف واكتب",
+      "actionHint": "{action}: {hint}",
+      "talkPlaceholder": "اكتب رسالة (اضغط Enter للإرسال)",
+      "lockedPlaceholder": "يمكنك الكتابة عندما يحين دورك",
+      "help": "💡 \"Over\" = إنهاء كلامك لهذا اليوم / \"Skip\" = تمرير هذه المرة. عند الكتابة يدويًا، استخدم Over / Skip بحرف أول كبير (الصيغة الصغيرة over/skip تُعامَل كرسائل عادية).",
+      "noTarget": "لا يوجد هدف"
+    },
+    "leaveConfirm": "هل تريد إنهاء اللعبة والعودة إلى الرئيسية؟ (ستنتهي هذه الطاولة.)"
+  }
+}
