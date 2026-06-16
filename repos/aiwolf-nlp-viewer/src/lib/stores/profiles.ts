@@ -1,0 +1,50 @@
+// キャラクター名・プロフィールのローカライズ。
+// 名前/性格はゲームサーバ(custom_profile)が割り当てる固定の24キャラ。サーバは全卓共通で
+// 日本語を送ってくるため、表示だけ言語別データ(profiles/<lang>.json)で差し替える。
+//   - キー(原名)はサーバの識別子そのまま（status_map/role_map/talk.agent、アバター対応に使う）。
+//   - 表示名・性格文だけを言語に応じて返す。サーバへ送る値は常に原名のまま。
+import { normalizeLanguage } from "$lib/stores/language";
+
+import ja from "$lib/data/profiles/ja.json";
+import en from "$lib/data/profiles/en.json";
+import zh from "$lib/data/profiles/zh.json";
+import hi from "$lib/data/profiles/hi.json";
+import es from "$lib/data/profiles/es.json";
+import ar from "$lib/data/profiles/ar.json";
+import bn from "$lib/data/profiles/bn.json";
+import fr from "$lib/data/profiles/fr.json";
+import ru from "$lib/data/profiles/ru.json";
+import pt from "$lib/data/profiles/pt.json";
+import ur from "$lib/data/profiles/ur.json";
+import id from "$lib/data/profiles/id.json";
+import de from "$lib/data/profiles/de.json";
+import nl from "$lib/data/profiles/nl.json";
+
+export interface ProfileEntry {
+  name: string;
+  personality: string;
+}
+
+type ProfileTable = Record<string, ProfileEntry>;
+
+const TABLES: Record<string, ProfileTable> = {
+  ja, en, zh, hi, es, ar, bn, fr, ru, pt, ur, id, de, nl,
+};
+
+/** 原名(サーバ名)を、指定言語の表示名に変換する。未登録なら原名をそのまま返す。 */
+export function localizedName(name: string | null | undefined, locale: string | null | undefined): string {
+  if (!name) return "—";
+  const lang = normalizeLanguage(locale, "ja");
+  return TABLES[lang]?.[name]?.name ?? TABLES.ja?.[name]?.name ?? name;
+}
+
+/** 原名に対応する性格文(プロフィール)を指定言語で返す。未登録なら fallback、無ければ null。 */
+export function localizedPersonality(
+  name: string | null | undefined,
+  locale: string | null | undefined,
+  fallback: string | null = null,
+): string | null {
+  if (!name) return fallback;
+  const lang = normalizeLanguage(locale, "ja");
+  return TABLES[lang]?.[name]?.personality ?? TABLES.ja?.[name]?.personality ?? fallback;
+}

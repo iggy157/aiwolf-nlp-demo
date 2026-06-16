@@ -364,7 +364,15 @@
       "waitingStart": "Menunggu permainan dimulai…",
       "waitingConnect": "Menunggu koneksi. Buka dari tautan QR (?url=…&team=…).",
       "talkOver": "(akhir bicara)",
-      "talkSkip": "(dilewati)"
+      "talkSkip": "(dilewati)",
+      "morning": "── Pagi Hari ke-{day} ──",
+      "executed": "🗳 {name} telah diasingkan melalui pemungutan suara kemarin",
+      "attacked": "🌙 Fajar menyingsing, {name} ditemukan tewas mengenaskan",
+      "vote": "🗳 Diskusi siang Hari ke-{day} telah berakhir. Waktunya memberikan suara",
+      "night": "🌙 Malam telah tiba. Setiap peran melakukan aksinya",
+      "finished": "🏁 Permainan selesai",
+      "divineResult": "🔮【Hasil Ramalan】{name} ternyata {species}",
+      "mediumResult": "🔮【Hasil Cenayang】{name} ternyata {species}"
     },
     "footer": {
       "skip": "Lewati",

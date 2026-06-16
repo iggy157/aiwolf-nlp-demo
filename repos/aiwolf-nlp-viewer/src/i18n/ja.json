@@ -359,7 +359,15 @@
       "waitingStart": "ゲームの開始を待っています…",
       "waitingConnect": "接続待ち。QRリンク（?url=…&team=…）から開いてください。",
       "talkOver": "（発言終了）",
-      "talkSkip": "（スキップ）"
+      "talkSkip": "（スキップ）",
+      "morning": "── {day}日目の朝 ──",
+      "executed": "🗳 前日の投票で {name} が追放されました",
+      "attacked": "🌙 夜が明け、{name} が無残な姿で発見されました",
+      "vote": "🗳 {day}日目の昼の議論が終了。投票の時間です",
+      "night": "🌙 夜になりました。各役職が行動します",
+      "finished": "🏁 ゲーム終了",
+      "divineResult": "🔮【占い結果】{name} は {species} でした",
+      "mediumResult": "🔮【霊媒結果】{name} は {species} でした"
     },
     "footer": {
       "skip": "スキップ",

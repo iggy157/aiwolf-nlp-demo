@@ -11,6 +11,7 @@
   import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { agentSettings } from "$lib/stores/agent-settings";
   import { language, normalizeLanguage } from "$lib/stores/language";
+  import { localizedName, localizedPersonality } from "$lib/stores/profiles";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
@@ -70,6 +71,12 @@
   const roleName = (r: string | null | undefined) => (r ? $_(`game.role.${r}`) : "—");
   const speciesName = (s: string | null | undefined) =>
     s === "WEREWOLF" || s === "HUMAN" ? $_(`game.species.${s}`) : (s ?? "—");
+  // キャラ名・プロフィールを現在のUI言語にローカライズ（サーバへ送る値は常に原名のまま）。
+  const nameOf = (n: string | null | undefined) => localizedName(n, $locale);
+  const personalityOf = (n: string | null | undefined, fallback: string | null = null) =>
+    localizedPersonality(n, $locale, fallback);
+  // 自分のプロフィール（性格文）をローカライズ。未登録ならサーバ送出の profile 文字列にフォールバック。
+  const myPersonality = $derived(personalityOf(agent, profile));
 
   let infoOpen = $state(false); // プロフィール/役職プレビューの開閉
   let introOpen = $state(false); // ゲーム開始時の説明ポップアップ
@@ -153,7 +160,7 @@
       return $_("demo.banner.yourTurn", { values: { action: actionName, hint: actionHint } });
     }
     if (currentTurnAgent && currentTurnAgent !== agent) {
-      return $_("demo.banner.othersTurn", { values: { name: currentTurnAgent } });
+      return $_("demo.banner.othersTurn", { values: { name: nameOf(currentTurnAgent) } });
     }
     // 自分のターンでも他者のターンでもない＝集計/夜など
     switch (request) {
@@ -412,11 +419,11 @@
       {#if agent}
         <button class="avatar" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.myInfo")}>
           <div class="w-9 rounded-full ring ring-primary ring-offset-1">
-            <img src={avatarSrc(agent)} alt={agent} />
+            <img src={avatarSrc(agent)} alt={nameOf(agent)} />
           </div>
         </button>
         <div class="leading-tight min-w-0">
-          <div class="font-bold truncate">{agent}<span class="ml-1 text-xs opacity-70">({roleName(role)})</span></div>
+          <div class="font-bold truncate">{nameOf(agent)}<span class="ml-1 text-xs opacity-70">({roleName(role)})</span></div>
           <div class="text-xs opacity-60">{info ? $_("demo.day", { values: { day: info.day } }) : ""}</div>
         </div>
       {:else}
@@ -461,17 +468,17 @@
         <!-- 自分 -->
         <div class="card bg-base-200 p-3">
           <div class="flex items-center gap-3">
-            <div class="avatar"><div class="w-14 rounded-full"><img src={avatarSrc(agent ?? "")} alt={agent} /></div></div>
+            <div class="avatar"><div class="w-14 rounded-full"><img src={avatarSrc(agent ?? "")} alt={nameOf(agent)} /></div></div>
             <div>
-              <div class="font-bold">{agent ?? "—"}</div>
+              <div class="font-bold">{nameOf(agent)}</div>
               <div class="badge badge-primary badge-sm">{$_("demo.info.role", { values: { role: roleName(role) } })}</div>
               {#if team}
                 <div class="text-xs opacity-60 mt-1">{$_("demo.info.team", { values: { team } })}</div>
               {/if}
             </div>
           </div>
-          {#if profile}
-            <div class="mt-2 text-sm whitespace-pre-wrap opacity-80">{profile}</div>
+          {#if myPersonality}
+            <div class="mt-2 text-sm whitespace-pre-wrap opacity-80">{myPersonality}</div>
           {:else}
             <div class="mt-2 text-xs opacity-50">{$_("demo.info.noProfile")}</div>
           {/if}
@@ -484,8 +491,8 @@
             {#each Object.entries(info?.status_map ?? {}) as [name, st]}
               {@const known = info?.role_map?.[name]}
               <div class="flex items-center gap-2 p-1.5 rounded {st === Status.ALIVE ? 'bg-base-200' : 'bg-base-300 opacity-60'}">
-                <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
-                <span class="font-bold text-sm">{name}{name === agent ? $_("demo.info.you") : ""}</span>
+                <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={nameOf(name)} /></div></div>
+                <span class="font-bold text-sm">{nameOf(name)}{name === agent ? $_("demo.info.you") : ""}</span>
                 {#if known}<span class="badge badge-xs">{roleName(known)}</span>{/if}
                 <span class="ml-auto badge badge-xs {st === Status.ALIVE ? 'badge-success' : 'badge-error'}">
                   {st === Status.ALIVE ? $_("demo.info.alive") : $_("demo.info.dead")}
@@ -504,7 +511,7 @@
               {#each divineResults as j}
                 <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
                   <span class="text-xs opacity-60">{$_("demo.day", { values: { day: j.day } })}</span>
-                  <span class="font-bold text-sm">{j.target}</span>
+                  <span class="font-bold text-sm">{nameOf(j.target)}</span>
                   <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
                     {speciesName(j.result)}
                   </span>
@@ -521,7 +528,7 @@
               {#each mediumResults as j}
                 <div class="flex items-center gap-2 p-1.5 rounded bg-base-200">
                   <span class="text-xs opacity-60">{$_("demo.day", { values: { day: j.day } })}</span>
-                  <span class="font-bold text-sm">{j.target}</span>
+                  <span class="font-bold text-sm">{nameOf(j.target)}</span>
                   <span class="ml-auto badge badge-sm {j.result === 'WEREWOLF' ? 'badge-error' : 'badge-success'}">
                     {speciesName(j.result)}
                   </span>
@@ -538,13 +545,13 @@
   {#if introOpen && agent}
     <div class="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/60">
       <div class="card bg-base-100 w-full max-w-sm p-5 flex flex-col items-center gap-3 text-center">
-        <div class="avatar"><div class="w-24 rounded-full ring ring-primary"><img src={avatarSrc(agent)} alt={agent} /></div></div>
+        <div class="avatar"><div class="w-24 rounded-full ring ring-primary"><img src={avatarSrc(agent)} alt={nameOf(agent)} /></div></div>
         <div class="text-sm opacity-70">{$_("demo.intro.yourCharacter")}</div>
-        <div class="text-2xl font-bold">{agent}</div>
+        <div class="text-2xl font-bold">{nameOf(agent)}</div>
         <div class="badge badge-primary badge-lg">{$_("demo.info.role", { values: { role: roleName(role) } })}</div>
         <p class="text-sm opacity-80">{role ? $_(`demo.roleDesc.${role}`) : ""}</p>
-        {#if profile}
-          <div class="text-xs whitespace-pre-wrap opacity-70 bg-base-200 rounded p-2 max-h-32 overflow-y-auto">{profile}</div>
+        {#if myPersonality}
+          <div class="text-xs whitespace-pre-wrap opacity-70 bg-base-200 rounded p-2 max-h-32 overflow-y-auto">{myPersonality}</div>
         {/if}
         <p class="text-sm font-bold mt-1">{$_("demo.intro.instruction")}</p>
         <button class="btn btn-primary btn-block" onclick={startGame}>
@@ -571,8 +578,8 @@
             {@const rs = r as string}
             {@const alive = (info?.status_map ?? {})[name] === Status.ALIVE}
             <div class="flex items-center gap-2 p-1.5 rounded {alive ? 'bg-base-200' : 'bg-base-300 opacity-70'}">
-              <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={name} /></div></div>
-              <span class="font-bold text-sm">{name}{name === agent ? $_("demo.info.you") : ""}</span>
+              <div class="avatar"><div class="w-8 rounded-full"><img src={avatarSrc(name)} alt={nameOf(name)} /></div></div>
+              <span class="font-bold text-sm">{nameOf(name)}{name === agent ? $_("demo.info.you") : ""}</span>
               <span class="badge badge-sm {rs === 'WEREWOLF' ? 'badge-error' : ''}">{roleName(rs)}</span>
               <span class="ml-auto text-xs opacity-60">{alive ? $_("demo.info.alive") : $_("demo.info.dead")}</span>
             </div>
@@ -658,11 +665,12 @@
     {/if}
     {#each feed as entry, i (i)}
       {#if entry.kind === "system"}
-        <!-- アナウンス（日付/夜/投票/結果/占い）-->
+        <!-- アナウンス（日付/夜/投票/結果/占い）。i18nキー＋params を描画時に翻訳。
+             name は原名なのでローカライズ、species は game.species で翻訳。-->
         <div class="my-1 text-center">
           <span class="badge badge-sm
             {entry.tone === 'day' ? 'badge-warning' : entry.tone === 'night' ? 'badge-neutral' : entry.tone === 'vote' ? 'badge-info' : entry.tone === 'result' ? 'badge-error' : 'badge-ghost'}
-            whitespace-normal h-auto py-1">{entry.text}</span>
+            whitespace-normal h-auto py-1">{$_(entry.i18nKey, { values: { day: entry.day, name: nameOf(entry.name), species: speciesName(entry.species) } })}</span>
         </div>
       {:else}
         {@const talk = entry.talk}
@@ -671,11 +679,11 @@
           {#if !mine}
             <div class="chat-image avatar">
               <div class="w-8 rounded-full">
-                <img src={avatarSrc(talk.agent)} alt={talk.agent} />
+                <img src={avatarSrc(talk.agent)} alt={nameOf(talk.agent)} />
               </div>
             </div>
           {/if}
-          <div class="chat-header text-xs opacity-70">{talk.agent}</div>
+          <div class="chat-header text-xs opacity-70">{nameOf(talk.agent)}</div>
           {#if talk.over}
             <div class="chat-bubble chat-bubble-neutral text-sm opacity-70">{$_("demo.feed.talkOver")}</div>
           {:else if talk.skip}
@@ -691,7 +699,7 @@
     {#if status === "connected" && currentTurnAgent && currentTurnAgent !== agent && !isMyTurn}
       <div class="chat chat-start">
         <div class="chat-image avatar">
-          <div class="w-8 rounded-full"><img src={avatarSrc(currentTurnAgent)} alt={currentTurnAgent} /></div>
+          <div class="w-8 rounded-full"><img src={avatarSrc(currentTurnAgent)} alt={nameOf(currentTurnAgent)} /></div>
         </div>
         <div class="chat-bubble"><span class="loading loading-dots loading-sm"></span></div>
       </div>
@@ -712,7 +720,8 @@
       <div class="text-xs font-bold opacity-70 mb-1">{$_("demo.footer.actionHint", { values: { action: actionName, hint: actionHint } })}</div>
       <div class="flex flex-wrap gap-2">
         {#each aliveTargets as t}
-          <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue(t)}>{t}</button>
+          <!-- 表示はローカライズ名、送信は原名(t) のまま（サーバはゲーム内名で判定する） -->
+          <button class="btn btn-sm" disabled={!canAct} onclick={() => sendValue(t)}>{nameOf(t)}</button>
         {/each}
         {#if request === Request.ATTACK && setting?.attack_vote?.allow_no_target}
           <button class="btn btn-sm btn-ghost" disabled={!canAct} onclick={() => sendValue("")}>{$_("demo.footer.noTarget")}</button>

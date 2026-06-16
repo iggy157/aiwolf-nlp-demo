@@ -359,7 +359,15 @@
       "waitingStart": "Waiting for the game to start…",
       "waitingConnect": "Waiting to connect. Open from the QR link (?url=…&team=…).",
       "talkOver": "(end of talk)",
-      "talkSkip": "(skipped)"
+      "talkSkip": "(skipped)",
+      "morning": "── Morning of Day {day} ──",
+      "executed": "🗳 {name} was executed by yesterday's vote",
+      "attacked": "🌙 At dawn, {name} was found attacked",
+      "vote": "🗳 Day {day} discussion is over. Time to vote",
+      "night": "🌙 Night falls. Each role takes action",
+      "finished": "🏁 Game over",
+      "divineResult": "🔮 [Divination] {name} was {species}",
+      "mediumResult": "🔮 [Medium] {name} was {species}"
     },
     "footer": {
       "skip": "Skip",

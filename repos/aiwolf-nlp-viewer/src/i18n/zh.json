@@ -364,7 +364,15 @@
       "waitingStart": "正在等待游戏开始…",
       "waitingConnect": "等待连接。请通过 QR 链接（?url=…&team=…）打开。",
       "talkOver": "（发言结束）",
-      "talkSkip": "（跳过）"
+      "talkSkip": "（跳过）",
+      "morning": "── 第 {day} 天早晨 ──",
+      "executed": "🗳 在前一天的投票中，{name} 被放逐了",
+      "attacked": "🌙 天亮后，发现 {name} 惨遭杀害",
+      "vote": "🗳 第 {day} 天白天的讨论结束。到投票时间了",
+      "night": "🌙 夜晚降临。各角色开始行动",
+      "finished": "🏁 游戏结束",
+      "divineResult": "🔮【占卜结果】{name} 是 {species}",
+      "mediumResult": "🔮【通灵结果】{name} 是 {species}"
     },
     "footer": {
       "skip": "跳过",

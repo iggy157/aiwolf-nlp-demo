@@ -43,9 +43,12 @@ const C_RESUME = '__RESUME__';
 
 // LINE風ストリームの要素: トーク or システムアナウンス（日付/夜/投票/結果/占い等）
 export type FeedTone = 'day' | 'night' | 'vote' | 'result' | 'info';
+// system アナウンスは「表示文言」ではなく「i18nキー＋パラメータ」で持つ。
+// 描画は +page.svelte 側で $_(i18nKey, {values}) で行い、言語切替に即追従させる。
+// name は原名（サーバ名）で持ち、表示時にローカライズする。species は 'WEREWOLF'|'HUMAN'。
 export type FeedEntry =
     | { kind: 'talk'; talk: Talk }
-    | { kind: 'system'; key: string; text: string; tone: FeedTone };
+    | { kind: 'system'; key: string; i18nKey: string; tone: FeedTone; day?: number; name?: string; species?: string };
 
 export interface DemoSocket {
     status: ConnectionStatus;
@@ -96,13 +99,15 @@ function talkKey(t: Talk): string {
     return `${t.day}:${t.idx}`;
 }
 
-function speciesJp(s: string): string {
-    return s === 'WEREWOLF' ? '人狼' : s === 'HUMAN' ? '人間' : s;
-}
-
-function pushSystem(feed: FeedEntry[], key: string, text: string, tone: FeedTone): FeedEntry[] {
+function pushSystem(
+    feed: FeedEntry[],
+    key: string,
+    i18nKey: string,
+    tone: FeedTone,
+    extra: { day?: number; name?: string; species?: string } = {},
+): FeedEntry[] {
     if (feed.some(e => e.kind === 'system' && e.key === key)) return feed; // 同一イベントは1回だけ
-    return [...feed, { kind: 'system', key, text, tone }];
+    return [...feed, { kind: 'system', key, i18nKey, tone, ...extra }];
 }
 
 function appendUniqueTalks(existing: Talk[], incoming: Talk[]): Talk[] {
@@ -294,7 +299,7 @@ function createDemoSocketState() {
                 if (!newState.mediumResults.some(j => j.day === judge.day && j.agent === judge.agent)) {
                     newState.mediumResults = [...newState.mediumResults, judge];
                     feed = pushSystem(feed, `medium-${judge.day}-${judge.target}`,
-                        `🔮【霊媒結果】${judge.target} は ${speciesJp(judge.result)} でした`, 'info');
+                        'demo.feed.mediumResult', 'info', { name: judge.target, species: judge.result });
                 }
             }
             if (packet.info.divine_result) {
@@ -302,7 +307,7 @@ function createDemoSocketState() {
                 if (!newState.divineResults.some(j => j.day === judge.day && j.agent === judge.agent)) {
                     newState.divineResults = [...newState.divineResults, judge];
                     feed = pushSystem(feed, `divine-${judge.day}-${judge.target}`,
-                        `🔮【占い結果】${judge.target} は ${speciesJp(judge.result)} でした`, 'info');
+                        'demo.feed.divineResult', 'info', { name: judge.target, species: judge.result });
                 }
             }
             if (packet.info.executed_agent) {
@@ -344,22 +349,22 @@ function createDemoSocketState() {
                 break;
             case Request.DAILY_INITIALIZE:
                 if (day !== undefined) {
-                    feed = pushSystem(feed, `morning-${day}`, `── ${day}日目の朝 ──`, 'day');
+                    feed = pushSystem(feed, `morning-${day}`, 'demo.feed.morning', 'day', { day });
                     const ex = newState.info?.executed_agent;
                     const at = newState.info?.attacked_agent;
-                    if (ex) feed = pushSystem(feed, `exec-${day}-${ex}`, `🗳 前日の投票で ${ex} が追放されました`, 'result');
-                    if (at) feed = pushSystem(feed, `attack-${day}-${at}`, `🌙 夜が明け、${at} が無残な姿で発見されました`, 'night');
+                    if (ex) feed = pushSystem(feed, `exec-${day}-${ex}`, 'demo.feed.executed', 'result', { name: ex });
+                    if (at) feed = pushSystem(feed, `attack-${day}-${at}`, 'demo.feed.attacked', 'night', { name: at });
                 }
                 break;
             case Request.VOTE:
-                if (day !== undefined) feed = pushSystem(feed, `vote-${day}`, `🗳 ${day}日目の昼の議論が終了。投票の時間です`, 'vote');
+                if (day !== undefined) feed = pushSystem(feed, `vote-${day}`, 'demo.feed.vote', 'vote', { day });
                 break;
             case Request.DAILY_FINISH:
-                if (day !== undefined) feed = pushSystem(feed, `night-${day}`, `🌙 夜になりました。各役職が行動します`, 'night');
+                if (day !== undefined) feed = pushSystem(feed, `night-${day}`, 'demo.feed.night', 'night');
                 break;
             case Request.FINISH:
                 newState.finished = true;
-                feed = pushSystem(feed, 'finish', '🏁 ゲーム終了', 'result');
+                feed = pushSystem(feed, 'finish', 'demo.feed.finished', 'result');
                 break;
         }
 

@@ -364,7 +364,15 @@
       "waitingStart": "Wachten tot het spel begint…",
       "waitingConnect": "Wachten op verbinding. Open via de QR-link (?url=…&team=…).",
       "talkOver": "(einde van gesprek)",
-      "talkSkip": "(overgeslagen)"
+      "talkSkip": "(overgeslagen)",
+      "morning": "── Ochtend van dag {day} ──",
+      "executed": "🗳 {name} werd door de stemming van gisteren geëxecuteerd",
+      "attacked": "🌙 Bij het aanbreken van de dag werd {name} aangevallen aangetroffen",
+      "vote": "🗳 De discussie van dag {day} is afgelopen. Tijd om te stemmen",
+      "night": "🌙 De nacht is gevallen. Elke rol komt in actie",
+      "finished": "🏁 Spel afgelopen",
+      "divineResult": "🔮【Schouwresultaat】{name} was {species}",
+      "mediumResult": "🔮【Mediumresultaat】{name} was {species}"
     },
     "footer": {
       "skip": "Skip",

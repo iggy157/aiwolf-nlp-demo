@@ -364,7 +364,15 @@
       "waitingStart": "Warte auf den Spielbeginn…",
       "waitingConnect": "Warte auf Verbindung. Über den QR-Link öffnen (?url=…&team=…).",
       "talkOver": "(Ende des Gesprächs)",
-      "talkSkip": "(übersprungen)"
+      "talkSkip": "(übersprungen)",
+      "morning": "── Morgen von Tag {day} ──",
+      "executed": "🗳 {name} wurde durch die gestrige Abstimmung verbannt",
+      "attacked": "🌙 Der Morgen graut, und {name} wurde grausam zugerichtet aufgefunden",
+      "vote": "🗳 Die Tagesdiskussion von Tag {day} ist beendet. Zeit zum Abstimmen",
+      "night": "🌙 Die Nacht ist hereingebrochen. Jede Rolle handelt",
+      "finished": "🏁 Spiel vorbei",
+      "divineResult": "🔮 [Weissagung] {name} war {species}",
+      "mediumResult": "🔮 [Medium] {name} war {species}"
     },
     "footer": {
       "skip": "Überspringen",

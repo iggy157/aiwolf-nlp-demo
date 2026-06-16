@@ -364,7 +364,15 @@
       "waitingStart": "Esperando a que empiece la partida…",
       "waitingConnect": "Esperando conexión. Abre desde el enlace QR (?url=…&team=…).",
       "talkOver": "(fin de la intervención)",
-      "talkSkip": "(omitido)"
+      "talkSkip": "(omitido)",
+      "morning": "── Mañana del Día {day} ──",
+      "executed": "🗳 {name} fue expulsado por la votación de ayer",
+      "attacked": "🌙 Al amanecer, {name} fue hallado tras un ataque atroz",
+      "vote": "🗳 Terminó el debate del Día {day}. Hora de votar",
+      "night": "🌙 Ha caído la noche. Cada rol entra en acción",
+      "finished": "🏁 Fin de la partida",
+      "divineResult": "🔮 [Adivinación] {name} era {species}",
+      "mediumResult": "🔮 [Médium] {name} era {species}"
     },
     "footer": {
       "skip": "Omitir",

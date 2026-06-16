@@ -364,7 +364,15 @@
       "waitingStart": "En attente du début de la partie…",
       "waitingConnect": "En attente de connexion. Ouvrez depuis le lien QR (?url=…&team=…).",
       "talkOver": "(fin de la prise de parole)",
-      "talkSkip": "(passé)"
+      "talkSkip": "(passé)",
+      "morning": "── Matin du jour {day} ──",
+      "executed": "🗳 {name} a été exécuté à la suite du vote d'hier",
+      "attacked": "🌙 À l'aube, {name} a été retrouvé sauvagement attaqué",
+      "vote": "🗳 La discussion du jour {day} est terminée. Place au vote",
+      "night": "🌙 La nuit est tombée. Chaque rôle entre en action",
+      "finished": "🏁 Partie terminée",
+      "divineResult": "🔮 [Divination] {name} était {species}",
+      "mediumResult": "🔮 [Médium] {name} était {species}"
     },
     "footer": {
       "skip": "Passer",
