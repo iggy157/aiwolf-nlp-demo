@@ -18,13 +18,16 @@
   }
 </script>
 
-<select
-  class="select select-bordered select-sm"
-  aria-label="Language"
-  value={selectedLanguage}
-  onchange={handleLanguageChange}
->
-  {#each LANGUAGES as { code, label }}
-    <option value={code}>{label}</option>
-  {/each}
-</select>
+<!-- 翻訳アイコン(文A)を添えて「言語切替」と一目で分かるようにする（言語非依存の目印）。 -->
+<label class="flex items-center gap-1" title="Language" aria-label="Language">
+  <iconify-icon icon="mdi:translate" class="text-base opacity-70"></iconify-icon>
+  <select
+    class="select select-bordered select-sm"
+    value={selectedLanguage}
+    onchange={handleLanguageChange}
+  >
+    {#each LANGUAGES as { code, label }}
+      <option value={code}>{label}</option>
+    {/each}
+  </select>
+</label>

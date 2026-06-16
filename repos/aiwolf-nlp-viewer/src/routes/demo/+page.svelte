@@ -8,8 +8,9 @@
   import { base } from "$app/paths";
   import { page } from "$app/state";
   import { Status } from "$lib/constants/common";
+  import LanguageSwitcher from "$lib/components/LanguageSwitcher.svelte";
   import { agentSettings } from "$lib/stores/agent-settings";
-  import { LANGUAGES, language, normalizeLanguage } from "$lib/stores/language";
+  import { language, normalizeLanguage } from "$lib/stores/language";
   import { DefaultProfileAvatars, Request } from "$lib/types/agent";
   import { demoSocketState, type FeedEntry } from "$lib/utils/demo-socket";
   import { onDestroy } from "svelte";
@@ -262,17 +263,9 @@
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let villageSize = $state(5); // 村の人数（5 or 9）。最初のページで選択。
 
-  // ゲーム言語（AIの発話言語）。スタート画面で選択。初期値はUI言語に追従し、
-  // ユーザが明示的に変えたら追従を止める（UI言語にゲーム言語が追従する設計）。
-  let gameLanguage = $state<string>("ja");
-  let gameLangTouched = $state(false);
-  $effect(() => {
-    if (!gameLangTouched) gameLanguage = normalizeLanguage($locale, "ja");
-  });
-  function pickGameLanguage(code: string) {
-    gameLangTouched = true;
-    gameLanguage = code;
-  }
+  // ゲーム言語（AIの発話言語）＝開始時のUI言語。言語セレクタはUIとゲームを同時に切り替える
+  // （言語を選ぶ＝画面もAIも即座にその言語）。卓開始後はこのゲーム言語が固定される。
+  const gameLanguage = $derived(normalizeLanguage($locale, "ja"));
 
   async function startViaLobby() {
     lobbyPhase = "joining";
@@ -414,7 +407,7 @@
 
 <main class="h-dvh flex flex-col bg-base-300">
   <!-- ヘッダ：タイトル＋自分の情報＋操作ボタン -->
-  <header class="flex-none bg-base-100 px-3 py-2 flex items-center gap-2 shadow">
+  <header class="flex-none bg-base-100 px-3 py-2 flex flex-wrap items-center gap-2 shadow">
     <div class="flex items-center gap-2 min-w-0">
       {#if agent}
         <button class="avatar" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.myInfo")}>
@@ -431,6 +424,8 @@
       {/if}
     </div>
     <div class="ml-auto flex items-center gap-1.5">
+      <!-- UI言語スイッチャー（常設）。いつでも切替でき、ヘッダー/フッター等が即座に切り替わる。 -->
+      <LanguageSwitcher />
       <span class="badge badge-sm {status === 'connected' ? 'badge-success' : status === 'connecting' ? 'badge-warning' : 'badge-error'}">
         {status === "connected" ? $_("demo.status.connected") : status === "connecting" ? $_("demo.status.connecting") : $_("demo.status.disconnected")}
       </span>
@@ -624,21 +619,6 @@
               {$_("demo.start.comp9")}
             {/if}
           </div>
-        </div>
-
-        <!-- ゲームの言語（AIの発話言語）。初期値はUI言語に追従。-->
-        <div class="flex flex-col items-center gap-2">
-          <div class="text-sm font-bold opacity-70">{$_("demo.start.gameLanguage")}</div>
-          <select
-            class="select select-bordered select-sm"
-            value={gameLanguage}
-            onchange={(e) => pickGameLanguage((e.target as HTMLSelectElement).value)}
-          >
-            {#each LANGUAGES as { code, label }}
-              <option value={code}>{label}</option>
-            {/each}
-          </select>
-          <div class="text-xs opacity-50 max-w-xs text-center">{$_("demo.start.gameLanguageHint")}</div>
         </div>
 
         <button class="btn btn-primary btn-lg" onclick={startViaLobby}>{$_("demo.start.start")}</button>
