@@ -30,7 +30,13 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import Response
 from pydantic import BaseModel
 
-from prompt_provider import MAX_PERSONA_CHARS, FilePromptProvider, preview_persona
+from prompt_provider import (
+    MAX_PROMPT_CHARS,
+    REQUESTS,
+    FilePromptProvider,
+    preview_prompt,
+    variable_catalog,
+)
 
 # ---------------------------------------------------------------------------
 # 設定（環境変数）
@@ -181,8 +187,8 @@ class Participant:
     display_name: str   # 表示名（userNN）
     team: str           # この人が接続に使う一意の human team（you-...）
     # この人が離脱したとき、席を引き継ぐ takeover AI に使う自作プロンプト（任意）。
-    # 空なら既定プロンプトで引き継ぐ。
-    agent_prompt: str = ""
+    # {request: text} の辞書。空なら既定プロンプトで引き継ぐ。
+    agent_prompts: dict[str, str] = field(default_factory=dict)
     last_seen: float = field(default_factory=time.time)
 
 
@@ -211,11 +217,11 @@ class Session:
     # --- Room（ソロ/マルチ）---
     mode: str = "solo"      # solo | multi
     code: str = ""          # マルチの合言葉（共有して同卓に入る）。ソロは空。
-    # agent_prompt: この卓のサンプルAIに使うユーザ自作の「プレイスタイル/性格」文（任意）。
-    # provider が initialize に安全注入する。空なら既定プロンプト。
-    agent_prompt: str = ""
+    # agent_prompts: この卓のサンプルAIに使うユーザ自作の「リクエスト別プロンプト」（任意）。
+    # {request: text} の辞書。provider がトークンを実行時 Jinja に解決して上書き。空なら既定。
+    agent_prompts: dict[str, str] = field(default_factory=dict)
     # ai_specs: AI席をグループに分けて別プロンプトで起動する（観戦の「自作AI×N＋既定×M」等）。
-    # 各要素は (persona, count)。空なら _spawn が単一グループ((agent_prompt, ai_count))にフォールバック。
+    # 各要素は (prompts_dict, count)。空なら _spawn が単一グループ((agent_prompts, ai_count))にフォールバック。
     ai_specs: list[Any] = field(default_factory=list)
     human_slots: int = 1    # 人間の席数（マルチでホストが指定。残りをAIが埋める）
     host_token: str = ""    # ホスト（部屋作成者）の匿名トークン
@@ -270,11 +276,11 @@ class Lobby:
         sid = self._codes.get((code or "").upper())
         return self.sessions.get(sid) if sid else None
 
-    def _make_participant(self, token: str, agent_prompt: str = "") -> Participant:
+    def _make_participant(self, token: str, agent_prompts: dict | None = None) -> Participant:
         display = self._next_display_name()
         return Participant(
             token=token, display_name=display, team=f"you-{display}",
-            agent_prompt=(agent_prompt or "").strip(),
+            agent_prompts=dict(agent_prompts or {}),
         )
 
     @staticmethod
@@ -327,11 +333,11 @@ class Lobby:
         language: str = DEFAULT_LANGUAGE,
         human_slots: int = 1,
         token: str = "",
-        agent_prompt: str = "",
+        agent_prompts: dict | None = None,
         my_ai_count: int = -1,
     ) -> Session:
         """卓を作る。ソロは即開始（AI spawn）、マルチは待機（コード発行・ホスト参加）。
-        agent_prompt があれば、この卓のサンプルAIにユーザ自作のプレイスタイルを使う。
+        agent_prompts があれば、この卓のサンプルAIにユーザ自作のリクエスト別プロンプトを使う。
         my_ai_count>=0 なら、AI席のうち my_ai_count 体だけ自作プロンプト・残りは既定（観戦の構成用）。"""
         if size not in VALID_SIZES:
             size = 5
@@ -340,10 +346,10 @@ class Lobby:
         # 人間席数: ソロは1、マルチは 1..size
         human_slots = 1 if mode == "solo" else max(1, min(human_slots, size))
         token = token or secrets.token_urlsafe(9)
-        agent_prompt = (agent_prompt or "").strip()
+        agent_prompts = dict(agent_prompts or {})
         async with self._lock:
             sid = secrets.token_urlsafe(9)
-            host = self._make_participant(token, agent_prompt)
+            host = self._make_participant(token, agent_prompts)
             session = Session(
                 id=sid,
                 display_name=host.display_name,
@@ -353,9 +359,9 @@ class Lobby:
                 size=size,
                 language=language,
                 mode=mode,
-                # solo: サンプルAIに persona を使う(①)。multi: サンプルAIは既定とし、persona は
+                # solo: サンプルAIに自作プロンプトを使う(①)。multi: サンプルAIは既定とし、自作は
                 # host 参加者に持たせて「離脱時の takeover」に使う(②)。
-                agent_prompt=agent_prompt if mode == "solo" else "",
+                agent_prompts=agent_prompts if mode == "solo" else {},
                 human_slots=human_slots,
                 host_token=token,
                 participants=[host],
@@ -366,12 +372,12 @@ class Lobby:
                 session.external_slots = 1
                 session.ai_count = max(0, size - 1)
                 # 自作プロンプトの構成: my_ai_count>=0 なら「自作×k＋既定×残り」、
-                # それ以外(=-1)で persona があれば全AIに適用（①の挙動）。
-                if agent_prompt and my_ai_count >= 0:
+                # それ以外(=-1)で自作があれば全AIに適用（①の挙動）。
+                if agent_prompts and my_ai_count >= 0:
                     k = max(0, min(my_ai_count, session.ai_count))
-                    session.ai_specs = [(agent_prompt, k), ("", session.ai_count - k)]
-                elif agent_prompt:
-                    session.ai_specs = [(agent_prompt, session.ai_count)]
+                    session.ai_specs = [(agent_prompts, k), ({}, session.ai_count - k)]
+                elif agent_prompts:
+                    session.ai_specs = [(agent_prompts, session.ai_count)]
                 session.status = "queued"
                 self.queue.append(sid)
             else:
@@ -381,11 +387,11 @@ class Lobby:
                 session.status = "waiting"
             return session
 
-    async def join_room(self, code: str, token: str, agent_prompt: str = "") -> tuple[Session, Participant]:
+    async def join_room(self, code: str, token: str, agent_prompts: dict | None = None) -> tuple[Session, Participant]:
         """マルチ卓に合言葉で参加する。空席が無ければ例外。既参加(同token)なら既存席を返す。
-        agent_prompt はこの人の離脱時 takeover に使う自作プロンプト。"""
+        agent_prompts はこの人の離脱時 takeover に使う自作プロンプト（リクエスト別辞書）。"""
         token = token or secrets.token_urlsafe(9)
-        agent_prompt = (agent_prompt or "").strip()
+        agent_prompts = dict(agent_prompts or {})
         async with self._lock:
             session = self.room_by_code(code)
             if session is None or session.mode != "multi":
@@ -393,13 +399,13 @@ class Lobby:
             if session.status != "waiting":
                 raise ValueError("room already started")
             for p in session.participants:
-                if p.token == token:  # 再入（リロード等）は既存席をそのまま（personaは最新に更新）
+                if p.token == token:  # 再入（リロード等）は既存席をそのまま（自作は最新に更新）
                     p.last_seen = time.time()
-                    p.agent_prompt = agent_prompt
+                    p.agent_prompts = agent_prompts
                     return session, p
             if len(session.participants) >= session.human_slots:
                 raise ValueError("room full")
-            p = self._make_participant(token, agent_prompt)
+            p = self._make_participant(token, agent_prompts)
             session.participants.append(p)
             return session, p
 
@@ -454,11 +460,11 @@ class Lobby:
                     session.error = str(ex)
 
     def _spawn_agents(self, session: Session) -> None:
-        # AI席のグループ (persona, count)。ai_specs があれば異種AI（自作AI＋既定 等）、
-        # 無ければ単一グループ（session.agent_prompt を ai_count 体）。
+        # AI席のグループ (prompts, count)。ai_specs があれば異種AI（自作AI＋既定 等）、
+        # 無ければ単一グループ（session.agent_prompts を ai_count 体）。
         specs = [
             (p, c)
-            for (p, c) in (session.ai_specs or [(session.agent_prompt, session.ai_count)])
+            for (p, c) in (session.ai_specs or [(session.agent_prompts, session.ai_count)])
             if c > 0
         ]
         if not specs:
@@ -471,9 +477,9 @@ class Lobby:
         # 各グループは ?room=<session.room> で同じ卓に集まる。グループごとに別チーム名。
         ai_url = with_room(internal_url_for(session.size, session.language), session.room)
         session.process = None
-        for i, (persona, count) in enumerate(specs):
+        for i, (prompts, count) in enumerate(specs):
             team = session.team if i == 0 else self._new_team(f"{session.display_name}-g{i}")
-            cfg = self._build_agent_config(team, count, ai_url, session.language, persona)
+            cfg = self._build_agent_config(team, count, ai_url, session.language, prompts)
             cfg_path = GENERATED_DIR / (f"{session.id}.yml" if i == 0 else f"{session.id}-g{i}.yml")
             with cfg_path.open("w", encoding="utf-8") as f:
                 yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -504,10 +510,10 @@ class Lobby:
             env.pop("OPENAI_API_BASE", None)
         return env
 
-    def _spawn_takeover_ai(self, session: Session, original_name: str, persona: str = "") -> bool:
+    def _spawn_takeover_ai(self, session: Session, original_name: str, custom_prompts: dict | None = None) -> bool:
         """人間が離脱した席(original_name)を引き継ぐAIを1体 spawn する。
         サーバが ?takeover=<original_name> を解釈し、進行中ゲームの該当席へ接続を渡す。
-        persona があれば、その人の自作プロンプトで引き継ぐ。"""
+        custom_prompts があれば、その人の自作プロンプトで引き継ぐ。"""
         import subprocess
         from urllib.parse import quote
 
@@ -516,7 +522,7 @@ class Lobby:
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         base_url = with_room(internal_url_for(session.size, session.language), session.room)
         ai_url = base_url + ("&" if "?" in base_url else "?") + "takeover=" + quote(original_name, safe="")
-        cfg = self._build_agent_config("takeover", 1, ai_url, session.language, persona)
+        cfg = self._build_agent_config("takeover", 1, ai_url, session.language, custom_prompts)
         cfg_path = GENERATED_DIR / f"{session.id}-takeover-{secrets.token_hex(3)}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -554,7 +560,7 @@ class Lobby:
                 else:
                     # まだ人間が残っている → 抜けた席だけAIが引き継ぎ、卓は続行。
                     # その人の自作プロンプト(あれば)で引き継ぐ。
-                    spawned = self._spawn_takeover_ai(session, p.team, p.agent_prompt)
+                    spawned = self._spawn_takeover_ai(session, p.team, p.agent_prompts)
                     if spawned:
                         session.takeover_events.append(p.display_name)
                     session.participants = remaining
@@ -571,12 +577,12 @@ class Lobby:
         ai_count: int,
         internal_url: str,
         language: str = DEFAULT_LANGUAGE,
-        persona: str = "",
+        custom_prompts: dict | None = None,
     ) -> dict[str, Any]:
         # provider が base.yml + prompts/<lang>.yml をマージした config を返す。
-        # persona があればユーザ自作のプレイスタイルを initialize に注入する。
+        # custom_prompts があればユーザ自作のリクエスト別プロンプトで上書きする。
         # それに接続/チーム/LLM を上書きして最終 config にする。
-        cfg: dict[str, Any] = PROMPT_PROVIDER.config_for(language, persona or None)
+        cfg: dict[str, Any] = PROMPT_PROVIDER.config_for(language, custom_prompts or None)
 
         cfg.setdefault("web_socket", {})
         cfg["web_socket"]["url"] = internal_url
@@ -949,13 +955,13 @@ class CreateRoomRequest(BaseModel):
     language: str = DEFAULT_LANGUAGE
     human_slots: int = 1             # マルチの人間席数（1..size、残りをAIが埋める）
     token: str = ""                  # 端末の匿名トークン（localStorage）
-    agent_prompt: str = ""           # 自作AIの「プレイスタイル/性格」文（任意）。AI席に注入。
-    my_ai_count: int = -1            # AI席のうち自作AIにする数（観戦の構成用。-1=persona適用なら全AI）
+    agent_prompts: dict[str, str] = {}  # 自作AIのリクエスト別プロンプト（任意）。AI席に注入。
+    my_ai_count: int = -1            # AI席のうち自作AIにする数（観戦の構成用。-1=自作適用なら全AI）
 
 
 class JoinRoomRequest(BaseModel):
     token: str = ""                  # 端末の匿名トークン
-    agent_prompt: str = ""           # 離脱時の takeover に使う自作プロンプト（任意）
+    agent_prompts: dict[str, str] = {}  # 離脱時の takeover に使う自作プロンプト（任意）
 
 
 class ParticipantInfo(BaseModel):
@@ -1014,14 +1020,25 @@ def _room_response(session: Session, token: str) -> RoomResponse:
 
 
 class PromptPreviewRequest(BaseModel):
-    language: str = DEFAULT_LANGUAGE
-    persona: str = ""
+    text: str = ""                   # 1リクエストぶんのプロンプト本文（トークン入り）
 
 
 @app.post("/api/prompt/preview")
 async def prompt_preview(req: PromptPreviewRequest) -> dict[str, Any]:
-    """自作AIエディタ用: 変数をサンプル値に解決した persona のプレビューを返す。"""
-    return {"preview": preview_persona(req.persona), "max_chars": MAX_PERSONA_CHARS}
+    """自作AIエディタ用: 変数トークンをサンプル値に解決したプレビューを返す。"""
+    return {"preview": preview_prompt(req.text), "max_chars": MAX_PROMPT_CHARS}
+
+
+@app.get("/api/prompt/catalog")
+async def prompt_catalog() -> dict[str, Any]:
+    """自作AIエディタ用: 変数カタログ（変数一覧・リクエスト別の使える変数・リクエスト一覧）。"""
+    return variable_catalog()
+
+
+@app.get("/api/prompt/defaults")
+async def prompt_defaults(language: str = DEFAULT_LANGUAGE) -> dict[str, Any]:
+    """自作AIエディタ用: 指定言語の既定プロンプトをトークン文（Jinja非表示）で返す。"""
+    return {"prompts": PROMPT_PROVIDER.defaults_as_tokens(language), "requests": REQUESTS}
 
 
 @app.post("/api/rooms", response_model=RoomResponse)
@@ -1029,7 +1046,7 @@ async def create_room(req: CreateRoomRequest) -> RoomResponse:
     token = req.token or secrets.token_urlsafe(9)
     session = await lobby.create_room(
         mode=req.mode, size=req.size, language=req.language, human_slots=req.human_slots,
-        token=token, agent_prompt=req.agent_prompt, my_ai_count=req.my_ai_count,
+        token=token, agent_prompts=req.agent_prompts, my_ai_count=req.my_ai_count,
     )
     if session.mode == "solo":
         await lobby._schedule()  # noqa: SLF001  ソロは即開始
@@ -1040,7 +1057,7 @@ async def create_room(req: CreateRoomRequest) -> RoomResponse:
 async def join_room(code: str, req: JoinRoomRequest) -> RoomResponse:
     token = req.token or secrets.token_urlsafe(9)
     try:
-        session, _ = await lobby.join_room(code, token, req.agent_prompt)
+        session, _ = await lobby.join_room(code, token, req.agent_prompts)
     except KeyError:
         raise HTTPException(status_code=404, detail="room not found")
     except ValueError as ex:

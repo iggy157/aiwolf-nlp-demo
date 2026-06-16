@@ -22,6 +22,7 @@ from __future__ import annotations
 
 import argparse
 import copy
+import re
 import sys
 from abc import ABC, abstractmethod
 from pathlib import Path
@@ -30,47 +31,72 @@ from typing import Any
 import yaml
 
 
-# ユーザが書ける「プレイスタイル/性格」文の最大長（プロンプト肥大・コスト暴走の防止）。
-MAX_PERSONA_CHARS = 2000
+# ユーザが編集できるリクエスト別プロンプトの最大長（プロンプト肥大・コスト暴走の防止）。
+MAX_PROMPT_CHARS = 4000
 
-# persona セクションのラベル（卓のゲーム言語で出す。未対応言語は英語にフォールバック）。
-_PERSONA_LABELS = {
-    "ja": "【あなたのプレイスタイル・性格】次になりきってプレイしてください（ゲームのルールと出力形式は上記の指示に必ず従うこと）:",
-    "en": "[Your play style and personality] Stay in character as described below (but always obey the game rules and output format above):",
-    "zh": "【你的游戏风格与性格】请按照下面的描述进行角色扮演（但必须始终遵守上述的游戏规则和输出格式）:",
-    "hi": "[आपकी खेल शैली और व्यक्तित्व] नीचे वर्णित किरदार में बने रहें (लेकिन हमेशा ऊपर दिए गए खेल के नियमों और आउटपुट प्रारूप का पालन करें):",
-    "es": "[Tu estilo de juego y personalidad] Mantente en el personaje descrito a continuación (pero obedece siempre las reglas del juego y el formato de salida indicados arriba):",
-    "ar": "[أسلوب لعبك وشخصيتك] التزم بالشخصية الموصوفة أدناه (مع الالتزام دائمًا بقواعد اللعبة وتنسيق الإخراج المذكورة أعلاه):",
-    "bn": "[আপনার খেলার ধরন ও ব্যক্তিত্ব] নিচে বর্ণিত চরিত্রে অভিনয় করুন (তবে সর্বদা উপরে দেওয়া খেলার নিয়ম ও আউটপুট বিন্যাস মেনে চলুন):",
-    "fr": "[Votre style de jeu et personnalité] Restez dans le personnage décrit ci-dessous (mais respectez toujours les règles du jeu et le format de sortie indiqués ci-dessus):",
-    "ru": "[Ваш стиль игры и характер] Оставайтесь в образе, описанном ниже (но всегда соблюдайте правила игры и формат вывода, указанные выше):",
-    "pt": "[Seu estilo de jogo e personalidade] Mantenha-se no personagem descrito abaixo (mas obedeça sempre às regras do jogo e ao formato de saída indicados acima):",
-    "ur": "[آپ کا کھیلنے کا انداز اور شخصیت] نیچے بیان کردہ کردار میں رہیں (لیکن ہمیشہ اوپر دیے گئے کھیل کے قواعد اور آؤٹ پٹ فارمیٹ کی پابندی کریں):",
-    "id": "[Gaya bermain dan kepribadian Anda] Tetaplah berperan sebagai karakter yang dijelaskan di bawah ini (tetapi selalu patuhi aturan permainan dan format keluaran di atas):",
-    "de": "[Dein Spielstil und deine Persönlichkeit] Bleibe in der unten beschriebenen Rolle (aber befolge stets die oben genannten Spielregeln und das Ausgabeformat):",
-    "nl": "[Jouw speelstijl en persoonlijkheid] Blijf in de hieronder beschreven rol (maar houd je altijd aan de spelregels en het uitvoerformaat hierboven):",
+# 編集可能なリクエスト（agent-llm の prompt キー）。
+REQUESTS = [
+    "initialize", "daily_initialize", "talk", "whisper", "daily_finish",
+    "divine", "guard", "vote", "attack",
+]
+
+# 既定プロンプトに現れるループ（複合変数）の“厳密な”Jinja 文字列。
+# これらを丸ごと1つのトークンに対応させ、ユーザにはループ(Jinja)を書かせない。
+# 文字列は configs/agents/prompts/*.yml の該当ループと完全一致させること（往復変換のため）。
+_TALK_LOOP = "{% for w in talk_history[sent_talk_count:] -%}\n{{ w.agent }}: {{ w.text }}\n{% endfor %}"
+_WHISPER_LOOP = "{% for w in whisper_history[sent_whisper_count:] -%}\n{{ w.agent }}: {{ w.text }}\n{% endfor %}"
+_ALIVE_LOOP = "{% for k, v in info.status_map.items() -%}\n{%- if v == 'ALIVE' -%}\n{{ k }}\n{% endif -%}\n{%- endfor %}"
+
+# 変数カタログ。各 (key, token, template_jinja, runtime_jinja, sample, composite)。
+#   token        : エディタ上のやさしい記法（ユーザは生 Jinja を打たない）
+#   template_jinja: 既定プロンプト中の素の式（トークン化＝逆変換のマッチ用）
+#   runtime_jinja : 実行時に注入する式（None セーフ）。agent-llm がこれを描画する
+#   sample        : プレビュー用のサンプル値
+#   composite     : ループ等のブロック変数か
+def _nz(attr: str) -> str:  # None セーフな実行時式
+    return f"{{{{ {attr} if {attr} is not none else '' }}}}"
+
+
+_VARS: list[dict[str, Any]] = [
+    {"key": "name", "token": "{name}", "template": "{{ info.agent }}", "runtime": "{{ info.agent }}", "sample": "ミナト", "composite": False},
+    {"key": "role", "token": "{role}", "template": "{{ role.value }}", "runtime": "{{ role.value }}", "sample": "占い師", "composite": False},
+    {"key": "day", "token": "{day}", "template": "{{ info.day }}", "runtime": "{{ info.day }}", "sample": "2", "composite": False},
+    {"key": "profile", "token": "{profile}", "template": "{{ info.profile }}", "runtime": _nz("info.profile"), "sample": "おっとりした性格", "composite": False},
+    {"key": "divine_result", "token": "{divine_result}", "template": "{{ info.divine_result }}", "runtime": _nz("info.divine_result"), "sample": "ミナトは人間でした", "composite": False},
+    {"key": "medium_result", "token": "{medium_result}", "template": "{{ info.medium_result }}", "runtime": _nz("info.medium_result"), "sample": "タクミは人狼でした", "composite": False},
+    {"key": "executed_agent", "token": "{executed_agent}", "template": "{{ info.executed_agent }}", "runtime": _nz("info.executed_agent"), "sample": "ケンジ", "composite": False},
+    {"key": "attacked_agent", "token": "{attacked_agent}", "template": "{{ info.attacked_agent }}", "runtime": _nz("info.attacked_agent"), "sample": "リン", "composite": False},
+    {"key": "vote_list", "token": "{vote_list}", "template": "{{ info.vote_list }}", "runtime": _nz("info.vote_list"), "sample": "ミナト→タクミ", "composite": False},
+    {"key": "attack_vote_list", "token": "{attack_vote_list}", "template": "{{ info.attack_vote_list }}", "runtime": _nz("info.attack_vote_list"), "sample": "（襲撃投票）", "composite": False},
+    {"key": "remain_talk", "token": "{remain_talk}", "template": "{{ info.remain_count }}", "runtime": _nz("info.remain_count"), "sample": "3", "composite": False},
+    {"key": "remain_skip", "token": "{remain_skip}", "template": "{{ info.remain_skip }}", "runtime": _nz("info.remain_skip"), "sample": "2", "composite": False},
+    {"key": "talk_history", "token": "{talk_history}", "template": _TALK_LOOP, "runtime": _TALK_LOOP, "sample": "ミナト: みなさんこんにちは\nタクミ: 怪しい人がいますね", "composite": True},
+    {"key": "whisper_history", "token": "{whisper_history}", "template": _WHISPER_LOOP, "runtime": _WHISPER_LOOP, "sample": "ミナト: 今夜はケンジを襲おう", "composite": True},
+    {"key": "alive_agents", "token": "{alive_agents}", "template": _ALIVE_LOOP, "runtime": _ALIVE_LOOP, "sample": "ミナト\nタクミ\nケンジ\nリン", "composite": True},
+]
+_VARS_BY_KEY = {v["key"]: v for v in _VARS}
+
+# リクエストごとに「使える変数」（ピッカー表示用）。
+REQUEST_VARS: dict[str, list[str]] = {
+    "initialize": ["name", "role", "profile"],
+    "daily_initialize": ["day", "medium_result", "divine_result", "executed_agent", "attacked_agent", "vote_list", "attack_vote_list"],
+    "talk": ["talk_history", "name", "role", "day", "remain_talk", "remain_skip"],
+    "whisper": ["whisper_history", "name", "role"],
+    "daily_finish": ["talk_history", "day", "medium_result", "divine_result", "executed_agent", "attacked_agent", "vote_list", "attack_vote_list"],
+    "divine": ["alive_agents", "name", "role", "day"],
+    "guard": ["alive_agents", "name", "role", "day"],
+    "vote": ["alive_agents", "name", "role", "day"],
+    "attack": ["alive_agents", "name", "role", "day", "attack_vote_list"],
 }
 
-
-def _persona_label(lang: str) -> str:
-    return _PERSONA_LABELS.get(lang, _PERSONA_LABELS["en"])
-
-
-# L2: ユーザがピッカーで挿入できる変数（whitelist）。
-#   token : エディタ上のやさしい記法（ユーザは生 Jinja を打たない）
-#   jinja : 実行時に agent-llm が描画する式（このリストの式しか注入されない＝安全）
-#   sample: プレビュー用のサンプル値
-# agent-llm の描画コンテキスト(info/role/...)に存在する属性だけを公開する。
-PROMPT_VARS: dict[str, dict[str, str]] = {
-    "name": {"token": "{name}", "jinja": "{{ info.agent }}", "sample": "ミナト"},
-    "role": {"token": "{role}", "jinja": "{{ role.value }}", "sample": "占い師"},
-    "day": {"token": "{day}", "jinja": "{{ info.day }}", "sample": "2"},
-}
+# 長い順（部分一致での誤置換を避ける）に並べたトークン/式。
+_VARS_LONGEST = sorted(_VARS, key=lambda v: -len(v["token"]))
+_VARS_TPL_LONGEST = sorted(_VARS, key=lambda v: -len(v["template"]))
+_COND_RE = re.compile(r"\{%-?.*?-?%\}", re.DOTALL)  # 残った条件タグ除去用
 
 
 def _escape_jinja(text: str) -> str:
-    """ユーザ文をテンプレートに“リテラル”として埋め込むため、Jinja デリミタを無効化する。
-    これでユーザが生 Jinja を書いても再評価されない（SSTI 防止）。"""
+    """ユーザ文中の生 Jinja デリミタを無効化（SSTI 防止）。"""
     return (
         text.replace("{{", "{ {").replace("}}", "} }")
         .replace("{%", "{ %").replace("%}", "% }")
@@ -78,44 +104,59 @@ def _escape_jinja(text: str) -> str:
     )
 
 
-def _apply_vars(text: str, mode: str) -> str:
-    """whitelist 変数トークン({name}等)を解決する。
-    mode='jinja': 実行時用に Jinja 式へ（agent-llm が描画）。mode='sample': プレビュー用にサンプル値へ。"""
-    for v in PROMPT_VARS.values():
-        text = text.replace(v["token"], v["jinja"] if mode == "jinja" else v["sample"])
-    return text
+def tokens_to_jinja(text: str) -> str:
+    """ユーザのトークン入りプロンプト → 実行時 Jinja。
+    1) 生 Jinja を無効化（whitelist 以外の live な式を排除）→ 2) トークンを runtime 式へ。"""
+    out = _escape_jinja(text)
+    for v in _VARS_LONGEST:
+        out = out.replace(v["token"], v["runtime"])
+    return out
 
 
-def _prepare_persona(persona: str, mode: str) -> str:
-    """ユーザ persona を安全な形に整える。
-    1) 生 Jinja デリミタを無効化(SSTI防止) → 2) whitelist 変数トークンだけを解決。
-    これで“whitelist 変数以外の live な Jinja は一切混入しない”。"""
-    return _apply_vars(_escape_jinja(persona), mode)
+def jinja_to_tokens(text: str) -> str:
+    """既定プロンプト(Jinja) → エディタ表示用のトークン文（ユーザに Jinja を見せない）。
+    ループ/スカラーをトークン化し、残った条件タグ({% if %}等)は除去する。"""
+    out = text
+    for v in _VARS_TPL_LONGEST:  # 長い(=ループ)を先に置換
+        out = out.replace(v["template"], v["token"])
+    out = _COND_RE.sub("", out)            # 残る条件タグを除去
+    out = re.sub(r"\n{3,}", "\n\n", out)   # 連続改行を整える
+    return out.strip("\n")
 
 
-def inject_persona(cfg: dict[str, Any], persona: str | None, lang: str) -> None:
-    """cfg["prompt"]["initialize"] の末尾にユーザの persona セクションを追記する（in-place）。
-    変数トークンは実行時 Jinja 式に解決され、それ以外のユーザ入力はリテラル化される。"""
-    persona = (persona or "").strip()
-    if not persona:
+def preview_prompt(text: str) -> str:
+    """エディタのプレビュー用: トークンをサンプル値に解決した文を返す。"""
+    out = _escape_jinja(text or "")
+    for v in _VARS_LONGEST:
+        out = out.replace(v["token"], v["sample"])
+    return out
+
+
+def apply_custom_prompts(cfg: dict[str, Any], custom_prompts: dict[str, str] | None) -> None:
+    """ユーザが編集したリクエスト別プロンプトで cfg["prompt"] を上書きする（in-place）。
+    各テキストはトークン→実行時 Jinja に変換して注入。空/対象外キーは無視。"""
+    if not custom_prompts:
         return
-    if len(persona) > MAX_PERSONA_CHARS:
-        persona = persona[:MAX_PERSONA_CHARS]
     prompt = cfg.get("prompt")
-    if not isinstance(prompt, dict) or "initialize" not in prompt:
+    if not isinstance(prompt, dict):
         return
-    section = f"\n\n{_persona_label(lang)}\n{_prepare_persona(persona, 'jinja')}\n"
-    prompt["initialize"] = str(prompt["initialize"]) + section
+    for req, text in custom_prompts.items():
+        if req not in REQUESTS:
+            continue
+        text = (text or "").strip()
+        if not text:
+            continue
+        prompt[req] = tokens_to_jinja(text[:MAX_PROMPT_CHARS])
 
 
-def preview_persona(persona: str | None) -> str:
-    """エディタのプレビュー用: 変数をサンプル値に解決した persona 文を返す（言語非依存）。"""
-    persona = (persona or "").strip()
-    if not persona:
-        return ""
-    if len(persona) > MAX_PERSONA_CHARS:
-        persona = persona[:MAX_PERSONA_CHARS]
-    return _prepare_persona(persona, "sample")
+def variable_catalog() -> dict[str, Any]:
+    """フロントのピッカー用: 変数一覧（key/token/composite）とリクエスト別の使える変数。"""
+    return {
+        "vars": [{"key": v["key"], "token": v["token"], "composite": v["composite"]} for v in _VARS],
+        "by_request": REQUEST_VARS,
+        "requests": REQUESTS,
+        "max_chars": MAX_PROMPT_CHARS,
+    }
 
 
 class PromptConfigProvider(ABC):
@@ -141,14 +182,22 @@ class PromptConfigProvider(ABC):
     def resolve_language(self, language: str | None) -> str:
         """要求言語を実在する言語コードに解決する（未対応なら既定言語）。"""
 
-    def config_for(self, language: str | None, persona: str | None = None) -> dict[str, Any]:
+    def config_for(
+        self, language: str | None, custom_prompts: dict[str, str] | None = None
+    ) -> dict[str, Any]:
         """base + 指定言語の prompt をマージした config（deep copy）を返す。
-        persona があれば、ユーザの「プレイスタイル/性格」文を initialize に安全注入する。"""
+        custom_prompts があれば、ユーザが編集したリクエスト別プロンプトで上書きする。"""
         cfg = copy.deepcopy(self.base_config())
         lang = self.resolve_language(language)
         cfg.update(copy.deepcopy(self.prompt_block(lang)))
-        inject_persona(cfg, persona, lang)
+        apply_custom_prompts(cfg, custom_prompts)
         return cfg
+
+    def defaults_as_tokens(self, language: str | None) -> dict[str, str]:
+        """指定言語の既定プロンプトを、エディタ表示用のトークン文に変換して返す。"""
+        lang = self.resolve_language(language)
+        block = self.prompt_block(lang).get("prompt", {})
+        return {req: jinja_to_tokens(str(block.get(req, ""))) for req in REQUESTS if req in block}
 
 
 class FilePromptProvider(PromptConfigProvider):

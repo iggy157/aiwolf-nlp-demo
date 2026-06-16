@@ -296,32 +296,68 @@
     selectedCharacter >= 0 ? (characters[selectedCharacter]?.avatar ?? null) : null,
   );
 
-  // ---- 自作AI（プロンプトエンジニアリング）----
-  // 編集中の値はローカルに持ち、保存時に myAgent ストア(localStorage)へ書く。
+  // ---- 自作AI（リクエスト別プロンプトエンジニアリング）----
+  type VarDef = { key: string; token: string; composite: boolean };
+  type Catalog = { vars: VarDef[]; by_request: Record<string, string[]>; requests: string[] };
   let editNickname = $state("");
-  let editPersona = $state("");
+  let editPrompts = $state<Record<string, string>>({}); // request -> 編集中の本文
+  let agentDefaults = $state<Record<string, string>>({}); // 既定プロンプト（トークン文）
+  let agentCatalog = $state<Catalog>({ vars: [], by_request: {}, requests: [] });
+  let selectedRequest = $state("initialize");
   let agentSaved = $state(false);
   let previewText = $state<string | null>(null);
-  let useMyAgent = $state(false); // ソロ: AI席に自作プロンプトを使うか
-  function openAgentEditor() {
-    const a = $myAgent;
-    editNickname = a.nickname;
-    editPersona = a.persona;
-    previewText = null;
-    agentSaved = false;
+  let useMyAgent = $state(false); // AI席/引き継ぎに自作プロンプトを使うか
+  let promptTextarea = $state<HTMLTextAreaElement | null>(null);
+  // 自作AIが作成済みか（どれか1リクエストでも保存されていれば）
+  const hasCustomAgent = $derived(Object.values($myAgent.prompts ?? {}).some((t) => (t ?? "").trim().length > 0));
+  // 現在のリクエストで使える変数
+  const requestVars = $derived(
+    (agentCatalog.by_request?.[selectedRequest] ?? [])
+      .map((k) => agentCatalog.vars.find((v) => v.key === k))
+      .filter((v): v is VarDef => !!v),
+  );
+
+  async function openAgentEditor() {
     screen = "agent";
+    agentSaved = false;
+    previewText = null;
+    try {
+      const [cat, def] = await Promise.all([
+        fetch(`${lobbyBase}/api/prompt/catalog`).then((r) => r.json()),
+        fetch(`${lobbyBase}/api/prompt/defaults?language=${encodeURIComponent(gameLanguage)}`).then((r) => r.json()),
+      ]);
+      agentCatalog = cat;
+      agentDefaults = def.prompts ?? {};
+    } catch {
+      /* 取得失敗でもエディタは開ける */
+    }
+    const reqs = agentCatalog.requests.length ? agentCatalog.requests : Object.keys(agentDefaults);
+    const saved = $myAgent;
+    editNickname = saved.nickname;
+    const buf: Record<string, string> = {};
+    for (const r of reqs) buf[r] = saved.prompts?.[r] ?? agentDefaults[r] ?? "";
+    editPrompts = buf;
+    if (!reqs.includes(selectedRequest)) selectedRequest = reqs[0] ?? "initialize";
   }
+
   function saveAgent() {
-    myAgent.set({ nickname: editNickname.trim(), persona: editPersona.trim().slice(0, MY_AGENT_MAX_CHARS) });
+    // 既定と同じものは保存しない（編集した差分だけ localStorage に持つ）
+    const out: Record<string, string> = {};
+    for (const [r, t] of Object.entries(editPrompts)) {
+      const v = (t ?? "").trim();
+      if (v && v !== (agentDefaults[r] ?? "").trim()) out[r] = v.slice(0, MY_AGENT_MAX_CHARS);
+    }
+    myAgent.set({ nickname: editNickname.trim(), prompts: out });
     agentSaved = true;
     setTimeout(() => (agentSaved = false), 1500);
   }
+
   async function previewAgent() {
     try {
       const res = await fetch(`${lobbyBase}/api/prompt/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ language: gameLanguage, persona: editPersona }),
+        body: JSON.stringify({ text: editPrompts[selectedRequest] ?? "" }),
       });
       if (res.ok) previewText = (await res.json()).preview ?? "";
     } catch {
@@ -329,28 +365,32 @@
     }
   }
 
-  // L2: ピッカーで挿入できる変数（lobby の PROMPT_VARS とトークンを一致させること）。
-  const PROMPT_VARS = [
-    { key: "name", token: "{name}" },
-    { key: "role", token: "{role}" },
-    { key: "day", token: "{day}" },
-  ];
-  let personaTextarea = $state<HTMLTextAreaElement | null>(null);
-  // テキストをカーソル位置に挿入（選択範囲は置換）。生 Jinja は打たせず、トークンだけ挿す。
+  function resetRequest() {
+    editPrompts[selectedRequest] = agentDefaults[selectedRequest] ?? "";
+    previewText = null;
+  }
+
+  // トークンをカーソル位置に挿入（生 Jinja は打たせず、トークンだけ挿す）。
   function insertAtCursor(text: string) {
-    const el = personaTextarea;
+    const el = promptTextarea;
+    const cur = editPrompts[selectedRequest] ?? "";
     if (!el) {
-      editPersona = editPersona + text;
+      editPrompts[selectedRequest] = cur + text;
       return;
     }
-    const s = el.selectionStart ?? editPersona.length;
-    const e = el.selectionEnd ?? editPersona.length;
-    editPersona = editPersona.slice(0, s) + text + editPersona.slice(e);
+    const s = el.selectionStart ?? cur.length;
+    const e = el.selectionEnd ?? cur.length;
+    editPrompts[selectedRequest] = cur.slice(0, s) + text + cur.slice(e);
     requestAnimationFrame(() => {
       el.focus();
       const pos = s + text.length;
       el.setSelectionRange(pos, pos);
     });
+  }
+
+  // 自作プロンプト送信用（useMyAgent かつ作成済みのとき辞書、なければ空）
+  function myPromptsPayload(): Record<string, string> {
+    return useMyAgent && hasCustomAgent ? ($myAgent.prompts ?? {}) : {};
   }
 
   // ゲーム言語（AIの発話言語）＝開始時のUI言語。言語セレクタはUIとゲームを同時に切り替える
@@ -398,7 +438,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
-          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
+          agent_prompts: myPromptsPayload(),
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -435,8 +475,8 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
-          agent_prompt: $myAgent.persona ?? "",
-          my_ai_count: $myAgent.persona ? myAiCount : 0,
+          agent_prompts: hasCustomAgent ? ($myAgent.prompts ?? {}) : {},
+          my_ai_count: hasCustomAgent ? myAiCount : 0,
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -485,7 +525,7 @@
         body: JSON.stringify({
           mode: "multi", size: villageSize, language: gameLanguage,
           human_slots: humanSlots, token: deviceToken,
-          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
+          agent_prompts: myPromptsPayload(),
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -509,7 +549,7 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           token: deviceToken,
-          agent_prompt: useMyAgent && $myAgent.persona ? $myAgent.persona : "",
+          agent_prompts: myPromptsPayload(),
         }),
       });
       if (res.status === 404) { lobbyError = $_("demo.multi.notFound"); return; }
@@ -988,15 +1028,15 @@
   <!-- マルチ作成/参加で共通: 「離脱したら自作AIが引き継ぐ」トグル -->
   {#snippet takeoverToggle()}
     <div class="flex flex-col items-center gap-1 w-full max-w-xs">
-      <label class="flex items-center gap-2 cursor-pointer {$myAgent.persona ? '' : 'opacity-50'}">
-        <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!$myAgent.persona} />
+      <label class="flex items-center gap-2 cursor-pointer {hasCustomAgent ? '' : 'opacity-50'}">
+        <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!hasCustomAgent} />
         <span class="text-sm text-left">
-          {$myAgent.persona
+          {hasCustomAgent
             ? $_("demo.multi.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
             : $_("demo.multi.useMyAgentNone")}
         </span>
       </label>
-      {#if !$myAgent.persona}
+      {#if !hasCustomAgent}
         <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.mode.agent")}</button>
       {/if}
     </div>
@@ -1038,7 +1078,7 @@
               <button class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
             </div>
           </div>
-          {#if $myAgent.persona}
+          {#if hasCustomAgent}
             <div class="flex flex-col items-center gap-1 w-full max-w-xs">
               <div class="text-sm font-bold opacity-70">{$_("demo.spectate.myAi")}: <span class="text-primary">{Math.min(myAiCount, villageSize - 1)}</span> / {villageSize - 1}</div>
               <input type="range" min="0" max={villageSize - 1} bind:value={myAiCount} class="range range-primary range-sm w-full" />
@@ -1059,23 +1099,40 @@
               <input class="input input-bordered input-sm" maxlength="40" placeholder={$_("demo.agent.nicknamePh")} bind:value={editNickname} />
             </label>
             <div class="flex flex-col gap-1">
-              <span class="text-sm font-bold opacity-70">{$_("demo.agent.persona")}</span>
-              <!-- 変数ピッカー＋型挿入（生 Jinja は打たせない）-->
-              <div class="flex flex-wrap items-center gap-1">
-                <span class="text-[11px] opacity-60">{$_("demo.agent.vars")}</span>
-                {#each PROMPT_VARS as v}
-                  <button type="button" class="btn btn-xs btn-outline" onclick={() => insertAtCursor(v.token)}>{$_(`demo.agent.var.${v.key}`)}</button>
+              <span class="text-sm font-bold opacity-70">{$_("demo.agent.requests")}</span>
+              <!-- リクエスト選択（initialize/talk/divine ... 各アクションのプロンプトを個別に編集）-->
+              <div class="flex flex-wrap gap-1">
+                {#each (agentCatalog.requests.length ? agentCatalog.requests : Object.keys(editPrompts)) as req}
+                  {@const edited = (editPrompts[req] ?? "").trim() !== (agentDefaults[req] ?? "").trim()}
+                  <button
+                    type="button"
+                    class="btn btn-xs {selectedRequest === req ? 'btn-primary' : 'btn-outline'}"
+                    onclick={() => { selectedRequest = req; previewText = null; }}
+                  >
+                    {$_(`demo.agent.req.${req}`)}{#if edited}&nbsp;●{/if}
+                  </button>
                 {/each}
-                <button type="button" class="btn btn-xs btn-ghost ml-auto" onclick={() => insertAtCursor($_("demo.agent.scaffoldText"))}>{$_("demo.agent.scaffold")}</button>
               </div>
-              <textarea bind:this={personaTextarea} class="textarea textarea-bordered h-40 text-sm" maxlength={MY_AGENT_MAX_CHARS} placeholder={$_("demo.agent.personaPh")} bind:value={editPersona}></textarea>
-              <span class="text-[11px] opacity-50 text-right">{$_("demo.agent.chars", { values: { count: editPersona.length, max: MY_AGENT_MAX_CHARS } })}</span>
             </div>
-            <p class="text-[11px] opacity-60">{$_("demo.agent.personaHint")} {$_("demo.agent.varsHint")}</p>
-            <div class="flex gap-2">
+            <div class="flex flex-col gap-1">
+              <span class="text-sm font-bold opacity-70">{$_(`demo.agent.req.${selectedRequest}`)}</span>
+              <!-- 変数ピッカー（生 Jinja は打たせず、トークンだけ挿入）。リクエストごとに使える変数のみ表示 -->
+              {#if requestVars.length}
+                <div class="flex flex-wrap items-center gap-1">
+                  <span class="text-[11px] opacity-60">{$_("demo.agent.vars")}</span>
+                  {#each requestVars as v}
+                    <button type="button" class="btn btn-xs {v.composite ? 'btn-outline btn-accent' : 'btn-outline'}" onclick={() => insertAtCursor(v.token)}>{$_(`demo.agent.var.${v.key}`)}</button>
+                  {/each}
+                </div>
+              {/if}
+              <textarea bind:this={promptTextarea} class="textarea textarea-bordered h-48 text-sm font-mono leading-snug" maxlength={MY_AGENT_MAX_CHARS} placeholder={agentDefaults[selectedRequest] ?? ""} bind:value={editPrompts[selectedRequest]}></textarea>
+              <span class="text-[11px] opacity-50 text-right">{$_("demo.agent.chars", { values: { count: (editPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
+            </div>
+            <p class="text-[11px] opacity-60">{$_("demo.agent.reqHint")} {$_("demo.agent.varsHint")}</p>
+            <div class="flex flex-wrap gap-2">
               <button class="btn btn-primary btn-sm grow" onclick={saveAgent}>{agentSaved ? $_("demo.agent.saved") : $_("demo.agent.save")}</button>
               <button class="btn btn-outline btn-sm" onclick={previewAgent}>{$_("demo.agent.preview")}</button>
-              <button class="btn btn-ghost btn-sm" onclick={() => { editPersona = ""; editNickname = ""; previewText = null; }}>{$_("demo.agent.clear")}</button>
+              <button class="btn btn-ghost btn-sm" onclick={resetRequest}>{$_("demo.agent.resetReq")}</button>
             </div>
             {#if previewText !== null}
               <div class="text-xs">
@@ -1118,15 +1175,15 @@
           </div>
           <!-- 自作AIをAI席に使う（任意）-->
           <div class="flex flex-col items-center gap-1">
-            <label class="flex items-center gap-2 cursor-pointer {$myAgent.persona ? '' : 'opacity-50'}">
-              <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!$myAgent.persona} />
+            <label class="flex items-center gap-2 cursor-pointer {hasCustomAgent ? '' : 'opacity-50'}">
+              <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!hasCustomAgent} />
               <span class="text-sm">
-                {$myAgent.persona
+                {hasCustomAgent
                   ? $_("demo.start.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
                   : $_("demo.start.useMyAgentNone")}
               </span>
             </label>
-            {#if !$myAgent.persona}
+            {#if !hasCustomAgent}
               <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.start.noAgentHint")}</button>
             {/if}
           </div>
