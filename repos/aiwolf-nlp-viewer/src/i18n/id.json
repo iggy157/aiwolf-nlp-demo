@@ -401,8 +401,9 @@
       "multi": "Multipemain",
       "multiDesc": "Main bersama teman (gabung ke meja yang sama dengan kode)",
       "back": "Kembali",
-      "agent": "🤖 Buat / edit AI kamu",
-      "spectate": "👁 Tonton AI (AI lawan AI)"
+      "agent": "Edit agen AI",
+      "spectate": "Tonton AI",
+      "spectateDesc": "Tonton AI lawan AI"
     },
     "multi": {
       "create": "Buat ruangan",
@@ -426,18 +427,18 @@
       "roomClosed": "Ruangan telah ditutup",
       "full": "Ruangan penuh",
       "notFound": "Ruangan tidak ditemukan",
-      "useMyAgent": "Jika kamu keluar, AI buatanmu «{name}» akan mengambil alih kursimu dan terus bermain",
+      "useMyAgent": "Jika saya keluar, AI khusus saya akan menggantikan kursi saya",
       "useMyAgentNone": "Jika kamu keluar, AI buatanmu akan mengambil alih kursimu (buat dulu di «Buat AI-mu»)"
     },
     "agent": {
-      "title": "Buat AI-mu sendiri",
-      "intro": "Edit prompt yang dikirim ke AI untuk setiap aksi (perkenalan, bicara, meramal, dan sebagainya). AI yang disimpan tetap berada di perangkat ini.",
+      "title": "Edit prompt agen AI",
+      "intro": "Edit prompt yang dikirim ke AI untuk setiap aksi (pengantar, bicara, ramalan, dll.) untuk menyetel cara mainnya. Karakter dan nama memakai yang sudah ada. Hasil editmu disimpan di perangkat ini.",
       "nickname": "Nama AI",
       "nicknamePh": "mis. Peramal Agresif",
       "requests": "Aksi yang akan diedit",
       "reqHint": "Edit prompt setiap aksi secara terpisah. ● menandai aksi yang telah diedit.",
       "vars": "Sisipkan variabel:",
-      "varsHint": "Variabel diganti dengan nilai sebenarnya (peranmu, riwayat percakapan, dll.) selama permainan.",
+      "varsHint": "Variabel diganti dengan nilai sebenarnya (peran kamu, riwayat percakapan, dll.) selama permainan. Tanda ★ menandai variabel yang umum digunakan untuk aksi ini — kamu tetap bisa menyisipkan yang lain, tetapi akan tampil kosong jika tidak ada nilai yang berlaku.",
       "chars": "{count} / {max} karakter",
       "save": "Simpan",
       "saved": "Tersimpan",
@@ -472,7 +473,14 @@
         "talk_history": "Riwayat percakapan",
         "whisper_history": "Riwayat bisikan",
         "alive_agents": "Pemain yang hidup"
-      }
+      },
+      "branch": {
+        "title": "Kondisional",
+        "withElse": "dengan else",
+        "insert": "Sisipkan",
+        "hint": "Ubah teks berdasarkan suatu kondisi (mis. menggertak hanya saat Anda werewolf). Tulis isi setiap cabang di editor di bawah."
+      },
+      "unsavedConfirm": "Ada perubahan yang belum disimpan. Kembali tanpa menyimpan akan menghapusnya. Lanjutkan?"
     },
     "spectate": {
       "title": "Tonton AI",
@@ -482,6 +490,10 @@
       "start": "Mulai menonton",
       "watching": "👁 Menonton (menyaksikan AI bermain)",
       "needAgent": "Untuk menyertakan AI Anda, buat dulu di “Buat AI Anda”"
+    },
+    "tab": {
+      "play": "Main",
+      "agent": "Edit agen"
     }
   }
 }

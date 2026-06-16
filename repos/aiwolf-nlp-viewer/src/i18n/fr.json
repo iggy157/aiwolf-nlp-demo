@@ -401,8 +401,9 @@
       "multi": "Multijoueur",
       "multiDesc": "Jouez entre amis (rejoignez la même table avec un code)",
       "back": "Retour",
-      "agent": "🤖 Créez / modifiez votre IA",
-      "spectate": "👁 Regarder l’IA (IA contre IA)"
+      "agent": "Modifier l'agent IA",
+      "spectate": "Regarder l'IA",
+      "spectateDesc": "Regarder IA contre IA"
     },
     "multi": {
       "create": "Créer un salon",
@@ -426,18 +427,18 @@
       "roomClosed": "Le salon a été fermé",
       "full": "Le salon est complet",
       "notFound": "Salon introuvable",
-      "useMyAgent": "Si vous partez, votre IA personnalisée «{name}» prendra votre place et continuera à jouer",
+      "useMyAgent": "Si je pars, mon IA personnalisée prend ma place",
       "useMyAgentNone": "Si vous partez, votre IA personnalisée prendra votre place (créez-la d'abord dans «Créez votre IA»)"
     },
     "agent": {
-      "title": "Crée ta propre IA",
-      "intro": "Modifie le prompt envoyé à l'IA pour chaque action (présentation, parler, divination, etc.). Les IA enregistrées restent sur cet appareil.",
+      "title": "Modifiez les prompts de l'agent IA",
+      "intro": "Modifiez le prompt envoyé à l'IA pour chaque action (introduction, parole, divination, etc.) afin d'ajuster sa façon de jouer. Les personnages et les noms utilisent ceux qui existent déjà. Vos modifications sont enregistrées sur cet appareil.",
       "nickname": "Nom de l'IA",
       "nicknamePh": "ex. : Voyante agressive",
       "requests": "Action à modifier",
       "reqHint": "Modifie le prompt de chaque action séparément. ● indique les actions modifiées.",
       "vars": "Insérer une variable :",
-      "varsHint": "Les variables sont remplacées par des valeurs réelles (ton rôle, historique des discussions, etc.) pendant la partie.",
+      "varsHint": "Les variables sont remplacées par des valeurs réelles (ton rôle, l'historique des discussions, etc.) pendant la partie. ★ indique celles couramment utilisées pour cette action — tu peux aussi insérer les autres, mais elles s'affichent vides lorsqu'aucune valeur ne s'applique.",
       "chars": "{count} / {max} caractères",
       "save": "Enregistrer",
       "saved": "Enregistré",
@@ -472,7 +473,14 @@
         "talk_history": "Historique des discussions",
         "whisper_history": "Historique des chuchotements",
         "alive_agents": "Joueurs en vie"
-      }
+      },
+      "branch": {
+        "title": "Condition",
+        "withElse": "avec sinon",
+        "insert": "Insérer",
+        "hint": "Changez le texte selon une condition (par ex. bluffer uniquement quand vous êtes loup-garou). Rédigez le contenu de chaque branche dans l'éditeur ci-dessous."
+      },
+      "unsavedConfirm": "Vous avez des modifications non enregistrées. Revenir en arrière sans enregistrer les supprimera. Continuer ?"
     },
     "spectate": {
       "title": "Regarder l’IA",
@@ -482,6 +490,10 @@
       "start": "Commencer à regarder",
       "watching": "👁 En observation (vous regardez les IA jouer)",
       "needAgent": "Pour inclure votre IA, créez-la d’abord dans « Créez votre IA »"
+    },
+    "tab": {
+      "play": "Jouer",
+      "agent": "Modifier l'agent"
     }
   }
 }

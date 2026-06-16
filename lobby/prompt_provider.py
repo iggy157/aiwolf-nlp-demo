@@ -45,7 +45,10 @@ REQUESTS = [
 # 文字列は configs/agents/prompts/*.yml の該当ループと完全一致させること（往復変換のため）。
 _TALK_LOOP = "{% for w in talk_history[sent_talk_count:] -%}\n{{ w.agent }}: {{ w.text }}\n{% endfor %}"
 _WHISPER_LOOP = "{% for w in whisper_history[sent_whisper_count:] -%}\n{{ w.agent }}: {{ w.text }}\n{% endfor %}"
+# template = 既定プロンプト中の素のループ（往復変換のマッチ用、info あり前提）。
 _ALIVE_LOOP = "{% for k, v in info.status_map.items() -%}\n{%- if v == 'ALIVE' -%}\n{{ k }}\n{% endif -%}\n{%- endfor %}"
+# runtime = ユーザがどのリクエストに入れても安全な版（info が None でも空に落ちる）。
+_ALIVE_LOOP_SAFE = "{% for k, v in (info.status_map if info else {}).items() -%}\n{%- if v == 'ALIVE' -%}\n{{ k }}\n{% endif -%}\n{%- endfor %}"
 
 # 変数カタログ。各 (key, token, template_jinja, runtime_jinja, sample, composite)。
 #   token        : エディタ上のやさしい記法（ユーザは生 Jinja を打たない）
@@ -72,7 +75,7 @@ _VARS: list[dict[str, Any]] = [
     {"key": "remain_skip", "token": "{remain_skip}", "template": "{{ info.remain_skip }}", "runtime": _nz("info.remain_skip"), "sample": "2", "composite": False},
     {"key": "talk_history", "token": "{talk_history}", "template": _TALK_LOOP, "runtime": _TALK_LOOP, "sample": "ミナト: みなさんこんにちは\nタクミ: 怪しい人がいますね", "composite": True},
     {"key": "whisper_history", "token": "{whisper_history}", "template": _WHISPER_LOOP, "runtime": _WHISPER_LOOP, "sample": "ミナト: 今夜はケンジを襲おう", "composite": True},
-    {"key": "alive_agents", "token": "{alive_agents}", "template": _ALIVE_LOOP, "runtime": _ALIVE_LOOP, "sample": "ミナト\nタクミ\nケンジ\nリン", "composite": True},
+    {"key": "alive_agents", "token": "{alive_agents}", "template": _ALIVE_LOOP, "runtime": _ALIVE_LOOP_SAFE, "sample": "ミナト\nタクミ\nケンジ\nリン", "composite": True},
 ]
 _VARS_BY_KEY = {v["key"]: v for v in _VARS}
 
@@ -94,6 +97,69 @@ _VARS_LONGEST = sorted(_VARS, key=lambda v: -len(v["token"]))
 _VARS_TPL_LONGEST = sorted(_VARS, key=lambda v: -len(v["template"]))
 _COND_RE = re.compile(r"\{%-?.*?-?%\}", re.DOTALL)  # 残った条件タグ除去用
 
+# ── 条件分岐ブロック（UIビルダー専用）─────────────────────────────────
+# ユーザには生 Jinja を書かせず、ビルダーが下のブロックトークンを挿入する:
+#   {if:role=WEREWOLF} ... {elif:role=SEER} ... {else} ... {endif}
+# これらだけを安全な Jinja に変換する。変数キーは whitelist の式に、値は厳格な許可文字
+# （英数字とアンダースコアのみ）に限定するため、式インジェクション（SSTI）は起きない。
+BRANCH_VARS: dict[str, dict[str, Any]] = {
+    # key: {expr=安全な実行時式, values=許可値（あれば検証）}
+    "role": {"expr": "role.value", "values": ["WEREWOLF", "POSSESSED", "SEER", "BODYGUARD", "VILLAGER", "MEDIUM"]},
+}
+_VALUE_RE = re.compile(r"^[A-Za-z0-9_]+$")  # 比較値の許可文字（インジェクション防止）
+_IF_RE = re.compile(r"\{(if|elif):([a-z_]+)=([^}]*)\}")
+
+
+def _branch_expr(var: str, value: str) -> str | None:
+    """{if:var=value} の安全な比較式を返す。未知の変数/不正な値なら None。"""
+    spec = BRANCH_VARS.get(var)
+    if not spec or not _VALUE_RE.match(value or ""):
+        return None
+    vals = spec.get("values")
+    if vals and value not in vals:
+        return None
+    return f"{spec['expr']} == '{value}'"
+
+
+def _blocks_to_jinja(text: str) -> str:
+    """ブロックトークン → 実 Jinja 制御タグ。無効な分岐はそのまま（リテラル）残す。"""
+    def repl(m: "re.Match[str]") -> str:
+        kw, var, value = m.group(1), m.group(2), m.group(3)
+        expr = _branch_expr(var, value)
+        return m.group(0) if expr is None else f"{{% {kw} {expr} %}}"
+
+    out = _IF_RE.sub(repl, text)
+    return out.replace("{else}", "{% else %}").replace("{endif}", "{% endif %}")
+
+
+def _blocks_to_preview(text: str) -> str:
+    """ブロックトークン → 読みやすい目印（プレビュー用、Jinja 描画はしない）。"""
+    def repl(m: "re.Match[str]") -> str:
+        kw, var, value = m.group(1), m.group(2), m.group(3)
+        if _branch_expr(var, value) is None:
+            return m.group(0)
+        return f"⟦{kw} {var} = {value}⟧"
+
+    out = _IF_RE.sub(repl, text)
+    return out.replace("{else}", "⟦else⟧").replace("{endif}", "⟦/if⟧")
+
+
+def jinja_compiles(jinja_text: str) -> bool:
+    """生成した Jinja が構文的に正しいか（if/endif の対応漏れ等）を検証する。
+    parse のみ＝描画しないので安全。壊れたプロンプトでエージェントを落とさないための関門。"""
+    try:
+        import jinja2
+        jinja2.Environment().parse(jinja_text)  # コンパイルのみ（実行なし）
+        return True
+    except ImportError:
+        # jinja2 が無い環境では構造の釣り合いだけ確認（best-effort）。
+        return (
+            jinja_text.count("{% if ") == jinja_text.count("{% endif %}")
+            and jinja_text.count("{% for ") == jinja_text.count("{% endfor %}")
+        )
+    except Exception:
+        return False
+
 
 def _escape_jinja(text: str) -> str:
     """ユーザ文中の生 Jinja デリミタを無効化（SSTI 防止）。"""
@@ -106,8 +172,10 @@ def _escape_jinja(text: str) -> str:
 
 def tokens_to_jinja(text: str) -> str:
     """ユーザのトークン入りプロンプト → 実行時 Jinja。
-    1) 生 Jinja を無効化（whitelist 以外の live な式を排除）→ 2) トークンを runtime 式へ。"""
+    1) 生 Jinja を無効化（whitelist 以外の live な式を排除）→ 2) 分岐ブロックを安全な制御タグへ
+    → 3) 変数トークンを runtime 式へ。"""
     out = _escape_jinja(text)
+    out = _blocks_to_jinja(out)
     for v in _VARS_LONGEST:
         out = out.replace(v["token"], v["runtime"])
     return out
@@ -125,8 +193,9 @@ def jinja_to_tokens(text: str) -> str:
 
 
 def preview_prompt(text: str) -> str:
-    """エディタのプレビュー用: トークンをサンプル値に解決した文を返す。"""
+    """エディタのプレビュー用: 分岐は目印に、変数はサンプル値に解決した文を返す。"""
     out = _escape_jinja(text or "")
+    out = _blocks_to_preview(out)
     for v in _VARS_LONGEST:
         out = out.replace(v["token"], v["sample"])
     return out
@@ -146,7 +215,10 @@ def apply_custom_prompts(cfg: dict[str, Any], custom_prompts: dict[str, str] | N
         text = (text or "").strip()
         if not text:
             continue
-        prompt[req] = tokens_to_jinja(text[:MAX_PROMPT_CHARS])
+        rendered = tokens_to_jinja(text[:MAX_PROMPT_CHARS])
+        # 分岐の対応漏れ等で壊れた Jinja は注入せず既定のままにする（エージェントを落とさない）。
+        if jinja_compiles(rendered):
+            prompt[req] = rendered
 
 
 def variable_catalog() -> dict[str, Any]:
@@ -155,6 +227,8 @@ def variable_catalog() -> dict[str, Any]:
         "vars": [{"key": v["key"], "token": v["token"], "composite": v["composite"]} for v in _VARS],
         "by_request": REQUEST_VARS,
         "requests": REQUESTS,
+        # 分岐ビルダー用: 分岐できる変数と許可値（フロントは値ラベルを i18n で出す）。
+        "branch_vars": [{"key": k, "values": spec.get("values", [])} for k, spec in BRANCH_VARS.items()],
         "max_chars": MAX_PROMPT_CHARS,
     }
 

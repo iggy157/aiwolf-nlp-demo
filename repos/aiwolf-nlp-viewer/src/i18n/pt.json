@@ -401,8 +401,9 @@
       "multi": "Multijogador",
       "multiDesc": "Jogue com amigos (entrem na mesma mesa com um código)",
       "back": "Voltar",
-      "agent": "🤖 Crie / edite sua IA",
-      "spectate": "👁 Assistir à IA (IA contra IA)"
+      "agent": "Editar agente de IA",
+      "spectate": "Assistir à IA",
+      "spectateDesc": "Assista a IA contra IA"
     },
     "multi": {
       "create": "Criar uma sala",
@@ -426,18 +427,18 @@
       "roomClosed": "A sala foi fechada",
       "full": "A sala está cheia",
       "notFound": "Sala não encontrada",
-      "useMyAgent": "Se você sair, sua IA personalizada «{name}» assumirá seu lugar e continuará jogando",
+      "useMyAgent": "Se eu sair, minha IA personalizada assume o meu lugar",
       "useMyAgentNone": "Se você sair, sua IA personalizada assumirá seu lugar (crie uma primeiro em «Crie sua IA»)"
     },
     "agent": {
-      "title": "Crie sua própria IA",
-      "intro": "Edite o prompt enviado à IA para cada ação (apresentação, falar, adivinhar, etc.). As IAs salvas permanecem neste dispositivo.",
+      "title": "Edite os prompts do agente de IA",
+      "intro": "Edite o prompt enviado à IA para cada ação (introdução, falar, adivinhação, etc.) para ajustar como ela joga. Personagens e nomes usam os existentes. Suas edições são salvas neste dispositivo.",
       "nickname": "Nome da IA",
       "nicknamePh": "ex.: Vidente agressivo",
       "requests": "Ação a editar",
       "reqHint": "Edite o prompt de cada ação separadamente. ● marca as ações editadas.",
       "vars": "Inserir variável:",
-      "varsHint": "As variáveis são substituídas por valores reais (seu papel, histórico de conversa, etc.) durante o jogo.",
+      "varsHint": "As variáveis são substituídas por valores reais (seu papel, histórico de conversa, etc.) durante a partida. A marca ★ indica as comumente usadas para esta ação — você ainda pode inserir as outras, mas elas aparecem vazias quando nenhum valor se aplica.",
       "chars": "{count} / {max} caracteres",
       "save": "Salvar",
       "saved": "Salvo",
@@ -472,7 +473,14 @@
         "talk_history": "Histórico de conversa",
         "whisper_history": "Histórico de sussurros",
         "alive_agents": "Jogadores vivos"
-      }
+      },
+      "branch": {
+        "title": "Condicional",
+        "withElse": "com else",
+        "insert": "Inserir",
+        "hint": "Altere o texto com base em uma condição (ex.: blefar apenas quando você for lobisomem). Escreva o conteúdo de cada ramo no editor abaixo."
+      },
+      "unsavedConfirm": "Você tem alterações não salvas. Voltar sem salvar irá descartá-las. Continuar?"
     },
     "spectate": {
       "title": "Assistir à IA",
@@ -482,6 +490,10 @@
       "start": "Começar a assistir",
       "watching": "👁 Assistindo (vendo as IA jogarem)",
       "needAgent": "Para incluir sua IA, crie-a primeiro em “Crie sua IA”"
+    },
+    "tab": {
+      "play": "Jogar",
+      "agent": "Editar agente"
     }
   }
 }

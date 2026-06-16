@@ -401,8 +401,9 @@
       "multi": "Mehrspieler",
       "multiDesc": "Spiele mit Freunden (mit einem Code am selben Tisch beitreten)",
       "back": "Zurück",
-      "agent": "🤖 Erstelle / bearbeite deine KI",
-      "spectate": "👁 KI ansehen (KI gegen KI)"
+      "agent": "KI-Agent bearbeiten",
+      "spectate": "KI ansehen",
+      "spectateDesc": "KI gegen KI ansehen"
     },
     "multi": {
       "create": "Raum erstellen",
@@ -426,18 +427,18 @@
       "roomClosed": "Der Raum wurde geschlossen",
       "full": "Der Raum ist voll",
       "notFound": "Raum nicht gefunden",
-      "useMyAgent": "Wenn du das Spiel verlässt, übernimmt deine eigene KI «{name}» deinen Platz und spielt weiter",
+      "useMyAgent": "Wenn ich gehe, übernimmt meine eigene KI meinen Platz",
       "useMyAgentNone": "Wenn du gehst, übernimmt deine eigene KI deinen Platz (erstelle sie zuerst unter «Erstelle deine KI»)"
     },
     "agent": {
-      "title": "Erstelle deine eigene KI",
-      "intro": "Bearbeite den Prompt, der für jede Aktion an die KI gesendet wird (Einführung, Reden, Wahrsagen usw.). Gespeicherte KIs bleiben auf diesem Gerät.",
+      "title": "Bearbeite die Prompts des KI-Agenten",
+      "intro": "Bearbeite den Prompt, der für jede Aktion an die KI gesendet wird (Einführung, Reden, Wahrsagen usw.), um abzustimmen, wie sie spielt. Charaktere und Namen verwenden die bestehenden. Deine Änderungen werden auf diesem Gerät gespeichert.",
       "nickname": "KI-Name",
       "nicknamePh": "z. B. Aggressiver Seher",
       "requests": "Zu bearbeitende Aktion",
       "reqHint": "Bearbeite den Prompt jeder Aktion einzeln. ● kennzeichnet bearbeitete Aktionen.",
       "vars": "Variable einfügen:",
-      "varsHint": "Variablen werden während des Spiels durch echte Werte ersetzt (deine Rolle, Gesprächsverlauf usw.).",
+      "varsHint": "Variablen werden während des Spiels durch echte Werte ersetzt (deine Rolle, Gesprächsverlauf usw.). ★ kennzeichnet die für diese Aktion üblicherweise verwendeten Variablen — du kannst auch die anderen einfügen, sie bleiben jedoch leer, wenn kein Wert zutrifft.",
       "chars": "{count} / {max} Zeichen",
       "save": "Speichern",
       "saved": "Gespeichert",
@@ -472,7 +473,14 @@
         "talk_history": "Gesprächsverlauf",
         "whisper_history": "Flüsterverlauf",
         "alive_agents": "Lebende Spieler"
-      }
+      },
+      "branch": {
+        "title": "Bedingung",
+        "withElse": "mit Else",
+        "insert": "Einfügen",
+        "hint": "Text je nach Bedingung wechseln (z. B. nur bluffen, wenn du ein Werwolf bist). Schreibe den Inhalt jedes Zweigs im Editor unten."
+      },
+      "unsavedConfirm": "Du hast nicht gespeicherte Änderungen. Wenn du ohne Speichern zurückgehst, gehen sie verloren. Fortfahren?"
     },
     "spectate": {
       "title": "KI ansehen",
@@ -482,6 +490,10 @@
       "start": "Zuschauen starten",
       "watching": "👁 Zuschauen (du siehst den KIs beim Spielen zu)",
       "needAgent": "Um deine KI einzubinden, erstelle sie zuerst unter „Erstelle deine KI“"
+    },
+    "tab": {
+      "play": "Spielen",
+      "agent": "Agent bearbeiten"
     }
   }
 }

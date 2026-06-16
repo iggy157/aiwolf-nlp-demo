@@ -260,9 +260,10 @@
       "soloDesc": "You + AI (starts right away)",
       "multi": "Multiplayer",
       "multiDesc": "Play with friends (join the same table by code)",
-      "agent": "🤖 Create / edit your AI",
-      "spectate": "👁 Watch AI (AI vs AI)",
-      "back": "Back"
+      "agent": "Edit AI agent",
+      "spectate": "Watch AI",
+      "back": "Back",
+      "spectateDesc": "Watch AI vs AI"
     },
     "spectate": {
       "title": "Watch AI",
@@ -274,14 +275,14 @@
       "needAgent": "Create your AI first in “Create your AI” to include it"
     },
     "agent": {
-      "title": "Build your own AI",
-      "intro": "Edit the prompt sent to the AI for each action (intro, talk, divination, and so on). Saved AIs stay on this device.",
+      "title": "Edit the AI agent's prompts",
+      "intro": "Edit the prompt sent to the AI for each action (intro, talk, divination, etc.) to tune how it plays. Characters and names use the existing ones. Your edits are saved on this device.",
       "nickname": "AI name",
       "nicknamePh": "e.g. Aggressive Seer",
       "requests": "Action to edit",
       "reqHint": "Edit each action's prompt separately. ● marks edited actions.",
       "vars": "Insert variable:",
-      "varsHint": "Variables are replaced with real values (your role, talk history, etc.) during the game.",
+      "varsHint": "Variables are replaced with real values (your role, talk history, etc.) during the game. ★ marks the ones commonly used for this action — you can still insert the others, but they render empty when no value applies.",
       "chars": "{count} / {max} chars",
       "save": "Save",
       "saved": "Saved",
@@ -316,7 +317,14 @@
         "talk_history": "Talk history",
         "whisper_history": "Whisper history",
         "alive_agents": "Alive players"
-      }
+      },
+      "branch": {
+        "title": "Conditional",
+        "withElse": "with else",
+        "insert": "Insert",
+        "hint": "Switch text based on a condition (e.g. bluff only when you're a werewolf). Write each branch's body in the editor below."
+      },
+      "unsavedConfirm": "You have unsaved changes. Going back without saving will discard them. Continue?"
     },
     "multi": {
       "create": "Create a room",
@@ -340,7 +348,7 @@
       "roomClosed": "The room was closed",
       "full": "Room is full",
       "notFound": "Room not found",
-      "useMyAgent": "If you leave, your AI “{name}” takes over your seat",
+      "useMyAgent": "If I leave, my custom AI takes over my seat",
       "useMyAgentNone": "If you leave, your AI takes over (create one first in “Create your AI”)"
     },
     "status": {
@@ -477,6 +485,10 @@
       "help": "💡 \"End\" = finish speaking for today / \"Skip\" = pass this time. If typing manually, use capitalized Over / Skip (lowercase over/skip become normal messages).",
       "noTarget": "No target"
     },
-    "leaveConfirm": "Quit the game and return home? (This table will end.)"
+    "leaveConfirm": "Quit the game and return home? (This table will end.)",
+    "tab": {
+      "play": "Play",
+      "agent": "Edit agent"
+    }
   }
 }

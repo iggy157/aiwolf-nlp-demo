@@ -401,8 +401,9 @@
       "multi": "多人",
       "multiDesc": "和朋友一起玩（用暗号加入同一桌）",
       "back": "返回",
-      "agent": "🤖 创建 / 编辑你的 AI",
-      "spectate": "👁 观看 AI（AI 对战 AI）"
+      "agent": "编辑 AI 智能体",
+      "spectate": "观看 AI",
+      "spectateDesc": "观看 AI 对战 AI"
     },
     "multi": {
       "create": "创建房间",
@@ -426,18 +427,18 @@
       "roomClosed": "房间已关闭",
       "full": "房间已满",
       "notFound": "未找到房间",
-      "useMyAgent": "如果你离开，你的自制 AI「{name}」将接管你的座位继续游戏",
+      "useMyAgent": "如果我离开，我的自定义 AI 会接替我的席位",
       "useMyAgentNone": "如果你离开，你的自制 AI 将接管你的座位（请先在「创建你的 AI」中创建）"
     },
     "agent": {
-      "title": "打造你自己的 AI",
-      "intro": "编辑每个动作发送给 AI 的提示词（自我介绍、发言、占卜等）。保存的 AI 会留在本设备上。",
+      "title": "编辑 AI 智能体的提示词",
+      "intro": "编辑每个动作（开场、发言、占卜等）发送给 AI 的提示词，以调整它的玩法。角色和名字沿用现有的。你的修改保存在本设备上。",
       "nickname": "AI 名称",
       "nicknamePh": "例如：激进的预言家",
       "requests": "要编辑的动作",
       "reqHint": "分别编辑每个动作的提示词。● 表示已编辑的动作。",
       "vars": "插入变量：",
-      "varsHint": "游戏中变量会被替换为真实值（你的身份、发言记录等）。",
+      "varsHint": "游戏过程中，变量会被替换为真实值（你的角色、对话历史等）。★ 标记的是此操作常用的变量——你也可以插入其他变量，但当没有对应值时它们会显示为空。",
       "chars": "{count} / {max} 字",
       "save": "保存",
       "saved": "已保存",
@@ -472,7 +473,14 @@
         "talk_history": "发言记录",
         "whisper_history": "私语记录",
         "alive_agents": "存活玩家"
-      }
+      },
+      "branch": {
+        "title": "条件分支",
+        "withElse": "包含 else",
+        "insert": "插入",
+        "hint": "根据条件切换文本（例如仅当你是狼人时才虚张声势）。在下方编辑器中编写每个分支的内容。"
+      },
+      "unsavedConfirm": "你有未保存的修改。不保存就返回将丢失这些修改。是否继续？"
     },
     "spectate": {
       "title": "观看 AI",
@@ -482,6 +490,10 @@
       "start": "开始观战",
       "watching": "👁 观战中（正在观看 AI 之间的对局）",
       "needAgent": "若要加入你的 AI，请先在“创建你的 AI”中创建"
+    },
+    "tab": {
+      "play": "游玩",
+      "agent": "编辑智能体"
     }
   }
 }

@@ -297,24 +297,33 @@
   );
 
   // ---- 自作AI（リクエスト別プロンプトエンジニアリング）----
+  type Screen = "mode" | "solo" | "multiCreate" | "multiJoin" | "waiting" | "agent" | "spectate";
   type VarDef = { key: string; token: string; composite: boolean };
-  type Catalog = { vars: VarDef[]; by_request: Record<string, string[]>; requests: string[] };
-  let editNickname = $state("");
+  type BranchVar = { key: string; values: string[] };
+  type Catalog = { vars: VarDef[]; by_request: Record<string, string[]>; requests: string[]; branch_vars: BranchVar[] };
   let editPrompts = $state<Record<string, string>>({}); // request -> 編集中の本文
   let agentDefaults = $state<Record<string, string>>({}); // 既定プロンプト（トークン文）
-  let agentCatalog = $state<Catalog>({ vars: [], by_request: {}, requests: [] });
+  let agentCatalog = $state<Catalog>({ vars: [], by_request: {}, requests: [], branch_vars: [] });
   let selectedRequest = $state("initialize");
   let agentSaved = $state(false);
   let previewText = $state<string | null>(null);
   let useMyAgent = $state(false); // AI席/引き継ぎに自作プロンプトを使うか
   let promptTextarea = $state<HTMLTextAreaElement | null>(null);
+  // 条件分岐ビルダー（生 Jinja は書かせず、安全なブロックトークンを挿入。lobby が安全な Jinja に変換）
+  let branchVar = $state("role");
+  let branchValue = $state("WEREWOLF");
+  let branchElse = $state(true);
+  const branchValues = $derived(agentCatalog.branch_vars?.find((b) => b.key === branchVar)?.values ?? []);
   // 自作AIが作成済みか（どれか1リクエストでも保存されていれば）
   const hasCustomAgent = $derived(Object.values($myAgent.prompts ?? {}).some((t) => (t ?? "").trim().length > 0));
-  // 現在のリクエストで使える変数
-  const requestVars = $derived(
-    (agentCatalog.by_request?.[selectedRequest] ?? [])
-      .map((k) => agentCatalog.vars.find((v) => v.key === k))
-      .filter((v): v is VarDef => !!v),
+  // 変数は全リクエストで挿入可能（描画コンテキストは共通＝lobby が None セーフに解決。
+  // 該当しない変数は実行時に空になるだけでエラーにはならない）。ピッカーは全変数を出しつつ、
+  // 「このリクエストでよく使う」ものを先頭に寄せて目印を付ける。
+  const relevantKeys = $derived(new Set(agentCatalog.by_request?.[selectedRequest] ?? []));
+  const pickerVars = $derived(
+    [...agentCatalog.vars]
+      .map((v) => ({ ...v, relevant: relevantKeys.has(v.key) }))
+      .sort((a, b) => Number(b.relevant) - Number(a.relevant)),
   );
 
   async function openAgentEditor() {
@@ -333,7 +342,6 @@
     }
     const reqs = agentCatalog.requests.length ? agentCatalog.requests : Object.keys(agentDefaults);
     const saved = $myAgent;
-    editNickname = saved.nickname;
     const buf: Record<string, string> = {};
     for (const r of reqs) buf[r] = saved.prompts?.[r] ?? agentDefaults[r] ?? "";
     editPrompts = buf;
@@ -347,7 +355,7 @@
       const v = (t ?? "").trim();
       if (v && v !== (agentDefaults[r] ?? "").trim()) out[r] = v.slice(0, MY_AGENT_MAX_CHARS);
     }
-    myAgent.set({ nickname: editNickname.trim(), prompts: out });
+    myAgent.set({ prompts: out });
     agentSaved = true;
     setTimeout(() => (agentSaved = false), 1500);
   }
@@ -371,6 +379,7 @@
   }
 
   // トークンをカーソル位置に挿入（生 Jinja は打たせず、トークンだけ挿す）。
+  // value 再代入で textarea がスクロール先頭に戻るのを防ぐため scrollTop を保存・復元する。
   function insertAtCursor(text: string) {
     const el = promptTextarea;
     const cur = editPrompts[selectedRequest] ?? "";
@@ -380,12 +389,22 @@
     }
     const s = el.selectionStart ?? cur.length;
     const e = el.selectionEnd ?? cur.length;
+    const top = el.scrollTop;
     editPrompts[selectedRequest] = cur.slice(0, s) + text + cur.slice(e);
     requestAnimationFrame(() => {
       el.focus();
       const pos = s + text.length;
       el.setSelectionRange(pos, pos);
+      el.scrollTop = top; // 再代入で 0 に戻った分を元の位置へ
     });
+  }
+
+  // 条件分岐の骨組みをカーソル位置に挿入。中身（本文）はユーザが下のエディタで埋める。
+  // 生成されるのはブロックトークンのみ（生 Jinja ではない）。lobby が安全な Jinja に変換する。
+  function insertBranch() {
+    const head = `{if:${branchVar}=${branchValue}}\n`;
+    const body = branchElse ? `\n{else}\n\n{endif}\n` : `\n{endif}\n`;
+    insertAtCursor(head + body);
   }
 
   // 自作プロンプト送信用（useMyAgent かつ作成済みのとき辞書、なければ空）
@@ -399,7 +418,34 @@
 
   // ---- ソロ/マルチのモード選択（接続前の画面遷移）----
   // mode=最初の選択 / solo=ソロ設定 / multiCreate=部屋作成 / multiJoin=合言葉参加 / waiting=待機部屋
-  let screen = $state<"mode" | "solo" | "multiCreate" | "multiJoin" | "waiting" | "agent" | "spectate">("mode");
+  let screen = $state<Screen>("mode");
+
+  // 上部タブ（遊ぶ / エージェント編集）。中央は試合用、編集はタブで分離。
+  // 注意: agentDirty は screen を参照するため screen 宣言より後に置く（SSR の初期化順）。
+  let lastPlayScreen = $state<Screen>("mode");
+  // 編集中に未保存の変更があるか（保存済み or 既定と違えば dirty）。
+  const agentDirty = $derived.by(() => {
+    if (screen !== "agent") return false;
+    const saved = $myAgent.prompts ?? {};
+    for (const r of Object.keys(editPrompts)) {
+      const cur = (editPrompts[r] ?? "").trim();
+      const persisted = (saved[r] ?? agentDefaults[r] ?? "").trim();
+      if (cur !== persisted) return true;
+    }
+    return false;
+  });
+  function confirmLeaveAgent(): boolean {
+    return !agentDirty || confirm($_("demo.agent.unsavedConfirm"));
+  }
+  function gotoAgentTab() {
+    if (screen === "agent") return;
+    lastPlayScreen = screen;
+    openAgentEditor();
+  }
+  function gotoPlayTab() {
+    if (screen === "agent" && !confirmLeaveAgent()) return;
+    screen = lastPlayScreen === "agent" ? "mode" : lastPlayScreen;
+  }
   let myAiCount = $state(1); // 観戦: AI席のうち自作AIにする数
   let deviceToken = ""; // 端末の匿名トークン（localStorage）。アカウント無しの席識別用。
   let humanSlots = $state(2); // マルチの人間席数（1..villageSize）
@@ -438,7 +484,9 @@
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
-          agent_prompts: myPromptsPayload(),
+          // 自作AIを k 体・残りはサンプル（k は AI席=size-1 を超えない）
+          agent_prompts: hasCustomAgent ? ($myAgent.prompts ?? {}) : {},
+          my_ai_count: hasCustomAgent ? Math.min(myAiCount, villageSize - 1) : 0,
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -476,7 +524,7 @@
         body: JSON.stringify({
           mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
           agent_prompts: hasCustomAgent ? ($myAgent.prompts ?? {}) : {},
-          my_ai_count: hasCustomAgent ? myAiCount : 0,
+          my_ai_count: hasCustomAgent ? Math.min(myAiCount, villageSize - 1) : 0,
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -1031,15 +1079,26 @@
       <label class="flex items-center gap-2 cursor-pointer {hasCustomAgent ? '' : 'opacity-50'}">
         <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!hasCustomAgent} />
         <span class="text-sm text-left">
-          {hasCustomAgent
-            ? $_("demo.multi.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
-            : $_("demo.multi.useMyAgentNone")}
+          {hasCustomAgent ? $_("demo.multi.useMyAgent") : $_("demo.multi.useMyAgentNone")}
         </span>
       </label>
       {#if !hasCustomAgent}
-        <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.mode.agent")}</button>
+        <button class="text-[11px] opacity-60 underline" onclick={gotoAgentTab}>{$_("demo.tab.agent")}</button>
       {/if}
     </div>
+  {/snippet}
+
+  <!-- ソロ/観戦で共通: 自作AIを何体起動するか（残りはサンプル）。maxSeats を超えない。 -->
+  {#snippet customAiSlider(maxSeats: number)}
+    {#if hasCustomAgent}
+      <div class="flex flex-col items-center gap-1 w-full max-w-xs">
+        <div class="text-sm font-bold opacity-70">{$_("demo.spectate.myAi")}: <span class="text-primary">{Math.min(myAiCount, maxSeats)}</span> / {maxSeats}</div>
+        <input type="range" min="0" max={maxSeats} bind:value={myAiCount} class="range range-primary range-sm w-full" />
+        <div class="text-xs opacity-60">{$_("demo.spectate.composition", { values: { my: Math.min(myAiCount, maxSeats), def: maxSeats - Math.min(myAiCount, maxSeats) } })}</div>
+      </div>
+    {:else}
+      <button class="text-[11px] opacity-60 underline" onclick={gotoAgentTab}>{$_("demo.spectate.needAgent")}</button>
+    {/if}
   {/snippet}
 
   {#if showStartScreen}
@@ -1051,9 +1110,14 @@
       </p>
 
       {#if lobbyPhase === "idle"}
+        <!-- 上部タブ: 遊ぶ（試合）/ エージェント編集（プロンプト）。中央は試合用に専念させる。 -->
+        <div role="tablist" class="tabs tabs-boxed">
+          <button role="tab" class="tab {screen === 'agent' ? '' : 'tab-active'}" onclick={gotoPlayTab}>{$_("demo.tab.play")}</button>
+          <button role="tab" class="tab {screen === 'agent' ? 'tab-active' : ''}" onclick={gotoAgentTab}>{$_("demo.tab.agent")}</button>
+        </div>
+
         {#if screen === "mode"}
-          <!-- ① モード選択（最初の画面） -->
-          <div class="text-sm font-bold opacity-70">{$_("demo.mode.title")}</div>
+          <!-- ① モード選択: ソロ/マルチ/AI観戦 を同サイズの3カードで。合言葉参加は試合系なので中央に残す。 -->
           <div class="flex flex-col gap-3 w-full max-w-xs">
             <button class="btn btn-primary h-auto py-3 flex-col" onclick={() => (screen = "solo")}>
               <span class="text-base font-bold">{$_("demo.mode.solo")}</span>
@@ -1063,9 +1127,11 @@
               <span class="text-base font-bold">{$_("demo.mode.multi")}</span>
               <span class="text-xs font-normal opacity-80">{$_("demo.mode.multiDesc")}</span>
             </button>
+            <button class="btn btn-outline h-auto py-3 flex-col" onclick={() => (screen = "spectate")}>
+              <span class="text-base font-bold">{$_("demo.mode.spectate")}</span>
+              <span class="text-xs font-normal opacity-80">{$_("demo.mode.spectateDesc")}</span>
+            </button>
             <button class="btn btn-ghost btn-sm" onclick={() => (screen = "multiJoin")}>{$_("demo.multi.join")}</button>
-            <button class="btn btn-ghost btn-sm" onclick={openAgentEditor}>{$_("demo.mode.agent")}</button>
-            <button class="btn btn-ghost btn-sm" onclick={() => (screen = "spectate")}>{$_("demo.mode.spectate")}</button>
           </div>
         {:else if screen === "spectate"}
           <!-- 👁 AI観戦: AI同士の対戦を観る -->
@@ -1078,26 +1144,14 @@
               <button class="join-item btn {villageSize === 9 ? 'btn-primary' : 'btn-outline'}" onclick={() => (villageSize = 9)}>{$_("demo.start.village9")}</button>
             </div>
           </div>
-          {#if hasCustomAgent}
-            <div class="flex flex-col items-center gap-1 w-full max-w-xs">
-              <div class="text-sm font-bold opacity-70">{$_("demo.spectate.myAi")}: <span class="text-primary">{Math.min(myAiCount, villageSize - 1)}</span> / {villageSize - 1}</div>
-              <input type="range" min="0" max={villageSize - 1} bind:value={myAiCount} class="range range-primary range-sm w-full" />
-              <div class="text-xs opacity-60">{$_("demo.spectate.composition", { values: { my: Math.min(myAiCount, villageSize - 1), def: villageSize - 1 - Math.min(myAiCount, villageSize - 1) } })}</div>
-            </div>
-          {:else}
-            <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.spectate.needAgent")}</button>
-          {/if}
+          {@render customAiSlider(villageSize - 1)}
           <button class="btn btn-primary btn-lg" onclick={startSpectate}>{$_("demo.spectate.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "agent"}
-          <!-- 自作AIエディタ（プロンプトエンジニアリング L1）-->
+          <!-- AIエージェントのプロンプト編集（リクエスト別。キャラ/名前は既存のものを使う）-->
           <div class="text-lg font-bold">{$_("demo.agent.title")}</div>
           <p class="text-xs opacity-60 max-w-sm">{$_("demo.agent.intro")}</p>
           <div class="flex flex-col items-stretch gap-3 w-full max-w-sm text-left">
-            <label class="flex flex-col gap-1">
-              <span class="text-sm font-bold opacity-70">{$_("demo.agent.nickname")}</span>
-              <input class="input input-bordered input-sm" maxlength="40" placeholder={$_("demo.agent.nicknamePh")} bind:value={editNickname} />
-            </label>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-bold opacity-70">{$_("demo.agent.requests")}</span>
               <!-- リクエスト選択（initialize/talk/divine ... 各アクションのプロンプトを個別に編集）-->
@@ -1116,13 +1170,49 @@
             </div>
             <div class="flex flex-col gap-1">
               <span class="text-sm font-bold opacity-70">{$_(`demo.agent.req.${selectedRequest}`)}</span>
-              <!-- 変数ピッカー（生 Jinja は打たせず、トークンだけ挿入）。リクエストごとに使える変数のみ表示 -->
-              {#if requestVars.length}
-                <div class="flex flex-wrap items-center gap-1">
+              <!-- 変数ピッカー（生 Jinja は打たせず、トークンだけ挿入）。全変数を表示し、
+                   挿入されるトークンをボタンに併記（エディタ表示と一致させる）。★=このリクエストでよく使う。 -->
+              {#if pickerVars.length}
+                <div class="flex flex-col gap-1">
                   <span class="text-[11px] opacity-60">{$_("demo.agent.vars")}</span>
-                  {#each requestVars as v}
-                    <button type="button" class="btn btn-xs {v.composite ? 'btn-outline btn-accent' : 'btn-outline'}" onclick={() => insertAtCursor(v.token)}>{$_(`demo.agent.var.${v.key}`)}</button>
-                  {/each}
+                  <div class="flex flex-wrap items-stretch gap-1">
+                    {#each pickerVars as v}
+                      <button
+                        type="button"
+                        title={v.token}
+                        class="btn btn-xs h-auto py-0.5 flex-col gap-0 leading-tight {v.relevant ? (v.composite ? 'btn-accent' : 'btn-primary btn-outline') : 'btn-ghost border border-base-300 opacity-70'}"
+                        onclick={() => insertAtCursor(v.token)}
+                      >
+                        <span class="text-[11px]">{v.relevant ? "★ " : ""}{$_(`demo.agent.var.${v.key}`)}</span>
+                        <span class="text-[9px] font-mono opacity-70">{v.token}</span>
+                      </button>
+                    {/each}
+                  </div>
+                </div>
+              {/if}
+              <!-- 条件分岐ビルダー（生 Jinja は書かせず、安全なブロックを挿入）-->
+              {#if branchValues.length}
+                <div class="flex flex-col gap-1 rounded border border-base-300 bg-base-200/40 p-2">
+                  <span class="text-[11px] font-bold opacity-70">{$_("demo.agent.branch.title")}</span>
+                  <div class="flex flex-wrap items-center gap-1 text-xs">
+                    <select class="select select-bordered select-xs" bind:value={branchVar}>
+                      {#each agentCatalog.branch_vars as b}
+                        <option value={b.key}>{$_(`demo.agent.var.${b.key}`)}</option>
+                      {/each}
+                    </select>
+                    <span class="opacity-60">=</span>
+                    <select class="select select-bordered select-xs" bind:value={branchValue}>
+                      {#each branchValues as val}
+                        <option value={val}>{$_(`game.role.${val}`)}</option>
+                      {/each}
+                    </select>
+                    <label class="flex items-center gap-1 cursor-pointer">
+                      <input type="checkbox" class="checkbox checkbox-xs" bind:checked={branchElse} />
+                      <span class="opacity-70">{$_("demo.agent.branch.withElse")}</span>
+                    </label>
+                    <button type="button" class="btn btn-xs btn-outline ml-auto" onclick={insertBranch}>{$_("demo.agent.branch.insert")}</button>
+                  </div>
+                  <span class="text-[10px] opacity-50">{$_("demo.agent.branch.hint")}</span>
                 </div>
               {/if}
               <textarea bind:this={promptTextarea} class="textarea textarea-bordered h-48 text-sm font-mono leading-snug" maxlength={MY_AGENT_MAX_CHARS} placeholder={agentDefaults[selectedRequest] ?? ""} bind:value={editPrompts[selectedRequest]}></textarea>
@@ -1141,7 +1231,7 @@
               </div>
             {/if}
           </div>
-          <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
+          <button class="btn btn-ghost btn-sm" onclick={gotoPlayTab}>← {$_("demo.tab.play")}</button>
         {:else if screen === "solo"}
           <!-- ② ソロ: 村サイズ + 役職/キャラ + 開始 -->
           <div class="flex flex-col items-center gap-2">
@@ -1173,20 +1263,8 @@
               </select>
             </div>
           </div>
-          <!-- 自作AIをAI席に使う（任意）-->
-          <div class="flex flex-col items-center gap-1">
-            <label class="flex items-center gap-2 cursor-pointer {hasCustomAgent ? '' : 'opacity-50'}">
-              <input type="checkbox" class="checkbox checkbox-sm" bind:checked={useMyAgent} disabled={!hasCustomAgent} />
-              <span class="text-sm">
-                {hasCustomAgent
-                  ? $_("demo.start.useMyAgent", { values: { name: $myAgent.nickname || $_("demo.agent.title") } })
-                  : $_("demo.start.useMyAgentNone")}
-              </span>
-            </label>
-            {#if !hasCustomAgent}
-              <button class="text-[11px] opacity-60 underline" onclick={openAgentEditor}>{$_("demo.start.noAgentHint")}</button>
-            {/if}
-          </div>
+          <!-- 自作AIをAI席に何体使うか（残りはサンプル）。あなた1席を除く size-1 が上限。 -->
+          {@render customAiSlider(villageSize - 1)}
           <button class="btn btn-primary btn-lg" onclick={startSolo}>{$_("demo.start.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "multiCreate"}

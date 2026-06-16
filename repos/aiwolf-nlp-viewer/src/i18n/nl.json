@@ -401,8 +401,9 @@
       "multi": "Multiplayer",
       "multiDesc": "Speel met vrienden (sluit aan bij dezelfde tafel met een code)",
       "back": "Terug",
-      "agent": "🤖 Maak / bewerk je AI",
-      "spectate": "👁 AI bekijken (AI tegen AI)"
+      "agent": "AI-agent bewerken",
+      "spectate": "AI bekijken",
+      "spectateDesc": "AI tegen AI bekijken"
     },
     "multi": {
       "create": "Een kamer maken",
@@ -426,18 +427,18 @@
       "roomClosed": "De kamer is gesloten",
       "full": "De kamer is vol",
       "notFound": "Kamer niet gevonden",
-      "useMyAgent": "Als je het spel verlaat, neemt jouw eigen AI «{name}» je plaats over en blijft spelen",
+      "useMyAgent": "Als ik vertrek, neemt mijn eigen AI mijn plaats over",
       "useMyAgentNone": "Als je weggaat, neemt jouw eigen AI je plaats over (maak er eerst een in «Maak je eigen AI»)"
     },
     "agent": {
-      "title": "Maak je eigen AI",
-      "intro": "Bewerk de prompt die naar de AI wordt gestuurd voor elke actie (introductie, praten, waarzeggen, enzovoort). Opgeslagen AI's blijven op dit apparaat.",
+      "title": "Bewerk de prompts van de AI-agent",
+      "intro": "Bewerk de prompt die voor elke actie naar de AI wordt gestuurd (introductie, praten, waarzeggen, enz.) om af te stemmen hoe hij speelt. Personages en namen gebruiken de bestaande. Je wijzigingen worden op dit apparaat opgeslagen.",
       "nickname": "AI-naam",
       "nicknamePh": "bijv. Agressieve Ziener",
       "requests": "Te bewerken actie",
       "reqHint": "Bewerk de prompt van elke actie afzonderlijk. ● markeert bewerkte acties.",
       "vars": "Variabele invoegen:",
-      "varsHint": "Variabelen worden tijdens het spel vervangen door echte waarden (jouw rol, gespreksgeschiedenis, enz.).",
+      "varsHint": "Variabelen worden tijdens het spel vervangen door echte waarden (jouw rol, gespreksgeschiedenis, enz.). ★ markeert de variabelen die gewoonlijk voor deze actie worden gebruikt — je kunt de andere ook invoegen, maar die blijven leeg wanneer er geen waarde van toepassing is.",
       "chars": "{count} / {max} tekens",
       "save": "Opslaan",
       "saved": "Opgeslagen",
@@ -472,7 +473,14 @@
         "talk_history": "Gespreksgeschiedenis",
         "whisper_history": "Fluistergeschiedenis",
         "alive_agents": "Levende spelers"
-      }
+      },
+      "branch": {
+        "title": "Voorwaardelijk",
+        "withElse": "met else",
+        "insert": "Invoegen",
+        "hint": "Wissel tekst op basis van een voorwaarde (bijv. alleen bluffen als je een weerwolf bent). Schrijf de inhoud van elke tak in de editor hieronder."
+      },
+      "unsavedConfirm": "Je hebt niet-opgeslagen wijzigingen. Teruggaan zonder op te slaan verwijdert ze. Doorgaan?"
     },
     "spectate": {
       "title": "AI bekijken",
@@ -482,6 +490,10 @@
       "start": "Beginnen met kijken",
       "watching": "👁 Aan het kijken (je kijkt hoe de AI’s spelen)",
       "needAgent": "Om je AI mee te nemen, maak deze eerst aan bij “Maak je AI”"
+    },
+    "tab": {
+      "play": "Spelen",
+      "agent": "Agent bewerken"
     }
   }
 }
