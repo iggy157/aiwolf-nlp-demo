@@ -255,10 +255,18 @@ class Lobby:
         session.config_path = cfg_path
 
         env = os.environ.copy()
-        # APIキー等は子プロセスの環境変数で渡す（agent.py は os.environ を参照）
-        for key in ("OPENAI_API_KEY", "GOOGLE_API_KEY", "OPENAI_BASE_URL", "VLLM_API_KEY"):
-            if os.environ.get(key):
-                env[key] = os.environ[key]
+        # APIキー等は os.environ.copy() で子に引き継がれる（agent.py は os.environ を参照）。
+        #
+        # OPENAI_BASE_URL の扱いが重要: これは vLLM 等の OpenAI 互換エンドポイント用。
+        # LLM_PROVIDER が openai/google/ollama のとき子プロセスに残っていると、openai SDK が
+        # base_url 未指定時に OPENAI_BASE_URL を読み（openai/_client.py）、全API呼び出しが
+        # 誤ったエンドポイント（例: 起動していないローカル vLLM）へ飛んで全AIが応答不能になる。
+        # → vllm のときだけ明示的に渡し、それ以外では子の環境から確実に取り除く。
+        if LLM_PROVIDER == "vllm" and OPENAI_BASE_URL:
+            env["OPENAI_BASE_URL"] = OPENAI_BASE_URL
+        else:
+            env.pop("OPENAI_BASE_URL", None)
+            env.pop("OPENAI_API_BASE", None)  # langchain 系が読む旧名も念のため除去
 
         # start_new_session=True で別プロセスグループにし、終了時に一括 kill 可能にする（M8）
         session.process = subprocess.Popen(  # noqa: S603
