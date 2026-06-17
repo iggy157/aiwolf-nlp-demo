@@ -472,7 +472,8 @@
         "remain_skip": "Resterende keren overslaan",
         "talk_history": "Gespreksgeschiedenis",
         "whisper_history": "Fluistergeschiedenis",
-        "alive_agents": "Levende spelers"
+        "alive_agents": "Levende spelers",
+        "turn": "Beurt"
       },
       "branch": {
         "title": "Voorwaardelijk",
@@ -490,7 +491,11 @@
       "pickFieldHint": "Tip: klik eerst op het gewenste veld en druk daarna op een variabele",
       "moveUp": "Omhoog verplaatsen",
       "moveDown": "Omlaag verplaatsen",
-      "dragHint": "Sleep om te verplaatsen"
+      "dragHint": "Sleep om te verplaatsen",
+      "insertBlock": "Hier invoegen",
+      "textBlock": "Tekst",
+      "condBlock": "Voorwaarde",
+      "emptyBlocks": "Begin met “＋ Tekst / ＋ Voorwaarde” hieronder"
     },
     "spectate": {
       "title": "AI bekijken",

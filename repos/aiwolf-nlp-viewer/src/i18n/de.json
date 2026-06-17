@@ -472,7 +472,8 @@
         "remain_skip": "Verbleibende Aussetzer",
         "talk_history": "Gesprächsverlauf",
         "whisper_history": "Flüsterverlauf",
-        "alive_agents": "Lebende Spieler"
+        "alive_agents": "Lebende Spieler",
+        "turn": "Runde"
       },
       "branch": {
         "title": "Bedingung",
@@ -490,7 +491,11 @@
       "pickFieldHint": "Tipp: Klicke zuerst auf das gewünschte Feld, dann auf eine Variable",
       "moveUp": "Nach oben verschieben",
       "moveDown": "Nach unten verschieben",
-      "dragHint": "Zum Verschieben ziehen"
+      "dragHint": "Zum Verschieben ziehen",
+      "insertBlock": "Hier einfügen",
+      "textBlock": "Text",
+      "condBlock": "Bedingung",
+      "emptyBlocks": "Beginne unten mit „＋ Text / ＋ Bedingung“"
     },
     "spectate": {
       "title": "KI ansehen",

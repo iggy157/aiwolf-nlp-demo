@@ -316,7 +316,8 @@
         "remain_skip": "Remaining skips",
         "talk_history": "Talk history",
         "whisper_history": "Whisper history",
-        "alive_agents": "Alive players"
+        "alive_agents": "Alive players",
+        "turn": "Turn"
       },
       "branch": {
         "title": "Conditional",
@@ -334,7 +335,11 @@
       "pickFieldHint": "Tip: click the field you want first, then press a variable",
       "moveUp": "Move up",
       "moveDown": "Move down",
-      "dragHint": "Drag to move"
+      "dragHint": "Drag to move",
+      "insertBlock": "Insert here",
+      "textBlock": "Text",
+      "condBlock": "Condition",
+      "emptyBlocks": "Start with “＋ Text / ＋ Condition” below"
     },
     "multi": {
       "create": "Create a room",

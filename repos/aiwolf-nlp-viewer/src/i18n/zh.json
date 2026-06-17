@@ -472,7 +472,8 @@
         "remain_skip": "剩余跳过次数",
         "talk_history": "发言记录",
         "whisper_history": "私语记录",
-        "alive_agents": "存活玩家"
+        "alive_agents": "存活玩家",
+        "turn": "回合"
       },
       "branch": {
         "title": "条件分支",
@@ -490,7 +491,11 @@
       "pickFieldHint": "提示：先点击你想要的输入框，再按下某个变量",
       "moveUp": "上移",
       "moveDown": "下移",
-      "dragHint": "拖动以移动"
+      "dragHint": "拖动以移动",
+      "insertBlock": "在此插入",
+      "textBlock": "文本",
+      "condBlock": "条件",
+      "emptyBlocks": "从下方的“＋ 文本 / ＋ 条件”开始"
     },
     "spectate": {
       "title": "观看 AI",

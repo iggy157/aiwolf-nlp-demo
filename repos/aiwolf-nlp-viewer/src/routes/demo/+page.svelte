@@ -459,6 +459,35 @@
     if (dragIndex !== null) moveBlock(selectedRequest, dragIndex, to);
     dragIndex = null;
   }
+  // 新規ブロックの素（Notion風の「＋」メニューから使う）。
+  function makeText(): Block {
+    return { id: ++blockSeq, kind: "text", value: "" };
+  }
+  function makeCond(): Block {
+    const spec = agentCatalog.branch_vars?.[0];
+    return {
+      id: ++blockSeq, kind: "cond",
+      v: spec?.key ?? "role", op: spec?.ops?.[0] ?? "=",
+      value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", body: "",
+    };
+  }
+  // 指定ブロックの直後にブロックを挿入（Notion風: カーソル位置の「＋」から好きな所に入れる）。
+  function insertAtIndex(req: string, afterIdx: number, block: Block) {
+    const list = [...(editBlocks[req] ?? [])];
+    list.splice(afterIdx + 1, 0, block);
+    editBlocks[req] = list;
+  }
+  // ＋メニューで選んだ後にドロップダウンを閉じる（DaisyUI dropdown は blur で閉じる）。
+  function blurActive() {
+    if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
+  }
+  // textarea を中身に合わせて自動で縦に伸ばす（1つの大きなエディタに見せるため）。
+  // 第2引数(value)が変わるたび update が走り、プログラム挿入時もリサイズされる。
+  function autogrow(node: HTMLTextAreaElement, _value: string) {
+    const resize = () => { node.style.height = "auto"; node.style.height = `${node.scrollHeight}px`; };
+    requestAnimationFrame(resize);
+    return { update: () => requestAnimationFrame(resize) };
+  }
   // 分岐の対象変数を変えたら、演算子と値をその型の既定に合わせ直す。
   function onCondVarChange(block: Block) {
     if (block.kind !== "cond") return;
@@ -1286,75 +1315,88 @@
                   </details>
                 {/if}
 
-                <!-- ブロックキャンバス（Notion風: 掴むハンドル＋行アクション）。並べ替えは↑↓/ドラッグ。 -->
-                <div role="list" class="flex flex-col gap-1">
+                <!-- 1つの大きなエディタ（Notion風）。ブロックは枠なしで流れ、行頭の＋で好きな位置に挿入。 -->
+                <div role="list" class="rounded-lg border border-base-300 bg-base-100 p-1 flex flex-col">
                   {#each (editBlocks[selectedRequest] ?? []) as block, i (block.id)}
                     <div
                       role="listitem"
-                      class="group flex items-start gap-0.5 rounded-lg border p-1 {dragIndex === i ? 'opacity-40' : ''} {block.kind === 'cond' ? 'border-accent/40 bg-accent/5' : 'border-base-200 hover:border-base-300'}"
+                      class="group relative flex items-start gap-0.5 rounded {dragIndex === i ? 'opacity-40' : ''}"
                       ondragover={(e) => { if (dragIndex !== null) e.preventDefault(); }}
                       ondrop={(e) => { e.preventDefault(); dropOn(i); }}
                     >
-                      <!-- ドラッグハンドル（PC）。スマホは↑↓で動かす。 -->
-                      <button
-                        type="button"
-                        draggable="true"
-                        tabindex="-1"
-                        class="cursor-grab active:cursor-grabbing opacity-20 group-hover:opacity-60 px-0.5 pt-1.5 text-base"
-                        aria-label={$_("demo.agent.dragHint")}
-                        title={$_("demo.agent.dragHint")}
-                        ondragstart={(e) => { dragIndex = i; e.dataTransfer?.setData("text/plain", String(i)); }}
-                        ondragend={() => (dragIndex = null)}
-                      ><iconify-icon icon="mdi:drag-vertical"></iconify-icon></button>
+                      <!-- 行頭ガター（Notion風）: ＋でこの位置に挿入 / ⠿でドラッグ移動。普段は薄く、ホバーで濃く。 -->
+                      <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
+                        <div class="dropdown">
+                          <button type="button" tabindex="0" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.insertBlock")} title={$_("demo.agent.insertBlock")}><iconify-icon icon="mdi:plus"></iconify-icon></button>
+                          <ul class="dropdown-content menu menu-xs z-10 w-32 rounded-box border border-base-300 bg-base-100 p-1 shadow">
+                            <li><button type="button" onclick={() => { insertAtIndex(selectedRequest, i, makeText()); blurActive(); }}>{$_("demo.agent.textBlock")}</button></li>
+                            <li><button type="button" onclick={() => { insertAtIndex(selectedRequest, i, makeCond()); blurActive(); }}>{$_("demo.agent.condBlock")}</button></li>
+                          </ul>
+                        </div>
+                        <button
+                          type="button" draggable="true" tabindex="-1"
+                          class="cursor-grab active:cursor-grabbing btn btn-ghost btn-xs px-0.5 min-h-0 h-6"
+                          aria-label={$_("demo.agent.dragHint")} title={$_("demo.agent.dragHint")}
+                          ondragstart={(e) => { dragIndex = i; e.dataTransfer?.setData("text/plain", String(i)); }}
+                          ondragend={() => (dragIndex = null)}
+                        ><iconify-icon icon="mdi:drag-vertical"></iconify-icon></button>
+                      </div>
 
-                      <!-- 中身: 文章 or 条件分岐 -->
-                      <div class="grow min-w-0 flex flex-col gap-1">
+                      <!-- 中身: 文章は枠なしで本文の一部に見せる / 条件分岐はカード -->
+                      <div class="grow min-w-0">
                         {#if block.kind === "text"}
                           <textarea
-                            class="textarea textarea-bordered w-full text-sm leading-snug min-h-16"
-                            rows="3"
+                            use:autogrow={block.value}
+                            rows="1"
+                            class="w-full resize-none rounded border-0 bg-transparent px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 hover:bg-base-200/40 focus:bg-base-200/50 focus:outline-none"
                             placeholder={$_("demo.agent.textPh")}
                             bind:value={block.value}
                             onfocus={(e) => focusArea(block, "value", e)}
                           ></textarea>
                         {:else}
                           {@const spec = branchSpec(block.v)}
-                          <div class="flex flex-wrap items-center gap-1 text-xs">
-                            <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
-                            <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
-                              {#each agentCatalog.branch_vars as bv}<option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>{/each}
-                            </select>
-                            <select class="select select-bordered select-xs" bind:value={block.op}>
-                              {#each (spec?.ops ?? ["="]) as op}<option value={op}>{OP_SYM[op] ?? op}</option>{/each}
-                            </select>
-                            {#if spec?.type === "enum"}
-                              <select class="select select-bordered select-xs" bind:value={block.value}>
-                                {#each (spec?.values ?? []) as val}<option value={val}>{$_(`game.role.${val}`)}</option>{/each}
+                          <div class="my-0.5 flex flex-col gap-1 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
+                            <div class="flex flex-wrap items-center gap-1 text-xs">
+                              <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
+                              <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
+                                {#each agentCatalog.branch_vars as bv}<option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>{/each}
                               </select>
-                            {:else}
-                              <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
-                            {/if}
+                              <select class="select select-bordered select-xs" bind:value={block.op}>
+                                {#each (spec?.ops ?? ["="]) as op}<option value={op}>{OP_SYM[op] ?? op}</option>{/each}
+                              </select>
+                              {#if spec?.type === "enum"}
+                                <select class="select select-bordered select-xs" bind:value={block.value}>
+                                  {#each (spec?.values ?? []) as val}<option value={val}>{$_(`game.role.${val}`)}</option>{/each}
+                                </select>
+                              {:else}
+                                <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
+                              {/if}
+                            </div>
+                            <textarea
+                              use:autogrow={block.body}
+                              rows="1"
+                              class="w-full resize-none rounded border-0 bg-base-100/60 px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 focus:bg-base-100 focus:outline-none"
+                              placeholder={$_("demo.agent.condBodyPh")}
+                              bind:value={block.body}
+                              onfocus={(e) => focusArea(block, "body", e)}
+                            ></textarea>
                           </div>
-                          <textarea
-                            class="textarea textarea-bordered w-full text-sm leading-snug min-h-16"
-                            rows="2"
-                            placeholder={$_("demo.agent.condBodyPh")}
-                            bind:value={block.body}
-                            onfocus={(e) => focusArea(block, "body", e)}
-                          ></textarea>
                         {/if}
                       </div>
 
-                      <!-- 行アクション: 上へ / 下へ / 削除 -->
-                      <div class="flex flex-col shrink-0">
-                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(selectedRequest, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
-                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5" aria-label={$_("demo.agent.moveDown")} disabled={i === (editBlocks[selectedRequest]?.length ?? 0) - 1} onclick={() => moveBlockBy(selectedRequest, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
-                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
+                      <!-- 行アクション: 上へ / 下へ / 削除（普段は薄く、ホバーで濃く） -->
+                      <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
+                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(selectedRequest, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
+                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveDown")} disabled={i === (editBlocks[selectedRequest]?.length ?? 0) - 1} onclick={() => moveBlockBy(selectedRequest, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
+                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
                       </div>
                     </div>
                   {/each}
+                  {#if (editBlocks[selectedRequest] ?? []).length === 0}
+                    <div class="px-2 py-3 text-xs opacity-40">{$_("demo.agent.emptyBlocks")}</div>
+                  {/if}
                 </div>
-                <!-- 追加（フォーカス中ブロックの直後に入る。位置は↑↓/ドラッグで調整） -->
+                <!-- 末尾に追加（空のときもここから。位置は行頭＋/↑↓/ドラッグで調整） -->
                 <div class="flex flex-wrap items-center gap-2">
                   <button type="button" class="btn btn-outline btn-xs" onclick={() => addText(selectedRequest)}>{$_("demo.agent.addText")}</button>
                   <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addCond(selectedRequest)}>{$_("demo.agent.addCond")}</button>

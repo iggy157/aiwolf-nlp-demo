@@ -316,7 +316,8 @@
         "remain_skip": "残りスキップ数",
         "talk_history": "会話履歴",
         "whisper_history": "囁き履歴",
-        "alive_agents": "生存者一覧"
+        "alive_agents": "生存者一覧",
+        "turn": "ターン数"
       },
       "branch": {
         "title": "条件分岐",
@@ -334,7 +335,11 @@
       "pickFieldHint": "※ 入れたい欄をクリックしてから変数を押してください",
       "moveUp": "上へ",
       "moveDown": "下へ",
-      "dragHint": "ドラッグで移動"
+      "dragHint": "ドラッグで移動",
+      "insertBlock": "ここに挿入",
+      "textBlock": "文章",
+      "condBlock": "条件分岐",
+      "emptyBlocks": "下の「＋文章 / ＋条件分岐」から作り始められます"
     },
     "multi": {
       "create": "部屋を作る",

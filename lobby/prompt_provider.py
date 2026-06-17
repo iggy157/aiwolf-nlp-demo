@@ -108,6 +108,7 @@ BRANCH_VARS: dict[str, dict[str, Any]] = {
     "role": {"type": "enum", "expr": "role.value", "ops": ["=", "!="],
              "values": ["WEREWOLF", "POSSESSED", "SEER", "BODYGUARD", "VILLAGER", "MEDIUM"]},
     "day": {"type": "number", "expr": "(info.day if info and info.day is not none else 0)", "ops": ["=", "!=", ">=", "<=", ">", "<"]},
+    "turn": {"type": "number", "expr": "(talk_history | length)", "ops": ["=", "!=", ">=", "<=", ">", "<"]},
     "remain_talk": {"type": "number", "expr": "(info.remain_count if info and info.remain_count is not none else 0)", "ops": ["=", "!=", ">=", "<=", ">", "<"]},
 }
 _ENUM_VALUE_RE = re.compile(r"^[A-Za-z0-9_]+$")  # enum値の許可文字（インジェクション防止）

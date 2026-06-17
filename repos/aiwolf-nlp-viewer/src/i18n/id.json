@@ -472,7 +472,8 @@
         "remain_skip": "Sisa lewati",
         "talk_history": "Riwayat percakapan",
         "whisper_history": "Riwayat bisikan",
-        "alive_agents": "Pemain yang hidup"
+        "alive_agents": "Pemain yang hidup",
+        "turn": "Giliran"
       },
       "branch": {
         "title": "Kondisional",
@@ -490,7 +491,11 @@
       "pickFieldHint": "Tips: klik dulu kolom yang Anda inginkan, lalu tekan sebuah variabel",
       "moveUp": "Pindah ke atas",
       "moveDown": "Pindah ke bawah",
-      "dragHint": "Seret untuk memindahkan"
+      "dragHint": "Seret untuk memindahkan",
+      "insertBlock": "Sisipkan di sini",
+      "textBlock": "Teks",
+      "condBlock": "Kondisi",
+      "emptyBlocks": "Mulai dengan “＋ Teks / ＋ Kondisi” di bawah"
     },
     "spectate": {
       "title": "Tonton AI",

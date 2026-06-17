@@ -472,7 +472,8 @@
         "remain_skip": "Pasos restantes",
         "talk_history": "Historial de conversación",
         "whisper_history": "Historial de susurros",
-        "alive_agents": "Jugadores vivos"
+        "alive_agents": "Jugadores vivos",
+        "turn": "Turno"
       },
       "branch": {
         "title": "Condicional",
@@ -490,7 +491,11 @@
       "pickFieldHint": "Consejo: primero haz clic en el campo que quieras y luego pulsa una variable",
       "moveUp": "Mover hacia arriba",
       "moveDown": "Mover hacia abajo",
-      "dragHint": "Arrastrar para mover"
+      "dragHint": "Arrastrar para mover",
+      "insertBlock": "Insertar aquí",
+      "textBlock": "Texto",
+      "condBlock": "Condición",
+      "emptyBlocks": "Empieza con «＋ Texto / ＋ Condición» abajo"
     },
     "spectate": {
       "title": "Ver IA",

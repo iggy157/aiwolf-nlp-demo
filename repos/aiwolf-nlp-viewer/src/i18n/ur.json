@@ -472,7 +472,8 @@
         "remain_skip": "باقی اسکپ",
         "talk_history": "گفتگو کی تاریخ",
         "whisper_history": "سرگوشی کی تاریخ",
-        "alive_agents": "زندہ کھلاڑی"
+        "alive_agents": "زندہ کھلاڑی",
+        "turn": "باری"
       },
       "branch": {
         "title": "مشروط",
@@ -490,7 +491,11 @@
       "pickFieldHint": "اشارہ: پہلے مطلوبہ خانے پر کلک کریں، پھر کوئی متغیر دبائیں",
       "moveUp": "اوپر منتقل کریں",
       "moveDown": "نیچے منتقل کریں",
-      "dragHint": "منتقل کرنے کے لیے گھسیٹیں"
+      "dragHint": "منتقل کرنے کے لیے گھسیٹیں",
+      "insertBlock": "یہاں شامل کریں",
+      "textBlock": "متن",
+      "condBlock": "شرط",
+      "emptyBlocks": "نیچے ”＋ متن / ＋ شرط“ سے شروع کریں"
     },
     "spectate": {
       "title": "AI دیکھیں",

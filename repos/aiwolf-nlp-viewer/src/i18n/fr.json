@@ -472,7 +472,8 @@
         "remain_skip": "Passes restants",
         "talk_history": "Historique des discussions",
         "whisper_history": "Historique des chuchotements",
-        "alive_agents": "Joueurs en vie"
+        "alive_agents": "Joueurs en vie",
+        "turn": "Tour"
       },
       "branch": {
         "title": "Condition",
@@ -490,7 +491,11 @@
       "pickFieldHint": "Astuce : cliquez d'abord sur le champ voulu, puis appuyez sur une variable",
       "moveUp": "Déplacer vers le haut",
       "moveDown": "Déplacer vers le bas",
-      "dragHint": "Faire glisser pour déplacer"
+      "dragHint": "Faire glisser pour déplacer",
+      "insertBlock": "Insérer ici",
+      "textBlock": "Texte",
+      "condBlock": "Condition",
+      "emptyBlocks": "Commencez avec « ＋ Texte / ＋ Condition » ci-dessous"
     },
     "spectate": {
       "title": "Regarder l’IA",

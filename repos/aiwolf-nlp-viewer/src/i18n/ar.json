@@ -472,7 +472,8 @@
         "remain_skip": "مرات التخطي المتبقية",
         "talk_history": "سجل الكلام",
         "whisper_history": "سجل الهمس",
-        "alive_agents": "اللاعبون الأحياء"
+        "alive_agents": "اللاعبون الأحياء",
+        "turn": "الدور"
       },
       "branch": {
         "title": "شرطي",
@@ -490,7 +491,11 @@
       "pickFieldHint": "تلميح: انقر أولًا على الحقل الذي تريده، ثم اضغط على متغير",
       "moveUp": "تحريك لأعلى",
       "moveDown": "تحريك لأسفل",
-      "dragHint": "اسحب للتحريك"
+      "dragHint": "اسحب للتحريك",
+      "insertBlock": "إدراج هنا",
+      "textBlock": "نص",
+      "condBlock": "شرط",
+      "emptyBlocks": "ابدأ بـ ”＋ نص / ＋ شرط“ في الأسفل"
     },
     "spectate": {
       "title": "مشاهدة الذكاء الاصطناعي",
