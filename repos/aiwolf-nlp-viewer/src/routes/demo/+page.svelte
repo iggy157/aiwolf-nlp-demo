@@ -440,8 +440,9 @@
   }
 
   // ── ブロック操作 ───────────────────────────────────────────────
-  // 操作は「対象の並び(list)」を直接受け取って in-place 変更する（$state 配列なので splice が反応的）。
-  // list は最上位 editBlocks[req] か、条件分岐ブロックの children（入れ子）のどちらか。
+  // 各操作は「対象の並び list」と「その並びを差し替える set」を受け取り、**新しい配列を set** する。
+  // 最上位でも入れ子(children)でも、owner への再代入になるので確実に再描画される。
+  type SetList = (list: Block[]) => void;
   function makeText(): Block {
     return { id: ++blockSeq, kind: "text", value: "" };
   }
@@ -453,33 +454,32 @@
       value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", children: [],
     };
   }
-  function appendBlock(list: Block[], block: Block) {
-    list.push(block);
+  // 最上位（選択中リクエスト）の並びを差し替える set。
+  function setTop(nl: Block[]) {
+    editBlocks[selectedRequest] = nl;
   }
-  // 最上位（選択中リクエスト）の末尾に追加。未初期化なら配列を作る。
-  function addTop(block: Block) {
-    if (!editBlocks[selectedRequest]) editBlocks[selectedRequest] = [];
-    editBlocks[selectedRequest].push(block);
+  function opAppend(list: Block[], block: Block, set: SetList) {
+    set([...list, block]);
   }
-  // 指定位置の直後にブロックを挿入（Notion風: 行頭の＋から好きな所に入れる）。
-  function insertAtIndex(list: Block[], afterIdx: number, block: Block) {
-    list.splice(afterIdx + 1, 0, block);
+  function opInsert(list: Block[], afterIdx: number, block: Block, set: SetList) {
+    set([...list.slice(0, afterIdx + 1), block, ...list.slice(afterIdx + 1)]);
   }
-  function removeBlock(list: Block[], id: number) {
-    const i = list.findIndex((b) => b.id === id);
-    if (i >= 0) list.splice(i, 1);
+  function opRemove(list: Block[], id: number, set: SetList) {
+    set(list.filter((b) => b.id !== id));
   }
-  function moveBlock(list: Block[], from: number, to: number) {
+  function opMove(list: Block[], from: number, to: number, set: SetList) {
     if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
-    const [m] = list.splice(from, 1);
-    list.splice(to, 0, m);
+    const nl = [...list];
+    const [m] = nl.splice(from, 1);
+    nl.splice(to, 0, m);
+    set(nl);
   }
-  function moveBlockBy(list: Block[], idx: number, delta: number) {
-    moveBlock(list, idx, idx + delta);
+  function opMoveBy(list: Block[], idx: number, delta: number, set: SetList) {
+    opMove(list, idx, idx + delta, set);
   }
   // ドラッグ&ドロップは同じ並びの中だけ（dragList が一致するときのみ並べ替え）。
-  function dropOn(list: Block[], to: number) {
-    if (dragList === list && dragIndex !== null) moveBlock(list, dragIndex, to);
+  function dropOn(list: Block[], to: number, set: SetList) {
+    if (dragList === list && dragIndex !== null) opMove(list, dragIndex, to, set);
     dragIndex = null;
     dragList = null;
   }
@@ -488,7 +488,6 @@
     if (document.activeElement instanceof HTMLElement) document.activeElement.blur();
   }
   // textarea を中身に合わせて自動で縦に伸ばす（1つの大きなエディタに見せるため）。
-  // 第2引数(value)が変わるたび update が走り、プログラム挿入時もリサイズされる。
   function autogrow(node: HTMLTextAreaElement, _value: string) {
     const resize = () => { node.style.height = "auto"; node.style.height = `${node.scrollHeight}px`; };
     requestAnimationFrame(resize);
@@ -501,9 +500,9 @@
       if (el) { el.focus(); el.setSelectionRange(caret, caret); }
     });
   }
-  // 文章ブロックの Enter で段落分割（Notion風）、行頭 Backspace で同じ並びの前の文章ブロックへ結合。
-  // Shift+Enter は段落内の改行。IME変換中の Enter は無視。list はこのブロックが属する並び。
-  function onTextKeydown(list: Block[], block: Block, i: number, ev: KeyboardEvent) {
+  // 文章ブロックの Enter で段落分割、行頭 Backspace で同じ並びの前の文章ブロックへ結合。
+  // Shift+Enter は段落内の改行。IME変換中の Enter は無視。list/set はこのブロックが属する並び。
+  function onTextKeydown(list: Block[], block: Block, i: number, set: SetList, ev: KeyboardEvent) {
     if (block.kind !== "text") return;
     const el = ev.currentTarget as HTMLTextAreaElement;
     if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
@@ -513,7 +512,7 @@
       block.value = block.value.slice(0, pos);
       const nb = makeText() as Extract<Block, { kind: "text" }>;
       nb.value = after;
-      insertAtIndex(list, i, nb);
+      opInsert(list, i, nb, set);
       focusBlock(nb.id, 0);
     } else if (ev.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0) {
       const prev = list[i - 1];
@@ -521,7 +520,7 @@
         ev.preventDefault();
         const caret = prev.value.length;
         prev.value = prev.value + block.value;
-        removeBlock(list, block.id);
+        opRemove(list, block.id, set);
         focusBlock(prev.id, caret);
       }
     }
@@ -1250,22 +1249,22 @@
     {/if}
   {/snippet}
 
-  <!-- 入れ子対応のブロックエディタ（自分自身を再帰呼び出し）。list=この並び（最上位 or 条件の children）。 -->
-  {#snippet blockEditor(list: Block[])}
+  <!-- 入れ子対応のブロックエディタ（自分自身を再帰呼び出し）。list=この並び / set=この並びの差し替え。 -->
+  {#snippet blockEditor(list: Block[], set: SetList)}
     {#each list as block, i (block.id)}
       <div
         role="listitem"
         class="group relative flex items-start gap-0.5 rounded {dragList === list && dragIndex === i ? 'opacity-40' : ''}"
         ondragover={(e) => { if (dragIndex !== null) e.preventDefault(); }}
-        ondrop={(e) => { e.preventDefault(); dropOn(list, i); }}
+        ondrop={(e) => { e.preventDefault(); dropOn(list, i, set); }}
       >
         <!-- 行頭ガター: ＋でこの位置に挿入 / ⠿でドラッグ移動 -->
         <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
           <div class="dropdown">
             <button type="button" tabindex="0" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.insertBlock")} title={$_("demo.agent.insertBlock")}><iconify-icon icon="mdi:plus"></iconify-icon></button>
             <ul class="dropdown-content menu menu-xs z-10 w-32 rounded-box border border-base-300 bg-base-100 p-1 shadow">
-              <li><button type="button" onclick={() => { insertAtIndex(list, i, makeText()); blurActive(); }}>{$_("demo.agent.textBlock")}</button></li>
-              <li><button type="button" onclick={() => { insertAtIndex(list, i, makeCond()); blurActive(); }}>{$_("demo.agent.condBlock")}</button></li>
+              <li><button type="button" onclick={() => { opInsert(list, i, makeText(), set); blurActive(); }}>{$_("demo.agent.textBlock")}</button></li>
+              <li><button type="button" onclick={() => { opInsert(list, i, makeCond(), set); blurActive(); }}>{$_("demo.agent.condBlock")}</button></li>
             </ul>
           </div>
           <button
@@ -1288,10 +1287,11 @@
               placeholder={$_("demo.agent.textPh")}
               bind:value={block.value}
               onfocus={(e) => focusArea(block, e)}
-              onkeydown={(e) => onTextKeydown(list, block, i, e)}
+              onkeydown={(e) => onTextKeydown(list, block, i, set, e)}
             ></textarea>
           {:else}
             {@const spec = branchSpec(block.v)}
+            {@const setChildren = (nl: Block[]) => { if (block.kind === "cond") block.children = nl; }}
             <div class="my-0.5 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
               <div class="flex flex-wrap items-center gap-1 text-xs">
                 <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
@@ -1311,13 +1311,14 @@
               </div>
               <!-- この条件のときの中身。さらに条件分岐も置ける（入れ子）。 -->
               <div class="mt-1 border-l-2 border-accent/30 pl-1">
-                {@render blockEditor(block.children)}
-                {#if block.children.length === 0}
+                {#if block.children.length > 0}
+                  {@render blockEditor(block.children, setChildren)}
+                {:else}
                   <div class="px-2 py-1 text-[11px] opacity-40">{$_("demo.agent.condBodyPh")}</div>
                 {/if}
                 <div class="flex flex-wrap items-center gap-1 pt-0.5">
-                  <button type="button" class="btn btn-ghost btn-xs" onclick={() => appendBlock(block.children, makeText())}>{$_("demo.agent.addText")}</button>
-                  <button type="button" class="btn btn-ghost btn-xs text-accent" onclick={() => appendBlock(block.children, makeCond())}>{$_("demo.agent.addCond")}</button>
+                  <button type="button" class="btn btn-ghost btn-xs gap-0.5" onclick={() => opAppend(block.children, makeText(), setChildren)}><iconify-icon icon="mdi:plus"></iconify-icon>{$_("demo.agent.textBlock")}</button>
+                  <button type="button" class="btn btn-ghost btn-xs gap-0.5 text-accent" onclick={() => opAppend(block.children, makeCond(), setChildren)}><iconify-icon icon="mdi:plus"></iconify-icon>{$_("demo.agent.condBlock")}</button>
                 </div>
               </div>
             </div>
@@ -1326,9 +1327,9 @@
 
         <!-- 行アクション: 上へ / 下へ / 削除 -->
         <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
-          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(list, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
-          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveDown")} disabled={i === list.length - 1} onclick={() => moveBlockBy(list, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
-          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(list, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => opMoveBy(list, i, -1, set)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveDown")} disabled={i === list.length - 1} onclick={() => opMoveBy(list, i, 1, set)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => opRemove(list, block.id, set)}><iconify-icon icon="mdi:close"></iconify-icon></button>
         </div>
       </div>
     {/each}
@@ -1427,17 +1428,17 @@
                   </details>
                 {/if}
 
-                <!-- 1つの大きなエディタ（Notion風・入れ子対応）。中身は再帰スニペットで描画。 -->
+                <!-- 1つの大きなエディタ（Notion風・入れ子対応）。最上位の並びの差し替えは setTop。 -->
                 <div role="list" class="rounded-lg border border-base-300 bg-base-100 p-1 flex flex-col">
-                  {@render blockEditor(editBlocks[selectedRequest] ?? [])}
+                  {@render blockEditor(editBlocks[selectedRequest] ?? [], setTop)}
                   {#if (editBlocks[selectedRequest] ?? []).length === 0}
                     <div class="px-2 py-3 text-xs opacity-40">{$_("demo.agent.emptyBlocks")}</div>
                   {/if}
                 </div>
                 <!-- 末尾に追加（空のときもここから。位置は行頭＋/↑↓/ドラッグで調整） -->
                 <div class="flex flex-wrap items-center gap-2">
-                  <button type="button" class="btn btn-outline btn-xs" onclick={() => addTop(makeText())}>{$_("demo.agent.addText")}</button>
-                  <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addTop(makeCond())}>{$_("demo.agent.addCond")}</button>
+                  <button type="button" class="btn btn-outline btn-xs" onclick={() => opAppend(editBlocks[selectedRequest] ?? [], makeText(), setTop)}>{$_("demo.agent.addText")}</button>
+                  <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => opAppend(editBlocks[selectedRequest] ?? [], makeCond(), setTop)}>{$_("demo.agent.addCond")}</button>
                   <span class="text-[11px] opacity-50 ml-auto">{$_("demo.agent.chars", { values: { count: (currentPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
                 </div>
                 <p class="text-[10px] opacity-40">{$_("demo.agent.splitHint")}</p>
