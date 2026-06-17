@@ -331,7 +331,10 @@
       "removeBlock": "Remove",
       "textPh": "Enter text (you can insert variables too)",
       "condBodyPh": "Text to use when this condition holds",
-      "pickFieldHint": "Tip: click the field you want first, then press a variable"
+      "pickFieldHint": "Tip: click the field you want first, then press a variable",
+      "moveUp": "Move up",
+      "moveDown": "Move down",
+      "dragHint": "Drag to move"
     },
     "multi": {
       "create": "Create a room",

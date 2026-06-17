@@ -487,7 +487,10 @@
       "removeBlock": "Hapus",
       "textPh": "Masukkan teks (Anda juga bisa menyisipkan variabel)",
       "condBodyPh": "Teks yang digunakan saat kondisi ini terpenuhi",
-      "pickFieldHint": "Tips: klik dulu kolom yang Anda inginkan, lalu tekan sebuah variabel"
+      "pickFieldHint": "Tips: klik dulu kolom yang Anda inginkan, lalu tekan sebuah variabel",
+      "moveUp": "Pindah ke atas",
+      "moveDown": "Pindah ke bawah",
+      "dragHint": "Seret untuk memindahkan"
     },
     "spectate": {
       "title": "Tonton AI",

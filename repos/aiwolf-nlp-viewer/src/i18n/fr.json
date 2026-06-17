@@ -487,7 +487,10 @@
       "removeBlock": "Supprimer",
       "textPh": "Saisissez le texte (vous pouvez aussi insérer des variables)",
       "condBodyPh": "Texte à utiliser lorsque cette condition est remplie",
-      "pickFieldHint": "Astuce : cliquez d'abord sur le champ voulu, puis appuyez sur une variable"
+      "pickFieldHint": "Astuce : cliquez d'abord sur le champ voulu, puis appuyez sur une variable",
+      "moveUp": "Déplacer vers le haut",
+      "moveDown": "Déplacer vers le bas",
+      "dragHint": "Faire glisser pour déplacer"
     },
     "spectate": {
       "title": "Regarder l’IA",

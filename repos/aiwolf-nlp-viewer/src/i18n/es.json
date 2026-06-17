@@ -487,7 +487,10 @@
       "removeBlock": "Quitar",
       "textPh": "Escribe el texto (también puedes insertar variables)",
       "condBodyPh": "Texto que se usará cuando se cumpla esta condición",
-      "pickFieldHint": "Consejo: primero haz clic en el campo que quieras y luego pulsa una variable"
+      "pickFieldHint": "Consejo: primero haz clic en el campo que quieras y luego pulsa una variable",
+      "moveUp": "Mover hacia arriba",
+      "moveDown": "Mover hacia abajo",
+      "dragHint": "Arrastrar para mover"
     },
     "spectate": {
       "title": "Ver IA",

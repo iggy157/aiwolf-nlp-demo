@@ -487,7 +487,10 @@
       "removeBlock": "Remover",
       "textPh": "Digite o texto (você também pode inserir variáveis)",
       "condBodyPh": "Texto a usar quando esta condição for verdadeira",
-      "pickFieldHint": "Dica: clique primeiro no campo desejado e depois pressione uma variável"
+      "pickFieldHint": "Dica: clique primeiro no campo desejado e depois pressione uma variável",
+      "moveUp": "Mover para cima",
+      "moveDown": "Mover para baixo",
+      "dragHint": "Arraste para mover"
     },
     "spectate": {
       "title": "Assistir à IA",

@@ -487,7 +487,10 @@
       "removeBlock": "Entfernen",
       "textPh": "Text eingeben (du kannst auch Variablen einfügen)",
       "condBodyPh": "Text, der verwendet wird, wenn diese Bedingung zutrifft",
-      "pickFieldHint": "Tipp: Klicke zuerst auf das gewünschte Feld, dann auf eine Variable"
+      "pickFieldHint": "Tipp: Klicke zuerst auf das gewünschte Feld, dann auf eine Variable",
+      "moveUp": "Nach oben verschieben",
+      "moveDown": "Nach unten verschieben",
+      "dragHint": "Zum Verschieben ziehen"
     },
     "spectate": {
       "title": "KI ansehen",

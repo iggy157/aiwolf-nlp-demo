@@ -487,7 +487,10 @@
       "removeBlock": "Verwijderen",
       "textPh": "Voer tekst in (je kunt ook variabelen invoegen)",
       "condBodyPh": "Tekst die wordt gebruikt wanneer aan deze voorwaarde is voldaan",
-      "pickFieldHint": "Tip: klik eerst op het gewenste veld en druk daarna op een variabele"
+      "pickFieldHint": "Tip: klik eerst op het gewenste veld en druk daarna op een variabele",
+      "moveUp": "Omhoog verplaatsen",
+      "moveDown": "Omlaag verplaatsen",
+      "dragHint": "Sleep om te verplaatsen"
     },
     "spectate": {
       "title": "AI bekijken",

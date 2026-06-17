@@ -317,6 +317,7 @@
   let activeEl: HTMLTextAreaElement | null = null;
   let activeBlock: Block | null = null;
   let activeKey: "value" | "body" = "value";
+  let dragIndex = $state<number | null>(null); // ドラッグ中ブロックの位置（並べ替え用）
   const OP_SYM: Record<string, string> = { "=": "＝", "!=": "≠", ">=": "≧", "<=": "≦", ">": "＞", "<": "＜" };
   // 保存トークン中の条件分岐ブロック（{if:var op value} 本文 {endif}）をブロックに戻す用。
   const COND_RE = /\{if:([a-z_]+)(!=|>=|<=|=|>|<)([^}]*)\}\n?([\s\S]*?)\n?\{endif\}/g;
@@ -420,19 +421,43 @@
     previewText = null;
   }
 
-  // ── ブロック操作（追加/削除/分岐の変数変更）──────────────────────
+  // ── ブロック操作（追加/削除/並べ替え/分岐の変数変更）──────────────────
+  // 新ブロックはフォーカス中ブロックの直後に挿す（無ければ末尾）。位置は↑↓/ドラッグで調整。
+  function insertAfterActive(req: string, block: Block) {
+    const list = [...(editBlocks[req] ?? [])];
+    const at = activeBlock ? list.findIndex((b) => b.id === activeBlock!.id) + 1 : 0;
+    const pos = at > 0 ? at : list.length;
+    list.splice(pos, 0, block);
+    editBlocks[req] = list;
+  }
   function addText(req: string) {
-    editBlocks[req] = [...(editBlocks[req] ?? []), { id: ++blockSeq, kind: "text", value: "" }];
+    insertAfterActive(req, { id: ++blockSeq, kind: "text", value: "" });
   }
   function addCond(req: string) {
     const spec = agentCatalog.branch_vars?.[0];
-    const v = spec?.key ?? "role";
-    const op = spec?.ops?.[0] ?? "=";
-    const value = spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1";
-    editBlocks[req] = [...(editBlocks[req] ?? []), { id: ++blockSeq, kind: "cond", v, op, value, body: "" }];
+    insertAfterActive(req, {
+      id: ++blockSeq, kind: "cond",
+      v: spec?.key ?? "role", op: spec?.ops?.[0] ?? "=",
+      value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", body: "",
+    });
   }
   function removeBlock(req: string, id: number) {
     editBlocks[req] = (editBlocks[req] ?? []).filter((b) => b.id !== id);
+  }
+  // 並べ替え: ↑↓ボタン（全デバイス）とドラッグ＆ドロップ（PC）の両方から呼ぶ。
+  function moveBlock(req: string, from: number, to: number) {
+    const list = [...(editBlocks[req] ?? [])];
+    if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
+    const [m] = list.splice(from, 1);
+    list.splice(to, 0, m);
+    editBlocks[req] = list;
+  }
+  function moveBlockBy(req: string, idx: number, delta: number) {
+    moveBlock(req, idx, idx + delta);
+  }
+  function dropOn(to: number) {
+    if (dragIndex !== null) moveBlock(selectedRequest, dragIndex, to);
+    dragIndex = null;
   }
   // 分岐の対象変数を変えたら、演算子と値をその型の既定に合わせ直す。
   function onCondVarChange(block: Block) {
@@ -1215,121 +1240,145 @@
           <button class="btn btn-primary btn-lg" onclick={startSpectate}>{$_("demo.spectate.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "agent"}
-          <!-- AIエージェントのプロンプト編集（リクエスト別。キャラ/名前は既存のものを使う）-->
-          <div class="text-lg font-bold">{$_("demo.agent.title")}</div>
-          <p class="text-xs opacity-60 max-w-sm">{$_("demo.agent.intro")}</p>
-          <div class="flex flex-col items-stretch gap-3 w-full max-w-sm text-left">
-            <div class="flex flex-col gap-1">
-              <span class="text-sm font-bold opacity-70">{$_("demo.agent.requests")}</span>
-              <!-- リクエスト選択（initialize/talk/divine ... 各アクションのプロンプトを個別に編集）-->
-              <div class="flex flex-wrap gap-1">
-                {#each (agentCatalog.requests.length ? agentCatalog.requests : Object.keys(editBlocks)) as req}
-                  {@const edited = (currentPrompts[req] ?? "").trim() !== (agentDefaults[req] ?? "").trim()}
-                  <button
-                    type="button"
-                    class="btn btn-xs {selectedRequest === req ? 'btn-primary' : 'btn-outline'}"
-                    onclick={() => { selectedRequest = req; previewText = null; activeBlock = null; activeEl = null; }}
-                  >
-                    {$_(`demo.agent.req.${req}`)}{#if edited}&nbsp;●{/if}
-                  </button>
-                {/each}
-              </div>
-            </div>
-            <div class="flex flex-col gap-1">
-              <span class="text-sm font-bold opacity-70">{$_(`demo.agent.req.${selectedRequest}`)}</span>
-              <!-- 変数ピッカー（生 Jinja は打たせず、トークンだけ挿入）。全変数を表示し、
-                   挿入されるトークンをボタンに併記（エディタ表示と一致させる）。★=このリクエストでよく使う。 -->
-              {#if pickerVars.length}
-                <div class="flex flex-col gap-1">
-                  <span class="text-[11px] opacity-60">{$_("demo.agent.vars")}</span>
-                  <div class="flex flex-wrap items-stretch gap-1">
-                    {#each pickerVars as v}
+          <!-- AIエージェントのプロンプト編集。PC=2ペイン(左リクエスト/右エディタ)、スマホ=縦積み。 -->
+          <div class="w-full max-w-4xl text-left">
+            <div class="text-lg font-bold text-center">{$_("demo.agent.title")}</div>
+            <p class="text-xs opacity-60 text-center mb-3 max-w-xl mx-auto">{$_("demo.agent.intro")}</p>
+            <div class="flex flex-col md:flex-row gap-3 items-stretch">
+              <!-- 左ペイン: リクエスト一覧（PC=縦サイドバー / スマホ=横スクロール） -->
+              <nav class="md:w-44 md:shrink-0">
+                <div class="text-[11px] font-bold opacity-50 mb-1 px-1">{$_("demo.agent.requests")}</div>
+                <div class="flex md:flex-col gap-1 overflow-x-auto md:overflow-visible pb-1">
+                  {#each (agentCatalog.requests.length ? agentCatalog.requests : Object.keys(editBlocks)) as req}
+                    {@const edited = (currentPrompts[req] ?? "").trim() !== (agentDefaults[req] ?? "").trim()}
+                    <button
+                      type="button"
+                      class="btn btn-sm whitespace-nowrap md:w-full md:justify-start {selectedRequest === req ? 'btn-primary' : 'btn-ghost'}"
+                      onclick={() => { selectedRequest = req; previewText = null; activeBlock = null; activeEl = null; }}
+                    >
+                      <span class="md:grow md:text-left">{$_(`demo.agent.req.${req}`)}</span>
+                      {#if edited}<span class="text-accent">●</span>{/if}
+                    </button>
+                  {/each}
+                </div>
+              </nav>
+
+              <!-- 右ペイン: エディタ -->
+              <div class="grow min-w-0 flex flex-col gap-2">
+                <!-- 変数パレット（折りたたみ）。出しっぱなしをやめてまとまりを出す。 -->
+                {#if pickerVars.length}
+                  <details class="rounded border border-base-300 bg-base-100" open>
+                    <summary class="cursor-pointer select-none text-[11px] font-bold opacity-70 px-2 py-1">{$_("demo.agent.vars")}</summary>
+                    <div class="flex flex-wrap items-stretch gap-1 px-2 pb-1">
+                      {#each pickerVars as v}
+                        <button
+                          type="button"
+                          title={v.token}
+                          class="btn btn-xs h-auto py-0.5 flex-col gap-0 leading-tight {v.relevant ? (v.composite ? 'btn-accent' : 'btn-primary btn-outline') : 'btn-ghost border border-base-300 opacity-70'}"
+                          onclick={() => insertAtCursor(v.token)}
+                        >
+                          <span class="text-[11px]">{v.relevant ? "★ " : ""}{$_(`demo.agent.var.${v.key}`)}</span>
+                          <span class="text-[9px] font-mono opacity-70">{v.token}</span>
+                        </button>
+                      {/each}
+                    </div>
+                    <div class="text-[10px] opacity-50 px-2 pb-1">{$_("demo.agent.pickFieldHint")}</div>
+                  </details>
+                {/if}
+
+                <!-- ブロックキャンバス（Notion風: 掴むハンドル＋行アクション）。並べ替えは↑↓/ドラッグ。 -->
+                <div role="list" class="flex flex-col gap-1">
+                  {#each (editBlocks[selectedRequest] ?? []) as block, i (block.id)}
+                    <div
+                      role="listitem"
+                      class="group flex items-start gap-0.5 rounded-lg border p-1 {dragIndex === i ? 'opacity-40' : ''} {block.kind === 'cond' ? 'border-accent/40 bg-accent/5' : 'border-base-200 hover:border-base-300'}"
+                      ondragover={(e) => { if (dragIndex !== null) e.preventDefault(); }}
+                      ondrop={(e) => { e.preventDefault(); dropOn(i); }}
+                    >
+                      <!-- ドラッグハンドル（PC）。スマホは↑↓で動かす。 -->
                       <button
                         type="button"
-                        title={v.token}
-                        class="btn btn-xs h-auto py-0.5 flex-col gap-0 leading-tight {v.relevant ? (v.composite ? 'btn-accent' : 'btn-primary btn-outline') : 'btn-ghost border border-base-300 opacity-70'}"
-                        onclick={() => insertAtCursor(v.token)}
-                      >
-                        <span class="text-[11px]">{v.relevant ? "★ " : ""}{$_(`demo.agent.var.${v.key}`)}</span>
-                        <span class="text-[9px] font-mono opacity-70">{v.token}</span>
-                      </button>
-                    {/each}
-                  </div>
-                  <span class="text-[10px] opacity-50">{$_("demo.agent.pickFieldHint")}</span>
-                </div>
-              {/if}
-              <!-- 本文＝ブロックの並び（文章ブロック＋条件分岐ブロック）。if/endif は画面に出さない。 -->
-              <div class="flex flex-col gap-2">
-                {#each (editBlocks[selectedRequest] ?? []) as block (block.id)}
-                  {#if block.kind === "text"}
-                    <div class="flex items-start gap-1">
-                      <textarea
-                        class="textarea textarea-bordered grow text-sm leading-snug min-h-16"
-                        rows="3"
-                        placeholder={$_("demo.agent.textPh")}
-                        bind:value={block.value}
-                        onfocus={(e) => focusArea(block, "value", e)}
-                      ></textarea>
-                      <button type="button" class="btn btn-ghost btn-xs" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}>✕</button>
-                    </div>
-                  {:else}
-                    {@const spec = branchSpec(block.v)}
-                    <!-- 条件分岐ブロック: 「もし [変数][演算子][値]」を選ぶ→当てはまるときに本文を出す。 -->
-                    <div class="flex flex-col gap-1 rounded-lg border-2 border-accent/40 bg-accent/5 p-2">
-                      <div class="flex flex-wrap items-center gap-1 text-xs">
-                        <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
-                        <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
-                          {#each agentCatalog.branch_vars as bv}
-                            <option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>
-                          {/each}
-                        </select>
-                        <select class="select select-bordered select-xs" bind:value={block.op}>
-                          {#each (spec?.ops ?? ["="]) as op}
-                            <option value={op}>{OP_SYM[op] ?? op}</option>
-                          {/each}
-                        </select>
-                        {#if spec?.type === "enum"}
-                          <select class="select select-bordered select-xs" bind:value={block.value}>
-                            {#each (spec?.values ?? []) as val}
-                              <option value={val}>{$_(`game.role.${val}`)}</option>
-                            {/each}
-                          </select>
+                        draggable="true"
+                        tabindex="-1"
+                        class="cursor-grab active:cursor-grabbing opacity-20 group-hover:opacity-60 px-0.5 pt-1.5 text-base"
+                        aria-label={$_("demo.agent.dragHint")}
+                        title={$_("demo.agent.dragHint")}
+                        ondragstart={(e) => { dragIndex = i; e.dataTransfer?.setData("text/plain", String(i)); }}
+                        ondragend={() => (dragIndex = null)}
+                      ><iconify-icon icon="mdi:drag-vertical"></iconify-icon></button>
+
+                      <!-- 中身: 文章 or 条件分岐 -->
+                      <div class="grow min-w-0 flex flex-col gap-1">
+                        {#if block.kind === "text"}
+                          <textarea
+                            class="textarea textarea-bordered w-full text-sm leading-snug min-h-16"
+                            rows="3"
+                            placeholder={$_("demo.agent.textPh")}
+                            bind:value={block.value}
+                            onfocus={(e) => focusArea(block, "value", e)}
+                          ></textarea>
                         {:else}
-                          <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
+                          {@const spec = branchSpec(block.v)}
+                          <div class="flex flex-wrap items-center gap-1 text-xs">
+                            <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
+                            <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
+                              {#each agentCatalog.branch_vars as bv}<option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>{/each}
+                            </select>
+                            <select class="select select-bordered select-xs" bind:value={block.op}>
+                              {#each (spec?.ops ?? ["="]) as op}<option value={op}>{OP_SYM[op] ?? op}</option>{/each}
+                            </select>
+                            {#if spec?.type === "enum"}
+                              <select class="select select-bordered select-xs" bind:value={block.value}>
+                                {#each (spec?.values ?? []) as val}<option value={val}>{$_(`game.role.${val}`)}</option>{/each}
+                              </select>
+                            {:else}
+                              <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
+                            {/if}
+                          </div>
+                          <textarea
+                            class="textarea textarea-bordered w-full text-sm leading-snug min-h-16"
+                            rows="2"
+                            placeholder={$_("demo.agent.condBodyPh")}
+                            bind:value={block.body}
+                            onfocus={(e) => focusArea(block, "body", e)}
+                          ></textarea>
                         {/if}
-                        <button type="button" class="btn btn-ghost btn-xs ml-auto" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}>✕</button>
                       </div>
-                      <textarea
-                        class="textarea textarea-bordered text-sm leading-snug min-h-16"
-                        rows="2"
-                        placeholder={$_("demo.agent.condBodyPh")}
-                        bind:value={block.body}
-                        onfocus={(e) => focusArea(block, "body", e)}
-                      ></textarea>
+
+                      <!-- 行アクション: 上へ / 下へ / 削除 -->
+                      <div class="flex flex-col shrink-0">
+                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(selectedRequest, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
+                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5" aria-label={$_("demo.agent.moveDown")} disabled={i === (editBlocks[selectedRequest]?.length ?? 0) - 1} onclick={() => moveBlockBy(selectedRequest, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
+                        <button type="button" class="btn btn-ghost btn-xs px-1 min-h-0 h-5 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
+                      </div>
                     </div>
-                  {/if}
-                {/each}
+                  {/each}
+                </div>
+                <!-- 追加（フォーカス中ブロックの直後に入る。位置は↑↓/ドラッグで調整） -->
                 <div class="flex flex-wrap items-center gap-2">
                   <button type="button" class="btn btn-outline btn-xs" onclick={() => addText(selectedRequest)}>{$_("demo.agent.addText")}</button>
                   <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addCond(selectedRequest)}>{$_("demo.agent.addCond")}</button>
                   <span class="text-[11px] opacity-50 ml-auto">{$_("demo.agent.chars", { values: { count: (currentPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
                 </div>
+
+                <!-- 操作 -->
+                <div class="flex flex-wrap gap-2">
+                  <button class="btn btn-primary btn-sm grow" onclick={saveAgent}>{agentSaved ? $_("demo.agent.saved") : $_("demo.agent.save")}</button>
+                  <button class="btn btn-outline btn-sm" onclick={previewAgent}>{$_("demo.agent.preview")}</button>
+                  <button class="btn btn-ghost btn-sm" onclick={resetRequest}>{$_("demo.agent.resetReq")}</button>
+                </div>
+                {#if previewText !== null}
+                  <div class="text-xs">
+                    <div class="font-bold opacity-70 mb-1">{$_("demo.agent.previewTitle")}</div>
+                    <pre class="bg-base-200 rounded p-2 whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[11px]">{previewText || $_("demo.agent.empty")}</pre>
+                  </div>
+                {/if}
               </div>
             </div>
-            <p class="text-[11px] opacity-60">{$_("demo.agent.reqHint")} {$_("demo.agent.varsHint")}</p>
-            <div class="flex flex-wrap gap-2">
-              <button class="btn btn-primary btn-sm grow" onclick={saveAgent}>{agentSaved ? $_("demo.agent.saved") : $_("demo.agent.save")}</button>
-              <button class="btn btn-outline btn-sm" onclick={previewAgent}>{$_("demo.agent.preview")}</button>
-              <button class="btn btn-ghost btn-sm" onclick={resetRequest}>{$_("demo.agent.resetReq")}</button>
+            <div class="text-center mt-3">
+              <button class="btn btn-ghost btn-sm" onclick={gotoPlayTab}>← {$_("demo.tab.play")}</button>
             </div>
-            {#if previewText !== null}
-              <div class="text-xs">
-                <div class="font-bold opacity-70 mb-1">{$_("demo.agent.previewTitle")}</div>
-                <pre class="bg-base-200 rounded p-2 whitespace-pre-wrap break-words max-h-48 overflow-y-auto text-[11px]">{previewText || $_("demo.agent.empty")}</pre>
-              </div>
-            {/if}
           </div>
-          <button class="btn btn-ghost btn-sm" onclick={gotoPlayTab}>← {$_("demo.tab.play")}</button>
         {:else if screen === "solo"}
           <!-- ② ソロ: 村サイズ + 役職/キャラ + 開始 -->
           <div class="flex flex-col items-center gap-2">

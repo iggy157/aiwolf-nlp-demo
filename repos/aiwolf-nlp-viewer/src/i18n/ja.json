@@ -331,7 +331,10 @@
       "removeBlock": "削除",
       "textPh": "文章を入力（変数も挿入できます）",
       "condBodyPh": "この条件のときに入れる文章",
-      "pickFieldHint": "※ 入れたい欄をクリックしてから変数を押してください"
+      "pickFieldHint": "※ 入れたい欄をクリックしてから変数を押してください",
+      "moveUp": "上へ",
+      "moveDown": "下へ",
+      "dragHint": "ドラッグで移動"
     },
     "multi": {
       "create": "部屋を作る",

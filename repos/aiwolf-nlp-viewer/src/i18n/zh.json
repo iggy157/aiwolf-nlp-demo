@@ -487,7 +487,10 @@
       "removeBlock": "移除",
       "textPh": "输入文本（也可以插入变量）",
       "condBodyPh": "满足此条件时使用的文本",
-      "pickFieldHint": "提示：先点击你想要的输入框，再按下某个变量"
+      "pickFieldHint": "提示：先点击你想要的输入框，再按下某个变量",
+      "moveUp": "上移",
+      "moveDown": "下移",
+      "dragHint": "拖动以移动"
     },
     "spectate": {
       "title": "观看 AI",
