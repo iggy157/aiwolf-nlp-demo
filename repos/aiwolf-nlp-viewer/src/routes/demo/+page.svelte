@@ -301,10 +301,11 @@
   type VarDef = { key: string; token: string; composite: boolean };
   type BranchVar = { key: string; type: "enum" | "number"; ops: string[]; values: string[] };
   type Catalog = { vars: VarDef[]; by_request: Record<string, string[]>; requests: string[]; branch_vars: BranchVar[] };
-  // ブロックエディタ: 本文は「文章ブロック」と「条件分岐ブロック」の並びで表す。if/endif はUIに出さない。
+  // ブロックエディタ: 本文は「文章ブロック」と「条件分岐ブロック」の並び。条件分岐は children を持ち
+  // **入れ子**にできる（条件の中にさらに条件/文章）。if/endif はUIに出さない。
   type Block =
     | { id: number; kind: "text"; value: string }
-    | { id: number; kind: "cond"; v: string; op: string; value: string; body: string };
+    | { id: number; kind: "cond"; v: string; op: string; value: string; children: Block[] };
   let editBlocks = $state<Record<string, Block[]>>({}); // request -> ブロック列
   let agentDefaults = $state<Record<string, string>>({}); // 既定プロンプト（トークン文）
   let agentCatalog = $state<Catalog>({ vars: [], by_request: {}, requests: [], branch_vars: [] });
@@ -313,14 +314,15 @@
   let previewText = $state<string | null>(null);
   let useMyAgent = $state(false); // AI席/引き継ぎに自作プロンプトを使うか
   let blockSeq = 0; // ブロックID採番
-  // 直近にフォーカスした入力欄（変数挿入の対象）。ブロックは $state なので直接書き換えれば反映される。
+  // 直近にフォーカスした文章ブロック（変数挿入の対象）。ブロックは $state なので直接書き換えれば反映。
   let activeEl: HTMLTextAreaElement | null = null;
   let activeBlock: Block | null = null;
-  let activeKey: "value" | "body" = "value";
-  let dragIndex = $state<number | null>(null); // ドラッグ中ブロックの位置（並べ替え用）
+  // ドラッグ並べ替え（同じ並びの中だけ）。dragList で「どの並びの」何番目かを区別する。
+  let dragIndex = $state<number | null>(null);
+  let dragList = $state<Block[] | null>(null);
   const OP_SYM: Record<string, string> = { "=": "＝", "!=": "≠", ">=": "≧", "<=": "≦", ">": "＞", "<": "＜" };
-  // 保存トークン中の条件分岐ブロック（{if:var op value} 本文 {endif}）をブロックに戻す用。
-  const COND_RE = /\{if:([a-z_]+)(!=|>=|<=|=|>|<)([^}]*)\}\n?([\s\S]*?)\n?\{endif\}/g;
+  // 保存トークン（{if:..} 本文 {endif}、入れ子可）を走査して木に戻すためのタグ正規表現。
+  const TAG_RE = /\{if:([a-z_]+)(!=|>=|<=|=|>|<)([^}]*)\}|\{endif\}/g;
   const branchSpec = (k: string): BranchVar | undefined => agentCatalog.branch_vars?.find((b) => b.key === k);
   // 自作AIが作成済みか（どれか1リクエストでも保存されていれば）
   const hasCustomAgent = $derived(Object.values($myAgent.prompts ?? {}).some((t) => (t ?? "").trim().length > 0));
@@ -364,7 +366,7 @@
       .map((b) =>
         b.kind === "text"
           ? b.value.trim()
-          : `{if:${b.v}${b.op}${b.value}}\n${b.body.trim()}\n{endif}`,
+          : `{if:${b.v}${b.op}${b.value}}\n${serializeBlocks(b.children)}\n{endif}`,
       )
       .filter((s) => s !== "")
       .join("\n\n");
@@ -376,19 +378,29 @@
       if (v.trim() !== "") out.push({ id: ++blockSeq, kind: "text", value: v });
     }
   }
+  // {if:..}/{endif} を順に走査し、スタックで入れ子の木に組み立てる（再帰の代わりにスタック）。
   function parseBlocks(text: string): Block[] {
-    const out: Block[] = [];
+    const root: Block[] = [];
+    const stack: Block[][] = [root]; // 現在の挿入先 = stack の末尾
+    const cur = () => stack[stack.length - 1];
     let last = 0;
     let m: RegExpExecArray | null;
-    COND_RE.lastIndex = 0;
-    while ((m = COND_RE.exec(text)) !== null) {
-      pushTextParas(out, text.slice(last, m.index));
-      out.push({ id: ++blockSeq, kind: "cond", v: m[1], op: m[2], value: m[3], body: m[4] });
+    TAG_RE.lastIndex = 0;
+    while ((m = TAG_RE.exec(text)) !== null) {
+      pushTextParas(cur(), text.slice(last, m.index));
       last = m.index + m[0].length;
+      if (m[1]) {
+        // {if:var op value} → 条件分岐ブロックを開いて children を新しい挿入先に
+        const cond: Block = { id: ++blockSeq, kind: "cond", v: m[1], op: m[2], value: m[3], children: [] };
+        cur().push(cond);
+        stack.push(cond.children);
+      } else if (stack.length > 1) {
+        stack.pop(); // {endif} → 親に戻る（root は閉じない＝防御）
+      }
     }
-    pushTextParas(out, text.slice(last));
-    if (out.length === 0) out.push({ id: ++blockSeq, kind: "text", value: "" });
-    return out;
+    pushTextParas(cur(), text.slice(last));
+    if (root.length === 0) root.push({ id: ++blockSeq, kind: "text", value: "" });
+    return root;
   }
   // 各リクエストの現在の本文（直列化）。保存・プレビュー・dirty 判定に使う。
   const currentPrompts = $derived.by(() => {
@@ -427,45 +439,9 @@
     previewText = null;
   }
 
-  // ── ブロック操作（追加/削除/並べ替え/分岐の変数変更）──────────────────
-  // 新ブロックはフォーカス中ブロックの直後に挿す（無ければ末尾）。位置は↑↓/ドラッグで調整。
-  function insertAfterActive(req: string, block: Block) {
-    const list = [...(editBlocks[req] ?? [])];
-    const at = activeBlock ? list.findIndex((b) => b.id === activeBlock!.id) + 1 : 0;
-    const pos = at > 0 ? at : list.length;
-    list.splice(pos, 0, block);
-    editBlocks[req] = list;
-  }
-  function addText(req: string) {
-    insertAfterActive(req, { id: ++blockSeq, kind: "text", value: "" });
-  }
-  function addCond(req: string) {
-    const spec = agentCatalog.branch_vars?.[0];
-    insertAfterActive(req, {
-      id: ++blockSeq, kind: "cond",
-      v: spec?.key ?? "role", op: spec?.ops?.[0] ?? "=",
-      value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", body: "",
-    });
-  }
-  function removeBlock(req: string, id: number) {
-    editBlocks[req] = (editBlocks[req] ?? []).filter((b) => b.id !== id);
-  }
-  // 並べ替え: ↑↓ボタン（全デバイス）とドラッグ＆ドロップ（PC）の両方から呼ぶ。
-  function moveBlock(req: string, from: number, to: number) {
-    const list = [...(editBlocks[req] ?? [])];
-    if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
-    const [m] = list.splice(from, 1);
-    list.splice(to, 0, m);
-    editBlocks[req] = list;
-  }
-  function moveBlockBy(req: string, idx: number, delta: number) {
-    moveBlock(req, idx, idx + delta);
-  }
-  function dropOn(to: number) {
-    if (dragIndex !== null) moveBlock(selectedRequest, dragIndex, to);
-    dragIndex = null;
-  }
-  // 新規ブロックの素（Notion風の「＋」メニューから使う）。
+  // ── ブロック操作 ───────────────────────────────────────────────
+  // 操作は「対象の並び(list)」を直接受け取って in-place 変更する（$state 配列なので splice が反応的）。
+  // list は最上位 editBlocks[req] か、条件分岐ブロックの children（入れ子）のどちらか。
   function makeText(): Block {
     return { id: ++blockSeq, kind: "text", value: "" };
   }
@@ -474,14 +450,38 @@
     return {
       id: ++blockSeq, kind: "cond",
       v: spec?.key ?? "role", op: spec?.ops?.[0] ?? "=",
-      value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", body: "",
+      value: spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1", children: [],
     };
   }
-  // 指定ブロックの直後にブロックを挿入（Notion風: カーソル位置の「＋」から好きな所に入れる）。
-  function insertAtIndex(req: string, afterIdx: number, block: Block) {
-    const list = [...(editBlocks[req] ?? [])];
+  function appendBlock(list: Block[], block: Block) {
+    list.push(block);
+  }
+  // 最上位（選択中リクエスト）の末尾に追加。未初期化なら配列を作る。
+  function addTop(block: Block) {
+    if (!editBlocks[selectedRequest]) editBlocks[selectedRequest] = [];
+    editBlocks[selectedRequest].push(block);
+  }
+  // 指定位置の直後にブロックを挿入（Notion風: 行頭の＋から好きな所に入れる）。
+  function insertAtIndex(list: Block[], afterIdx: number, block: Block) {
     list.splice(afterIdx + 1, 0, block);
-    editBlocks[req] = list;
+  }
+  function removeBlock(list: Block[], id: number) {
+    const i = list.findIndex((b) => b.id === id);
+    if (i >= 0) list.splice(i, 1);
+  }
+  function moveBlock(list: Block[], from: number, to: number) {
+    if (from < 0 || from >= list.length || to < 0 || to >= list.length || from === to) return;
+    const [m] = list.splice(from, 1);
+    list.splice(to, 0, m);
+  }
+  function moveBlockBy(list: Block[], idx: number, delta: number) {
+    moveBlock(list, idx, idx + delta);
+  }
+  // ドラッグ&ドロップは同じ並びの中だけ（dragList が一致するときのみ並べ替え）。
+  function dropOn(list: Block[], to: number) {
+    if (dragList === list && dragIndex !== null) moveBlock(list, dragIndex, to);
+    dragIndex = null;
+    dragList = null;
   }
   // ＋メニューで選んだ後にドロップダウンを閉じる（DaisyUI dropdown は blur で閉じる）。
   function blurActive() {
@@ -501,9 +501,9 @@
       if (el) { el.focus(); el.setSelectionRange(caret, caret); }
     });
   }
-  // 文章ブロックの Enter で段落分割（Notion風）、行頭 Backspace で前の文章ブロックへ結合。
-  // Shift+Enter は段落内の改行。IME変換中の Enter は無視。
-  function onTextKeydown(block: Block, i: number, ev: KeyboardEvent) {
+  // 文章ブロックの Enter で段落分割（Notion風）、行頭 Backspace で同じ並びの前の文章ブロックへ結合。
+  // Shift+Enter は段落内の改行。IME変換中の Enter は無視。list はこのブロックが属する並び。
+  function onTextKeydown(list: Block[], block: Block, i: number, ev: KeyboardEvent) {
     if (block.kind !== "text") return;
     const el = ev.currentTarget as HTMLTextAreaElement;
     if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
@@ -511,16 +511,17 @@
       const pos = el.selectionStart ?? block.value.length;
       const after = block.value.slice(pos);
       block.value = block.value.slice(0, pos);
-      const nb: Block = { id: ++blockSeq, kind: "text", value: after };
-      insertAtIndex(selectedRequest, i, nb);
+      const nb = makeText() as Extract<Block, { kind: "text" }>;
+      nb.value = after;
+      insertAtIndex(list, i, nb);
       focusBlock(nb.id, 0);
     } else if (ev.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0) {
-      const prev = (editBlocks[selectedRequest] ?? [])[i - 1];
+      const prev = list[i - 1];
       if (prev && prev.kind === "text") {
         ev.preventDefault();
         const caret = prev.value.length;
         prev.value = prev.value + block.value;
-        removeBlock(selectedRequest, block.id);
+        removeBlock(list, block.id);
         focusBlock(prev.id, caret);
       }
     }
@@ -534,33 +535,23 @@
     block.value = spec.type === "enum" ? (spec.values?.[0] ?? "") : "1";
   }
 
-  // フォーカス中の入力欄に変数トークンを挿入（生 Jinja は打たせない）。
-  function focusArea(block: Block, key: "value" | "body", ev: FocusEvent) {
+  // フォーカス中の文章ブロックに変数トークンを挿入（生 Jinja は打たせない）。
+  function focusArea(block: Block, ev: FocusEvent) {
     activeBlock = block;
-    activeKey = key;
     activeEl = ev.currentTarget as HTMLTextAreaElement;
   }
   function insertAtCursor(text: string) {
     const el = activeEl;
     const block = activeBlock;
-    if (!el || !block) {
-      // フォーカス無し: 末尾の文章ブロックに追記（無ければ作る）
-      const list = editBlocks[selectedRequest] ?? [];
-      let tb = [...list].reverse().find((b) => b.kind === "text") as Extract<Block, { kind: "text" }> | undefined;
-      if (!tb) { addText(selectedRequest); tb = editBlocks[selectedRequest].at(-1) as Extract<Block, { kind: "text" }>; }
-      if (tb) tb.value += text;
-      return;
-    }
-    const field = activeKey;
-    const cur = (block as unknown as Record<string, string>)[field] ?? "";
+    if (!el || !block || block.kind !== "text") return; // 文章ブロックにフォーカス中のときだけ
+    const cur = block.value;
     const s = el.selectionStart ?? cur.length;
     const e = el.selectionEnd ?? cur.length;
     const top = el.scrollTop;
-    (block as unknown as Record<string, string>)[field] = cur.slice(0, s) + text + cur.slice(e);
+    block.value = cur.slice(0, s) + text + cur.slice(e);
     requestAnimationFrame(() => {
       el.focus();
-      const pos = s + text.length;
-      el.setSelectionRange(pos, pos);
+      el.setSelectionRange(s + text.length, s + text.length);
       el.scrollTop = top;
     });
   }
@@ -1259,6 +1250,90 @@
     {/if}
   {/snippet}
 
+  <!-- 入れ子対応のブロックエディタ（自分自身を再帰呼び出し）。list=この並び（最上位 or 条件の children）。 -->
+  {#snippet blockEditor(list: Block[])}
+    {#each list as block, i (block.id)}
+      <div
+        role="listitem"
+        class="group relative flex items-start gap-0.5 rounded {dragList === list && dragIndex === i ? 'opacity-40' : ''}"
+        ondragover={(e) => { if (dragIndex !== null) e.preventDefault(); }}
+        ondrop={(e) => { e.preventDefault(); dropOn(list, i); }}
+      >
+        <!-- 行頭ガター: ＋でこの位置に挿入 / ⠿でドラッグ移動 -->
+        <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
+          <div class="dropdown">
+            <button type="button" tabindex="0" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.insertBlock")} title={$_("demo.agent.insertBlock")}><iconify-icon icon="mdi:plus"></iconify-icon></button>
+            <ul class="dropdown-content menu menu-xs z-10 w-32 rounded-box border border-base-300 bg-base-100 p-1 shadow">
+              <li><button type="button" onclick={() => { insertAtIndex(list, i, makeText()); blurActive(); }}>{$_("demo.agent.textBlock")}</button></li>
+              <li><button type="button" onclick={() => { insertAtIndex(list, i, makeCond()); blurActive(); }}>{$_("demo.agent.condBlock")}</button></li>
+            </ul>
+          </div>
+          <button
+            type="button" draggable="true" tabindex="-1"
+            class="cursor-grab active:cursor-grabbing btn btn-ghost btn-xs px-0.5 min-h-0 h-6"
+            aria-label={$_("demo.agent.dragHint")} title={$_("demo.agent.dragHint")}
+            ondragstart={(e) => { dragIndex = i; dragList = list; e.dataTransfer?.setData("text/plain", String(i)); }}
+            ondragend={() => { dragIndex = null; dragList = null; }}
+          ><iconify-icon icon="mdi:drag-vertical"></iconify-icon></button>
+        </div>
+
+        <!-- 中身: 文章 or 条件分岐（条件は children を再帰描画＝入れ子） -->
+        <div class="grow min-w-0">
+          {#if block.kind === "text"}
+            <textarea
+              use:autogrow={block.value}
+              rows="1"
+              data-bid={block.id}
+              class="w-full resize-none rounded border-0 bg-transparent px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 hover:bg-base-200/40 focus:bg-base-200/50 focus:outline-none"
+              placeholder={$_("demo.agent.textPh")}
+              bind:value={block.value}
+              onfocus={(e) => focusArea(block, e)}
+              onkeydown={(e) => onTextKeydown(list, block, i, e)}
+            ></textarea>
+          {:else}
+            {@const spec = branchSpec(block.v)}
+            <div class="my-0.5 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
+              <div class="flex flex-wrap items-center gap-1 text-xs">
+                <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
+                <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
+                  {#each agentCatalog.branch_vars as bv}<option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>{/each}
+                </select>
+                <select class="select select-bordered select-xs" bind:value={block.op}>
+                  {#each (spec?.ops ?? ["="]) as op}<option value={op}>{OP_SYM[op] ?? op}</option>{/each}
+                </select>
+                {#if spec?.type === "enum"}
+                  <select class="select select-bordered select-xs" bind:value={block.value}>
+                    {#each (spec?.values ?? []) as val}<option value={val}>{$_(`game.role.${val}`)}</option>{/each}
+                  </select>
+                {:else}
+                  <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
+                {/if}
+              </div>
+              <!-- この条件のときの中身。さらに条件分岐も置ける（入れ子）。 -->
+              <div class="mt-1 border-l-2 border-accent/30 pl-1">
+                {@render blockEditor(block.children)}
+                {#if block.children.length === 0}
+                  <div class="px-2 py-1 text-[11px] opacity-40">{$_("demo.agent.condBodyPh")}</div>
+                {/if}
+                <div class="flex flex-wrap items-center gap-1 pt-0.5">
+                  <button type="button" class="btn btn-ghost btn-xs" onclick={() => appendBlock(block.children, makeText())}>{$_("demo.agent.addText")}</button>
+                  <button type="button" class="btn btn-ghost btn-xs text-accent" onclick={() => appendBlock(block.children, makeCond())}>{$_("demo.agent.addCond")}</button>
+                </div>
+              </div>
+            </div>
+          {/if}
+        </div>
+
+        <!-- 行アクション: 上へ / 下へ / 削除 -->
+        <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(list, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveDown")} disabled={i === list.length - 1} onclick={() => moveBlockBy(list, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
+          <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(list, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
+        </div>
+      </div>
+    {/each}
+  {/snippet}
+
   {#if showStartScreen}
     <!-- スタート/順番待ち画面（ロビー連携）-->
     <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
@@ -1352,93 +1427,17 @@
                   </details>
                 {/if}
 
-                <!-- 1つの大きなエディタ（Notion風）。ブロックは枠なしで流れ、行頭の＋で好きな位置に挿入。 -->
+                <!-- 1つの大きなエディタ（Notion風・入れ子対応）。中身は再帰スニペットで描画。 -->
                 <div role="list" class="rounded-lg border border-base-300 bg-base-100 p-1 flex flex-col">
-                  {#each (editBlocks[selectedRequest] ?? []) as block, i (block.id)}
-                    <div
-                      role="listitem"
-                      class="group relative flex items-start gap-0.5 rounded {dragIndex === i ? 'opacity-40' : ''}"
-                      ondragover={(e) => { if (dragIndex !== null) e.preventDefault(); }}
-                      ondrop={(e) => { e.preventDefault(); dropOn(i); }}
-                    >
-                      <!-- 行頭ガター（Notion風）: ＋でこの位置に挿入 / ⠿でドラッグ移動。普段は薄く、ホバーで濃く。 -->
-                      <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
-                        <div class="dropdown">
-                          <button type="button" tabindex="0" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.insertBlock")} title={$_("demo.agent.insertBlock")}><iconify-icon icon="mdi:plus"></iconify-icon></button>
-                          <ul class="dropdown-content menu menu-xs z-10 w-32 rounded-box border border-base-300 bg-base-100 p-1 shadow">
-                            <li><button type="button" onclick={() => { insertAtIndex(selectedRequest, i, makeText()); blurActive(); }}>{$_("demo.agent.textBlock")}</button></li>
-                            <li><button type="button" onclick={() => { insertAtIndex(selectedRequest, i, makeCond()); blurActive(); }}>{$_("demo.agent.condBlock")}</button></li>
-                          </ul>
-                        </div>
-                        <button
-                          type="button" draggable="true" tabindex="-1"
-                          class="cursor-grab active:cursor-grabbing btn btn-ghost btn-xs px-0.5 min-h-0 h-6"
-                          aria-label={$_("demo.agent.dragHint")} title={$_("demo.agent.dragHint")}
-                          ondragstart={(e) => { dragIndex = i; e.dataTransfer?.setData("text/plain", String(i)); }}
-                          ondragend={() => (dragIndex = null)}
-                        ><iconify-icon icon="mdi:drag-vertical"></iconify-icon></button>
-                      </div>
-
-                      <!-- 中身: 文章は枠なしで本文の一部に見せる / 条件分岐はカード -->
-                      <div class="grow min-w-0">
-                        {#if block.kind === "text"}
-                          <textarea
-                            use:autogrow={block.value}
-                            rows="1"
-                            data-bid={block.id}
-                            class="w-full resize-none rounded border-0 bg-transparent px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 hover:bg-base-200/40 focus:bg-base-200/50 focus:outline-none"
-                            placeholder={$_("demo.agent.textPh")}
-                            bind:value={block.value}
-                            onfocus={(e) => focusArea(block, "value", e)}
-                            onkeydown={(e) => onTextKeydown(block, i, e)}
-                          ></textarea>
-                        {:else}
-                          {@const spec = branchSpec(block.v)}
-                          <div class="my-0.5 flex flex-col gap-1 rounded-md border border-accent/30 bg-accent/5 px-2 py-1.5">
-                            <div class="flex flex-wrap items-center gap-1 text-xs">
-                              <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
-                              <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
-                                {#each agentCatalog.branch_vars as bv}<option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>{/each}
-                              </select>
-                              <select class="select select-bordered select-xs" bind:value={block.op}>
-                                {#each (spec?.ops ?? ["="]) as op}<option value={op}>{OP_SYM[op] ?? op}</option>{/each}
-                              </select>
-                              {#if spec?.type === "enum"}
-                                <select class="select select-bordered select-xs" bind:value={block.value}>
-                                  {#each (spec?.values ?? []) as val}<option value={val}>{$_(`game.role.${val}`)}</option>{/each}
-                                </select>
-                              {:else}
-                                <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
-                              {/if}
-                            </div>
-                            <textarea
-                              use:autogrow={block.body}
-                              rows="1"
-                              class="w-full resize-none rounded border-0 bg-base-100/60 px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 focus:bg-base-100 focus:outline-none"
-                              placeholder={$_("demo.agent.condBodyPh")}
-                              bind:value={block.body}
-                              onfocus={(e) => focusArea(block, "body", e)}
-                            ></textarea>
-                          </div>
-                        {/if}
-                      </div>
-
-                      <!-- 行アクション: 上へ / 下へ / 削除（普段は薄く、ホバーで濃く） -->
-                      <div class="flex shrink-0 pt-1 opacity-25 group-hover:opacity-100 transition-opacity">
-                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveUp")} disabled={i === 0} onclick={() => moveBlockBy(selectedRequest, i, -1)}><iconify-icon icon="mdi:chevron-up"></iconify-icon></button>
-                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6" aria-label={$_("demo.agent.moveDown")} disabled={i === (editBlocks[selectedRequest]?.length ?? 0) - 1} onclick={() => moveBlockBy(selectedRequest, i, 1)}><iconify-icon icon="mdi:chevron-down"></iconify-icon></button>
-                        <button type="button" class="btn btn-ghost btn-xs px-0.5 min-h-0 h-6 text-error" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}><iconify-icon icon="mdi:close"></iconify-icon></button>
-                      </div>
-                    </div>
-                  {/each}
+                  {@render blockEditor(editBlocks[selectedRequest] ?? [])}
                   {#if (editBlocks[selectedRequest] ?? []).length === 0}
                     <div class="px-2 py-3 text-xs opacity-40">{$_("demo.agent.emptyBlocks")}</div>
                   {/if}
                 </div>
                 <!-- 末尾に追加（空のときもここから。位置は行頭＋/↑↓/ドラッグで調整） -->
                 <div class="flex flex-wrap items-center gap-2">
-                  <button type="button" class="btn btn-outline btn-xs" onclick={() => addText(selectedRequest)}>{$_("demo.agent.addText")}</button>
-                  <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addCond(selectedRequest)}>{$_("demo.agent.addCond")}</button>
+                  <button type="button" class="btn btn-outline btn-xs" onclick={() => addTop(makeText())}>{$_("demo.agent.addText")}</button>
+                  <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addTop(makeCond())}>{$_("demo.agent.addCond")}</button>
                   <span class="text-[11px] opacity-50 ml-auto">{$_("demo.agent.chars", { values: { count: (currentPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
                 </div>
                 <p class="text-[10px] opacity-40">{$_("demo.agent.splitHint")}</p>
