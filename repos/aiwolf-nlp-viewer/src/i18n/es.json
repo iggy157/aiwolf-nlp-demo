@@ -480,7 +480,14 @@
         "insert": "Insertar",
         "hint": "Cambia el texto según una condición (p. ej., farolear solo cuando eres hombre lobo). Escribe el contenido de cada rama en el editor de abajo."
       },
-      "unsavedConfirm": "Tienes cambios sin guardar. Si vuelves sin guardar, se perderán. ¿Continuar?"
+      "unsavedConfirm": "Tienes cambios sin guardar. Si vuelves sin guardar, se perderán. ¿Continuar?",
+      "condIf": "Si",
+      "addText": "＋ Texto",
+      "addCond": "＋ Condición",
+      "removeBlock": "Quitar",
+      "textPh": "Escribe el texto (también puedes insertar variables)",
+      "condBodyPh": "Texto que se usará cuando se cumpla esta condición",
+      "pickFieldHint": "Consejo: primero haz clic en el campo que quieras y luego pulsa una variable"
     },
     "spectate": {
       "title": "Ver IA",

@@ -324,7 +324,14 @@
         "insert": "Insert",
         "hint": "Switch text based on a condition (e.g. bluff only when you're a werewolf). Write each branch's body in the editor below."
       },
-      "unsavedConfirm": "You have unsaved changes. Going back without saving will discard them. Continue?"
+      "unsavedConfirm": "You have unsaved changes. Going back without saving will discard them. Continue?",
+      "condIf": "If",
+      "addText": "＋ Text",
+      "addCond": "＋ Condition",
+      "removeBlock": "Remove",
+      "textPh": "Enter text (you can insert variables too)",
+      "condBodyPh": "Text to use when this condition holds",
+      "pickFieldHint": "Tip: click the field you want first, then press a variable"
     },
     "multi": {
       "create": "Create a room",

@@ -97,35 +97,47 @@ _VARS_LONGEST = sorted(_VARS, key=lambda v: -len(v["token"]))
 _VARS_TPL_LONGEST = sorted(_VARS, key=lambda v: -len(v["template"]))
 _COND_RE = re.compile(r"\{%-?.*?-?%\}", re.DOTALL)  # 残った条件タグ除去用
 
-# ── 条件分岐ブロック（UIビルダー専用）─────────────────────────────────
-# ユーザには生 Jinja を書かせず、ビルダーが下のブロックトークンを挿入する:
-#   {if:role=WEREWOLF} ... {elif:role=SEER} ... {else} ... {endif}
-# これらだけを安全な Jinja に変換する。変数キーは whitelist の式に、値は厳格な許可文字
-# （英数字とアンダースコアのみ）に限定するため、式インジェクション（SSTI）は起きない。
+# ── 条件分岐ブロック（UIのブロックエディタ専用）──────────────────────────
+# ユーザには生 Jinja を書かせず、ブロックエディタが下のブロックトークンを挿入する:
+#   {if:role=WEREWOLF} ... {endif}      （役職＝人狼）
+#   {if:day>=2} ... {endif}             （日数が2以上）
+# これらだけを安全な Jinja に変換する。変数キーは whitelist の式に、演算子は許可集合に、
+# 値は型ごとに厳格制限（enum=許可値のみ / number=数字のみ）するため、式インジェクションは起きない。
 BRANCH_VARS: dict[str, dict[str, Any]] = {
-    # key: {expr=安全な実行時式, values=許可値（あれば検証）}
-    "role": {"expr": "role.value", "values": ["WEREWOLF", "POSSESSED", "SEER", "BODYGUARD", "VILLAGER", "MEDIUM"]},
+    # key: {type, expr=安全な実行時式, ops=許可演算子, values=enumの許可値}
+    "role": {"type": "enum", "expr": "role.value", "ops": ["=", "!="],
+             "values": ["WEREWOLF", "POSSESSED", "SEER", "BODYGUARD", "VILLAGER", "MEDIUM"]},
+    "day": {"type": "number", "expr": "(info.day if info and info.day is not none else 0)", "ops": ["=", "!=", ">=", "<=", ">", "<"]},
+    "remain_talk": {"type": "number", "expr": "(info.remain_count if info and info.remain_count is not none else 0)", "ops": ["=", "!=", ">=", "<=", ">", "<"]},
 }
-_VALUE_RE = re.compile(r"^[A-Za-z0-9_]+$")  # 比較値の許可文字（インジェクション防止）
-_IF_RE = re.compile(r"\{(if|elif):([a-z_]+)=([^}]*)\}")
+_ENUM_VALUE_RE = re.compile(r"^[A-Za-z0-9_]+$")  # enum値の許可文字（インジェクション防止）
+_NUM_VALUE_RE = re.compile(r"^[0-9]+$")           # number値の許可文字
+# 演算子は長いものを先に（>= を > より先に）マッチさせる。
+_IF_RE = re.compile(r"\{(if|elif):([a-z_]+)(!=|>=|<=|=|>|<)([^}]*)\}")
 
 
-def _branch_expr(var: str, value: str) -> str | None:
-    """{if:var=value} の安全な比較式を返す。未知の変数/不正な値なら None。"""
+def _branch_expr(var: str, op: str, value: str) -> str | None:
+    """{if:var op value} の安全な比較式を返す。未知の変数/演算子/不正な値なら None。"""
     spec = BRANCH_VARS.get(var)
-    if not spec or not _VALUE_RE.match(value or ""):
+    if not spec or op not in spec.get("ops", []):
         return None
-    vals = spec.get("values")
-    if vals and value not in vals:
-        return None
-    return f"{spec['expr']} == '{value}'"
+    jop = "==" if op == "=" else op  # トークンの = は Jinja の ==
+    if spec["type"] == "enum":
+        if value not in spec.get("values", []):
+            return None
+        return f"{spec['expr']} {jop} '{value}'"
+    if spec["type"] == "number":
+        if not _NUM_VALUE_RE.match(value or ""):
+            return None
+        return f"{spec['expr']} {jop} {value}"
+    return None
 
 
 def _blocks_to_jinja(text: str) -> str:
     """ブロックトークン → 実 Jinja 制御タグ。無効な分岐はそのまま（リテラル）残す。"""
     def repl(m: "re.Match[str]") -> str:
-        kw, var, value = m.group(1), m.group(2), m.group(3)
-        expr = _branch_expr(var, value)
+        kw, var, op, value = m.group(1), m.group(2), m.group(3), m.group(4)
+        expr = _branch_expr(var, op, value)
         return m.group(0) if expr is None else f"{{% {kw} {expr} %}}"
 
     out = _IF_RE.sub(repl, text)
@@ -135,10 +147,10 @@ def _blocks_to_jinja(text: str) -> str:
 def _blocks_to_preview(text: str) -> str:
     """ブロックトークン → 読みやすい目印（プレビュー用、Jinja 描画はしない）。"""
     def repl(m: "re.Match[str]") -> str:
-        kw, var, value = m.group(1), m.group(2), m.group(3)
-        if _branch_expr(var, value) is None:
+        kw, var, op, value = m.group(1), m.group(2), m.group(3), m.group(4)
+        if _branch_expr(var, op, value) is None:
             return m.group(0)
-        return f"⟦{kw} {var} = {value}⟧"
+        return f"⟦{kw} {var} {op} {value}⟧"
 
     out = _IF_RE.sub(repl, text)
     return out.replace("{else}", "⟦else⟧").replace("{endif}", "⟦/if⟧")
@@ -227,8 +239,11 @@ def variable_catalog() -> dict[str, Any]:
         "vars": [{"key": v["key"], "token": v["token"], "composite": v["composite"]} for v in _VARS],
         "by_request": REQUEST_VARS,
         "requests": REQUESTS,
-        # 分岐ビルダー用: 分岐できる変数と許可値（フロントは値ラベルを i18n で出す）。
-        "branch_vars": [{"key": k, "values": spec.get("values", [])} for k, spec in BRANCH_VARS.items()],
+        # 分岐ビルダー用: 分岐できる変数（型/演算子/enum許可値）。フロントは値・演算子を UI で出す。
+        "branch_vars": [
+            {"key": k, "type": spec["type"], "ops": spec.get("ops", []), "values": spec.get("values", [])}
+            for k, spec in BRANCH_VARS.items()
+        ],
         "max_chars": MAX_PROMPT_CHARS,
     }
 

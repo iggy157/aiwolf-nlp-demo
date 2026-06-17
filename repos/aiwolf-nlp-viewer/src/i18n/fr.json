@@ -480,7 +480,14 @@
         "insert": "Insérer",
         "hint": "Changez le texte selon une condition (par ex. bluffer uniquement quand vous êtes loup-garou). Rédigez le contenu de chaque branche dans l'éditeur ci-dessous."
       },
-      "unsavedConfirm": "Vous avez des modifications non enregistrées. Revenir en arrière sans enregistrer les supprimera. Continuer ?"
+      "unsavedConfirm": "Vous avez des modifications non enregistrées. Revenir en arrière sans enregistrer les supprimera. Continuer ?",
+      "condIf": "Si",
+      "addText": "＋ Texte",
+      "addCond": "＋ Condition",
+      "removeBlock": "Supprimer",
+      "textPh": "Saisissez le texte (vous pouvez aussi insérer des variables)",
+      "condBodyPh": "Texte à utiliser lorsque cette condition est remplie",
+      "pickFieldHint": "Astuce : cliquez d'abord sur le champ voulu, puis appuyez sur une variable"
     },
     "spectate": {
       "title": "Regarder l’IA",

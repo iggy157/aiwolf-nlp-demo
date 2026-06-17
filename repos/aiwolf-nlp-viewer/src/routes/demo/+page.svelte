@@ -299,21 +299,28 @@
   // ---- 自作AI（リクエスト別プロンプトエンジニアリング）----
   type Screen = "mode" | "solo" | "multiCreate" | "multiJoin" | "waiting" | "agent" | "spectate";
   type VarDef = { key: string; token: string; composite: boolean };
-  type BranchVar = { key: string; values: string[] };
+  type BranchVar = { key: string; type: "enum" | "number"; ops: string[]; values: string[] };
   type Catalog = { vars: VarDef[]; by_request: Record<string, string[]>; requests: string[]; branch_vars: BranchVar[] };
-  let editPrompts = $state<Record<string, string>>({}); // request -> 編集中の本文
+  // ブロックエディタ: 本文は「文章ブロック」と「条件分岐ブロック」の並びで表す。if/endif はUIに出さない。
+  type Block =
+    | { id: number; kind: "text"; value: string }
+    | { id: number; kind: "cond"; v: string; op: string; value: string; body: string };
+  let editBlocks = $state<Record<string, Block[]>>({}); // request -> ブロック列
   let agentDefaults = $state<Record<string, string>>({}); // 既定プロンプト（トークン文）
   let agentCatalog = $state<Catalog>({ vars: [], by_request: {}, requests: [], branch_vars: [] });
   let selectedRequest = $state("initialize");
   let agentSaved = $state(false);
   let previewText = $state<string | null>(null);
   let useMyAgent = $state(false); // AI席/引き継ぎに自作プロンプトを使うか
-  let promptTextarea = $state<HTMLTextAreaElement | null>(null);
-  // 条件分岐ビルダー（生 Jinja は書かせず、安全なブロックトークンを挿入。lobby が安全な Jinja に変換）
-  let branchVar = $state("role");
-  let branchValue = $state("WEREWOLF");
-  let branchElse = $state(true);
-  const branchValues = $derived(agentCatalog.branch_vars?.find((b) => b.key === branchVar)?.values ?? []);
+  let blockSeq = 0; // ブロックID採番
+  // 直近にフォーカスした入力欄（変数挿入の対象）。ブロックは $state なので直接書き換えれば反映される。
+  let activeEl: HTMLTextAreaElement | null = null;
+  let activeBlock: Block | null = null;
+  let activeKey: "value" | "body" = "value";
+  const OP_SYM: Record<string, string> = { "=": "＝", "!=": "≠", ">=": "≧", "<=": "≦", ">": "＞", "<": "＜" };
+  // 保存トークン中の条件分岐ブロック（{if:var op value} 本文 {endif}）をブロックに戻す用。
+  const COND_RE = /\{if:([a-z_]+)(!=|>=|<=|=|>|<)([^}]*)\}\n?([\s\S]*?)\n?\{endif\}/g;
+  const branchSpec = (k: string): BranchVar | undefined => agentCatalog.branch_vars?.find((b) => b.key === k);
   // 自作AIが作成済みか（どれか1リクエストでも保存されていれば）
   const hasCustomAgent = $derived(Object.values($myAgent.prompts ?? {}).some((t) => (t ?? "").trim().length > 0));
   // 変数は全リクエストで挿入可能（描画コンテキストは共通＝lobby が None セーフに解決。
@@ -342,16 +349,51 @@
     }
     const reqs = agentCatalog.requests.length ? agentCatalog.requests : Object.keys(agentDefaults);
     const saved = $myAgent;
-    const buf: Record<string, string> = {};
-    for (const r of reqs) buf[r] = saved.prompts?.[r] ?? agentDefaults[r] ?? "";
-    editPrompts = buf;
+    const buf: Record<string, Block[]> = {};
+    for (const r of reqs) buf[r] = parseBlocks(saved.prompts?.[r] ?? agentDefaults[r] ?? "");
+    editBlocks = buf;
     if (!reqs.includes(selectedRequest)) selectedRequest = reqs[0] ?? "initialize";
   }
+
+  // ── ブロック ⇄ 保存トークン文字列 の相互変換 ──────────────────────
+  // 文章ブロックはそのまま、条件分岐ブロックは {if:var op value} 本文 {endif} に直列化する。
+  function serializeBlocks(blocks: Block[]): string {
+    return (blocks ?? [])
+      .map((b) =>
+        b.kind === "text"
+          ? b.value.trim()
+          : `{if:${b.v}${b.op}${b.value}}\n${b.body.trim()}\n{endif}`,
+      )
+      .filter((s) => s !== "")
+      .join("\n");
+  }
+  function parseBlocks(text: string): Block[] {
+    const out: Block[] = [];
+    let last = 0;
+    let m: RegExpExecArray | null;
+    COND_RE.lastIndex = 0;
+    while ((m = COND_RE.exec(text)) !== null) {
+      const pre = text.slice(last, m.index).replace(/^\n+|\n+$/g, "");
+      if (pre) out.push({ id: ++blockSeq, kind: "text", value: pre });
+      out.push({ id: ++blockSeq, kind: "cond", v: m[1], op: m[2], value: m[3], body: m[4] });
+      last = m.index + m[0].length;
+    }
+    const tail = text.slice(last).replace(/^\n+|\n+$/g, "");
+    if (tail) out.push({ id: ++blockSeq, kind: "text", value: tail });
+    if (out.length === 0) out.push({ id: ++blockSeq, kind: "text", value: "" });
+    return out;
+  }
+  // 各リクエストの現在の本文（直列化）。保存・プレビュー・dirty 判定に使う。
+  const currentPrompts = $derived.by(() => {
+    const out: Record<string, string> = {};
+    for (const r of Object.keys(editBlocks)) out[r] = serializeBlocks(editBlocks[r]);
+    return out;
+  });
 
   function saveAgent() {
     // 既定と同じものは保存しない（編集した差分だけ localStorage に持つ）
     const out: Record<string, string> = {};
-    for (const [r, t] of Object.entries(editPrompts)) {
+    for (const [r, t] of Object.entries(currentPrompts)) {
       const v = (t ?? "").trim();
       if (v && v !== (agentDefaults[r] ?? "").trim()) out[r] = v.slice(0, MY_AGENT_MAX_CHARS);
     }
@@ -365,7 +407,7 @@
       const res = await fetch(`${lobbyBase}/api/prompt/preview`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: editPrompts[selectedRequest] ?? "" }),
+        body: JSON.stringify({ text: currentPrompts[selectedRequest] ?? "" }),
       });
       if (res.ok) previewText = (await res.json()).preview ?? "";
     } catch {
@@ -374,37 +416,62 @@
   }
 
   function resetRequest() {
-    editPrompts[selectedRequest] = agentDefaults[selectedRequest] ?? "";
+    editBlocks[selectedRequest] = parseBlocks(agentDefaults[selectedRequest] ?? "");
     previewText = null;
   }
 
-  // トークンをカーソル位置に挿入（生 Jinja は打たせず、トークンだけ挿す）。
-  // value 再代入で textarea がスクロール先頭に戻るのを防ぐため scrollTop を保存・復元する。
+  // ── ブロック操作（追加/削除/分岐の変数変更）──────────────────────
+  function addText(req: string) {
+    editBlocks[req] = [...(editBlocks[req] ?? []), { id: ++blockSeq, kind: "text", value: "" }];
+  }
+  function addCond(req: string) {
+    const spec = agentCatalog.branch_vars?.[0];
+    const v = spec?.key ?? "role";
+    const op = spec?.ops?.[0] ?? "=";
+    const value = spec?.type === "enum" ? (spec?.values?.[0] ?? "") : "1";
+    editBlocks[req] = [...(editBlocks[req] ?? []), { id: ++blockSeq, kind: "cond", v, op, value, body: "" }];
+  }
+  function removeBlock(req: string, id: number) {
+    editBlocks[req] = (editBlocks[req] ?? []).filter((b) => b.id !== id);
+  }
+  // 分岐の対象変数を変えたら、演算子と値をその型の既定に合わせ直す。
+  function onCondVarChange(block: Block) {
+    if (block.kind !== "cond") return;
+    const spec = agentCatalog.branch_vars?.find((b) => b.key === block.v);
+    if (!spec) return;
+    block.op = spec.ops?.[0] ?? "=";
+    block.value = spec.type === "enum" ? (spec.values?.[0] ?? "") : "1";
+  }
+
+  // フォーカス中の入力欄に変数トークンを挿入（生 Jinja は打たせない）。
+  function focusArea(block: Block, key: "value" | "body", ev: FocusEvent) {
+    activeBlock = block;
+    activeKey = key;
+    activeEl = ev.currentTarget as HTMLTextAreaElement;
+  }
   function insertAtCursor(text: string) {
-    const el = promptTextarea;
-    const cur = editPrompts[selectedRequest] ?? "";
-    if (!el) {
-      editPrompts[selectedRequest] = cur + text;
+    const el = activeEl;
+    const block = activeBlock;
+    if (!el || !block) {
+      // フォーカス無し: 末尾の文章ブロックに追記（無ければ作る）
+      const list = editBlocks[selectedRequest] ?? [];
+      let tb = [...list].reverse().find((b) => b.kind === "text") as Extract<Block, { kind: "text" }> | undefined;
+      if (!tb) { addText(selectedRequest); tb = editBlocks[selectedRequest].at(-1) as Extract<Block, { kind: "text" }>; }
+      if (tb) tb.value += text;
       return;
     }
+    const field = activeKey;
+    const cur = (block as unknown as Record<string, string>)[field] ?? "";
     const s = el.selectionStart ?? cur.length;
     const e = el.selectionEnd ?? cur.length;
     const top = el.scrollTop;
-    editPrompts[selectedRequest] = cur.slice(0, s) + text + cur.slice(e);
+    (block as unknown as Record<string, string>)[field] = cur.slice(0, s) + text + cur.slice(e);
     requestAnimationFrame(() => {
       el.focus();
       const pos = s + text.length;
       el.setSelectionRange(pos, pos);
-      el.scrollTop = top; // 再代入で 0 に戻った分を元の位置へ
+      el.scrollTop = top;
     });
-  }
-
-  // 条件分岐の骨組みをカーソル位置に挿入。中身（本文）はユーザが下のエディタで埋める。
-  // 生成されるのはブロックトークンのみ（生 Jinja ではない）。lobby が安全な Jinja に変換する。
-  function insertBranch() {
-    const head = `{if:${branchVar}=${branchValue}}\n`;
-    const body = branchElse ? `\n{else}\n\n{endif}\n` : `\n{endif}\n`;
-    insertAtCursor(head + body);
   }
 
   // 自作プロンプト送信用（useMyAgent かつ作成済みのとき辞書、なければ空）
@@ -427,8 +494,8 @@
   const agentDirty = $derived.by(() => {
     if (screen !== "agent") return false;
     const saved = $myAgent.prompts ?? {};
-    for (const r of Object.keys(editPrompts)) {
-      const cur = (editPrompts[r] ?? "").trim();
+    for (const r of Object.keys(currentPrompts)) {
+      const cur = (currentPrompts[r] ?? "").trim();
       const persisted = (saved[r] ?? agentDefaults[r] ?? "").trim();
       if (cur !== persisted) return true;
     }
@@ -1156,12 +1223,12 @@
               <span class="text-sm font-bold opacity-70">{$_("demo.agent.requests")}</span>
               <!-- リクエスト選択（initialize/talk/divine ... 各アクションのプロンプトを個別に編集）-->
               <div class="flex flex-wrap gap-1">
-                {#each (agentCatalog.requests.length ? agentCatalog.requests : Object.keys(editPrompts)) as req}
-                  {@const edited = (editPrompts[req] ?? "").trim() !== (agentDefaults[req] ?? "").trim()}
+                {#each (agentCatalog.requests.length ? agentCatalog.requests : Object.keys(editBlocks)) as req}
+                  {@const edited = (currentPrompts[req] ?? "").trim() !== (agentDefaults[req] ?? "").trim()}
                   <button
                     type="button"
                     class="btn btn-xs {selectedRequest === req ? 'btn-primary' : 'btn-outline'}"
-                    onclick={() => { selectedRequest = req; previewText = null; }}
+                    onclick={() => { selectedRequest = req; previewText = null; activeBlock = null; activeEl = null; }}
                   >
                     {$_(`demo.agent.req.${req}`)}{#if edited}&nbsp;●{/if}
                   </button>
@@ -1188,35 +1255,66 @@
                       </button>
                     {/each}
                   </div>
+                  <span class="text-[10px] opacity-50">{$_("demo.agent.pickFieldHint")}</span>
                 </div>
               {/if}
-              <!-- 条件分岐ビルダー（生 Jinja は書かせず、安全なブロックを挿入）-->
-              {#if branchValues.length}
-                <div class="flex flex-col gap-1 rounded border border-base-300 bg-base-200/40 p-2">
-                  <span class="text-[11px] font-bold opacity-70">{$_("demo.agent.branch.title")}</span>
-                  <div class="flex flex-wrap items-center gap-1 text-xs">
-                    <select class="select select-bordered select-xs" bind:value={branchVar}>
-                      {#each agentCatalog.branch_vars as b}
-                        <option value={b.key}>{$_(`demo.agent.var.${b.key}`)}</option>
-                      {/each}
-                    </select>
-                    <span class="opacity-60">=</span>
-                    <select class="select select-bordered select-xs" bind:value={branchValue}>
-                      {#each branchValues as val}
-                        <option value={val}>{$_(`game.role.${val}`)}</option>
-                      {/each}
-                    </select>
-                    <label class="flex items-center gap-1 cursor-pointer">
-                      <input type="checkbox" class="checkbox checkbox-xs" bind:checked={branchElse} />
-                      <span class="opacity-70">{$_("demo.agent.branch.withElse")}</span>
-                    </label>
-                    <button type="button" class="btn btn-xs btn-outline ml-auto" onclick={insertBranch}>{$_("demo.agent.branch.insert")}</button>
-                  </div>
-                  <span class="text-[10px] opacity-50">{$_("demo.agent.branch.hint")}</span>
+              <!-- 本文＝ブロックの並び（文章ブロック＋条件分岐ブロック）。if/endif は画面に出さない。 -->
+              <div class="flex flex-col gap-2">
+                {#each (editBlocks[selectedRequest] ?? []) as block (block.id)}
+                  {#if block.kind === "text"}
+                    <div class="flex items-start gap-1">
+                      <textarea
+                        class="textarea textarea-bordered grow text-sm leading-snug min-h-16"
+                        rows="3"
+                        placeholder={$_("demo.agent.textPh")}
+                        bind:value={block.value}
+                        onfocus={(e) => focusArea(block, "value", e)}
+                      ></textarea>
+                      <button type="button" class="btn btn-ghost btn-xs" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}>✕</button>
+                    </div>
+                  {:else}
+                    {@const spec = branchSpec(block.v)}
+                    <!-- 条件分岐ブロック: 「もし [変数][演算子][値]」を選ぶ→当てはまるときに本文を出す。 -->
+                    <div class="flex flex-col gap-1 rounded-lg border-2 border-accent/40 bg-accent/5 p-2">
+                      <div class="flex flex-wrap items-center gap-1 text-xs">
+                        <span class="font-bold opacity-70">{$_("demo.agent.condIf")}</span>
+                        <select class="select select-bordered select-xs" bind:value={block.v} onchange={() => onCondVarChange(block)}>
+                          {#each agentCatalog.branch_vars as bv}
+                            <option value={bv.key}>{$_(`demo.agent.var.${bv.key}`)}</option>
+                          {/each}
+                        </select>
+                        <select class="select select-bordered select-xs" bind:value={block.op}>
+                          {#each (spec?.ops ?? ["="]) as op}
+                            <option value={op}>{OP_SYM[op] ?? op}</option>
+                          {/each}
+                        </select>
+                        {#if spec?.type === "enum"}
+                          <select class="select select-bordered select-xs" bind:value={block.value}>
+                            {#each (spec?.values ?? []) as val}
+                              <option value={val}>{$_(`game.role.${val}`)}</option>
+                            {/each}
+                          </select>
+                        {:else}
+                          <input type="number" min="0" class="input input-bordered input-xs w-16" bind:value={block.value} />
+                        {/if}
+                        <button type="button" class="btn btn-ghost btn-xs ml-auto" aria-label={$_("demo.agent.removeBlock")} onclick={() => removeBlock(selectedRequest, block.id)}>✕</button>
+                      </div>
+                      <textarea
+                        class="textarea textarea-bordered text-sm leading-snug min-h-16"
+                        rows="2"
+                        placeholder={$_("demo.agent.condBodyPh")}
+                        bind:value={block.body}
+                        onfocus={(e) => focusArea(block, "body", e)}
+                      ></textarea>
+                    </div>
+                  {/if}
+                {/each}
+                <div class="flex flex-wrap items-center gap-2">
+                  <button type="button" class="btn btn-outline btn-xs" onclick={() => addText(selectedRequest)}>{$_("demo.agent.addText")}</button>
+                  <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addCond(selectedRequest)}>{$_("demo.agent.addCond")}</button>
+                  <span class="text-[11px] opacity-50 ml-auto">{$_("demo.agent.chars", { values: { count: (currentPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
                 </div>
-              {/if}
-              <textarea bind:this={promptTextarea} class="textarea textarea-bordered h-48 text-sm font-mono leading-snug" maxlength={MY_AGENT_MAX_CHARS} placeholder={agentDefaults[selectedRequest] ?? ""} bind:value={editPrompts[selectedRequest]}></textarea>
-              <span class="text-[11px] opacity-50 text-right">{$_("demo.agent.chars", { values: { count: (editPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
+              </div>
             </div>
             <p class="text-[11px] opacity-60">{$_("demo.agent.reqHint")} {$_("demo.agent.varsHint")}</p>
             <div class="flex flex-wrap gap-2">

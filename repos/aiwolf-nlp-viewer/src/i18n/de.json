@@ -480,7 +480,14 @@
         "insert": "Einfügen",
         "hint": "Text je nach Bedingung wechseln (z. B. nur bluffen, wenn du ein Werwolf bist). Schreibe den Inhalt jedes Zweigs im Editor unten."
       },
-      "unsavedConfirm": "Du hast nicht gespeicherte Änderungen. Wenn du ohne Speichern zurückgehst, gehen sie verloren. Fortfahren?"
+      "unsavedConfirm": "Du hast nicht gespeicherte Änderungen. Wenn du ohne Speichern zurückgehst, gehen sie verloren. Fortfahren?",
+      "condIf": "Wenn",
+      "addText": "＋ Text",
+      "addCond": "＋ Bedingung",
+      "removeBlock": "Entfernen",
+      "textPh": "Text eingeben (du kannst auch Variablen einfügen)",
+      "condBodyPh": "Text, der verwendet wird, wenn diese Bedingung zutrifft",
+      "pickFieldHint": "Tipp: Klicke zuerst auf das gewünschte Feld, dann auf eine Variable"
     },
     "spectate": {
       "title": "KI ansehen",

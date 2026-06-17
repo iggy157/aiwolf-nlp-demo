@@ -480,7 +480,14 @@
         "insert": "Inserir",
         "hint": "Altere o texto com base em uma condição (ex.: blefar apenas quando você for lobisomem). Escreva o conteúdo de cada ramo no editor abaixo."
       },
-      "unsavedConfirm": "Você tem alterações não salvas. Voltar sem salvar irá descartá-las. Continuar?"
+      "unsavedConfirm": "Você tem alterações não salvas. Voltar sem salvar irá descartá-las. Continuar?",
+      "condIf": "Se",
+      "addText": "＋ Texto",
+      "addCond": "＋ Condição",
+      "removeBlock": "Remover",
+      "textPh": "Digite o texto (você também pode inserir variáveis)",
+      "condBodyPh": "Texto a usar quando esta condição for verdadeira",
+      "pickFieldHint": "Dica: clique primeiro no campo desejado e depois pressione uma variável"
     },
     "spectate": {
       "title": "Assistir à IA",

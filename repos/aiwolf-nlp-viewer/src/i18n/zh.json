@@ -480,7 +480,14 @@
         "insert": "插入",
         "hint": "根据条件切换文本（例如仅当你是狼人时才虚张声势）。在下方编辑器中编写每个分支的内容。"
       },
-      "unsavedConfirm": "你有未保存的修改。不保存就返回将丢失这些修改。是否继续？"
+      "unsavedConfirm": "你有未保存的修改。不保存就返回将丢失这些修改。是否继续？",
+      "condIf": "如果",
+      "addText": "＋ 文本",
+      "addCond": "＋ 条件",
+      "removeBlock": "移除",
+      "textPh": "输入文本（也可以插入变量）",
+      "condBodyPh": "满足此条件时使用的文本",
+      "pickFieldHint": "提示：先点击你想要的输入框，再按下某个变量"
     },
     "spectate": {
       "title": "观看 AI",

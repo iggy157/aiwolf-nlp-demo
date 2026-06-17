@@ -480,7 +480,14 @@
         "insert": "Sisipkan",
         "hint": "Ubah teks berdasarkan suatu kondisi (mis. menggertak hanya saat Anda werewolf). Tulis isi setiap cabang di editor di bawah."
       },
-      "unsavedConfirm": "Ada perubahan yang belum disimpan. Kembali tanpa menyimpan akan menghapusnya. Lanjutkan?"
+      "unsavedConfirm": "Ada perubahan yang belum disimpan. Kembali tanpa menyimpan akan menghapusnya. Lanjutkan?",
+      "condIf": "Jika",
+      "addText": "＋ Teks",
+      "addCond": "＋ Kondisi",
+      "removeBlock": "Hapus",
+      "textPh": "Masukkan teks (Anda juga bisa menyisipkan variabel)",
+      "condBodyPh": "Teks yang digunakan saat kondisi ini terpenuhi",
+      "pickFieldHint": "Tips: klik dulu kolom yang Anda inginkan, lalu tekan sebuah variabel"
     },
     "spectate": {
       "title": "Tonton AI",

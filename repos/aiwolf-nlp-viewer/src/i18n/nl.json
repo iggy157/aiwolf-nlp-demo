@@ -480,7 +480,14 @@
         "insert": "Invoegen",
         "hint": "Wissel tekst op basis van een voorwaarde (bijv. alleen bluffen als je een weerwolf bent). Schrijf de inhoud van elke tak in de editor hieronder."
       },
-      "unsavedConfirm": "Je hebt niet-opgeslagen wijzigingen. Teruggaan zonder op te slaan verwijdert ze. Doorgaan?"
+      "unsavedConfirm": "Je hebt niet-opgeslagen wijzigingen. Teruggaan zonder op te slaan verwijdert ze. Doorgaan?",
+      "condIf": "Als",
+      "addText": "＋ Tekst",
+      "addCond": "＋ Voorwaarde",
+      "removeBlock": "Verwijderen",
+      "textPh": "Voer tekst in (je kunt ook variabelen invoegen)",
+      "condBodyPh": "Tekst die wordt gebruikt wanneer aan deze voorwaarde is voldaan",
+      "pickFieldHint": "Tip: klik eerst op het gewenste veld en druk daarna op een variabele"
     },
     "spectate": {
       "title": "AI bekijken",
