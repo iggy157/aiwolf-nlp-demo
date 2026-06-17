@@ -495,7 +495,8 @@
       "insertBlock": "Insérer ici",
       "textBlock": "Texte",
       "condBlock": "Condition",
-      "emptyBlocks": "Commencez avec « ＋ Texte / ＋ Condition » ci-dessous"
+      "emptyBlocks": "Commencez avec « ＋ Texte / ＋ Condition » ci-dessous",
+      "splitHint": "Enter divise en un nouveau paragraphe · Shift+Enter pour un saut de ligne · Backspace en début de ligne fusionne avec le paragraphe précédent"
     },
     "spectate": {
       "title": "Regarder l’IA",

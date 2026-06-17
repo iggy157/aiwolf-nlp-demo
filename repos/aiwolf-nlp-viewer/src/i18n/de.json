@@ -495,7 +495,8 @@
       "insertBlock": "Hier einfügen",
       "textBlock": "Text",
       "condBlock": "Bedingung",
-      "emptyBlocks": "Beginne unten mit „＋ Text / ＋ Bedingung“"
+      "emptyBlocks": "Beginne unten mit „＋ Text / ＋ Bedingung“",
+      "splitHint": "Enter teilt in einen neuen Absatz · Shift+Enter für einen Zeilenumbruch · Backspace am Zeilenanfang führt mit dem vorherigen Absatz zusammen"
     },
     "spectate": {
       "title": "KI ansehen",

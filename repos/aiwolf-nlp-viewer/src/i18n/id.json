@@ -495,7 +495,8 @@
       "insertBlock": "Sisipkan di sini",
       "textBlock": "Teks",
       "condBlock": "Kondisi",
-      "emptyBlocks": "Mulai dengan “＋ Teks / ＋ Kondisi” di bawah"
+      "emptyBlocks": "Mulai dengan “＋ Teks / ＋ Kondisi” di bawah",
+      "splitHint": "Enter membagi menjadi paragraf baru · Shift+Enter untuk jeda baris · Backspace di awal baris menggabungkan dengan paragraf sebelumnya"
     },
     "spectate": {
       "title": "Tonton AI",

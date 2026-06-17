@@ -357,7 +357,8 @@
   }
 
   // ── ブロック ⇄ 保存トークン文字列 の相互変換 ──────────────────────
-  // 文章ブロックはそのまま、条件分岐ブロックは {if:var op value} 本文 {endif} に直列化する。
+  // 文章ブロック=段落（空行で区切る単位）、条件分岐ブロックは {if:var op value} 本文 {endif}。
+  // ブロック同士は空行（\n\n）で連結＝Notion風に「段落＝ブロック」。
   function serializeBlocks(blocks: Block[]): string {
     return (blocks ?? [])
       .map((b) =>
@@ -366,7 +367,14 @@
           : `{if:${b.v}${b.op}${b.value}}\n${b.body.trim()}\n{endif}`,
       )
       .filter((s) => s !== "")
-      .join("\n");
+      .join("\n\n");
+  }
+  // テキスト区間を段落（空行区切り）ごとに文章ブロックへ。段落内の単一改行はそのまま残す。
+  function pushTextParas(out: Block[], seg: string) {
+    for (const para of seg.split(/\n[ \t]*\n/)) {
+      const v = para.replace(/^\n+|\n+$/g, "");
+      if (v.trim() !== "") out.push({ id: ++blockSeq, kind: "text", value: v });
+    }
   }
   function parseBlocks(text: string): Block[] {
     const out: Block[] = [];
@@ -374,13 +382,11 @@
     let m: RegExpExecArray | null;
     COND_RE.lastIndex = 0;
     while ((m = COND_RE.exec(text)) !== null) {
-      const pre = text.slice(last, m.index).replace(/^\n+|\n+$/g, "");
-      if (pre) out.push({ id: ++blockSeq, kind: "text", value: pre });
+      pushTextParas(out, text.slice(last, m.index));
       out.push({ id: ++blockSeq, kind: "cond", v: m[1], op: m[2], value: m[3], body: m[4] });
       last = m.index + m[0].length;
     }
-    const tail = text.slice(last).replace(/^\n+|\n+$/g, "");
-    if (tail) out.push({ id: ++blockSeq, kind: "text", value: tail });
+    pushTextParas(out, text.slice(last));
     if (out.length === 0) out.push({ id: ++blockSeq, kind: "text", value: "" });
     return out;
   }
@@ -487,6 +493,37 @@
     const resize = () => { node.style.height = "auto"; node.style.height = `${node.scrollHeight}px`; };
     requestAnimationFrame(resize);
     return { update: () => requestAnimationFrame(resize) };
+  }
+  // 指定ブロックの textarea にフォーカスしてキャレットを置く（分割/結合後に呼ぶ）。
+  function focusBlock(id: number, caret: number) {
+    requestAnimationFrame(() => {
+      const el = document.querySelector<HTMLTextAreaElement>(`textarea[data-bid="${id}"]`);
+      if (el) { el.focus(); el.setSelectionRange(caret, caret); }
+    });
+  }
+  // 文章ブロックの Enter で段落分割（Notion風）、行頭 Backspace で前の文章ブロックへ結合。
+  // Shift+Enter は段落内の改行。IME変換中の Enter は無視。
+  function onTextKeydown(block: Block, i: number, ev: KeyboardEvent) {
+    if (block.kind !== "text") return;
+    const el = ev.currentTarget as HTMLTextAreaElement;
+    if (ev.key === "Enter" && !ev.shiftKey && !ev.isComposing) {
+      ev.preventDefault();
+      const pos = el.selectionStart ?? block.value.length;
+      const after = block.value.slice(pos);
+      block.value = block.value.slice(0, pos);
+      const nb: Block = { id: ++blockSeq, kind: "text", value: after };
+      insertAtIndex(selectedRequest, i, nb);
+      focusBlock(nb.id, 0);
+    } else if (ev.key === "Backspace" && el.selectionStart === 0 && el.selectionEnd === 0) {
+      const prev = (editBlocks[selectedRequest] ?? [])[i - 1];
+      if (prev && prev.kind === "text") {
+        ev.preventDefault();
+        const caret = prev.value.length;
+        prev.value = prev.value + block.value;
+        removeBlock(selectedRequest, block.id);
+        focusBlock(prev.id, caret);
+      }
+    }
   }
   // 分岐の対象変数を変えたら、演算子と値をその型の既定に合わせ直す。
   function onCondVarChange(block: Block) {
@@ -1348,10 +1385,12 @@
                           <textarea
                             use:autogrow={block.value}
                             rows="1"
+                            data-bid={block.id}
                             class="w-full resize-none rounded border-0 bg-transparent px-2 py-1 text-sm leading-relaxed placeholder:opacity-40 hover:bg-base-200/40 focus:bg-base-200/50 focus:outline-none"
                             placeholder={$_("demo.agent.textPh")}
                             bind:value={block.value}
                             onfocus={(e) => focusArea(block, "value", e)}
+                            onkeydown={(e) => onTextKeydown(block, i, e)}
                           ></textarea>
                         {:else}
                           {@const spec = branchSpec(block.v)}
@@ -1402,6 +1441,7 @@
                   <button type="button" class="btn btn-outline btn-accent btn-xs" onclick={() => addCond(selectedRequest)}>{$_("demo.agent.addCond")}</button>
                   <span class="text-[11px] opacity-50 ml-auto">{$_("demo.agent.chars", { values: { count: (currentPrompts[selectedRequest] ?? "").length, max: MY_AGENT_MAX_CHARS } })}</span>
                 </div>
+                <p class="text-[10px] opacity-40">{$_("demo.agent.splitHint")}</p>
 
                 <!-- 操作 -->
                 <div class="flex flex-wrap gap-2">

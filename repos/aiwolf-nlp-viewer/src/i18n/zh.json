@@ -495,7 +495,8 @@
       "insertBlock": "在此插入",
       "textBlock": "文本",
       "condBlock": "条件",
-      "emptyBlocks": "从下方的“＋ 文本 / ＋ 条件”开始"
+      "emptyBlocks": "从下方的“＋ 文本 / ＋ 条件”开始",
+      "splitHint": "Enter 分隔为新段落 · Shift+Enter 换行 · 在行首按 Backspace 与上一段落合并"
     },
     "spectate": {
       "title": "观看 AI",

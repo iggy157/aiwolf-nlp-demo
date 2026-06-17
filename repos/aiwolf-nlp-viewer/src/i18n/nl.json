@@ -495,7 +495,8 @@
       "insertBlock": "Hier invoegen",
       "textBlock": "Tekst",
       "condBlock": "Voorwaarde",
-      "emptyBlocks": "Begin met “＋ Tekst / ＋ Voorwaarde” hieronder"
+      "emptyBlocks": "Begin met “＋ Tekst / ＋ Voorwaarde” hieronder",
+      "splitHint": "Enter splitst in een nieuwe alinea · Shift+Enter voor een regeleinde · Backspace aan het begin van de regel voegt samen met de vorige alinea"
     },
     "spectate": {
       "title": "AI bekijken",

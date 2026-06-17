@@ -495,7 +495,8 @@
       "insertBlock": "إدراج هنا",
       "textBlock": "نص",
       "condBlock": "شرط",
-      "emptyBlocks": "ابدأ بـ ”＋ نص / ＋ شرط“ في الأسفل"
+      "emptyBlocks": "ابدأ بـ ”＋ نص / ＋ شرط“ في الأسفل",
+      "splitHint": "Enter لإنشاء فقرة جديدة · Shift+Enter لإدراج فاصل سطر · Backspace في بداية السطر يدمج مع الفقرة السابقة"
     },
     "spectate": {
       "title": "مشاهدة الذكاء الاصطناعي",

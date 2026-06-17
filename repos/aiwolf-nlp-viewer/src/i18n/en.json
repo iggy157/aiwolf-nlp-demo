@@ -339,7 +339,8 @@
       "insertBlock": "Insert here",
       "textBlock": "Text",
       "condBlock": "Condition",
-      "emptyBlocks": "Start with “＋ Text / ＋ Condition” below"
+      "emptyBlocks": "Start with “＋ Text / ＋ Condition” below",
+      "splitHint": "Enter splits into a new paragraph · Shift+Enter for a line break · Backspace at line start merges with the previous paragraph"
     },
     "multi": {
       "create": "Create a room",

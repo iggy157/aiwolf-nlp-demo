@@ -495,7 +495,8 @@
       "insertBlock": "Insertar aquí",
       "textBlock": "Texto",
       "condBlock": "Condición",
-      "emptyBlocks": "Empieza con «＋ Texto / ＋ Condición» abajo"
+      "emptyBlocks": "Empieza con «＋ Texto / ＋ Condición» abajo",
+      "splitHint": "Enter divide en un nuevo párrafo · Shift+Enter para un salto de línea · Backspace al inicio de la línea se fusiona con el párrafo anterior"
     },
     "spectate": {
       "title": "Ver IA",
