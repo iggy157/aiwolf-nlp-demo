@@ -5,8 +5,10 @@ import (
 	"log/slog"
 	"math/rand/v2"
 	"sync"
+	"time"
 
 	"github.com/aiwolfdial/aiwolf-nlp-server/model"
+	"github.com/gorilla/websocket"
 )
 
 type WaitingRoom struct {
@@ -14,6 +16,18 @@ type WaitingRoom struct {
 	selfMatch   bool
 	roomMatch   bool
 	connections sync.Map
+	// held は「人数が揃っても卓を立てない」保留中のキー（room）。
+	// ロビーが卓を作ったときに /control/hold で入れ、全員の準備完了で /control/release する。
+	// 保留が無ければ従来どおり揃った瞬間に卓が立つ（待合室ゲートを使わない構成との互換）。
+	held sync.Map
+	// mu は connections のスライス差し替え（追加・取り出し・掃除）を直列化する。
+	mu sync.Mutex
+}
+
+// Seat は待合室に着席中の1接続（ロビー/画面に「誰が来ているか」を見せる用）。
+type Seat struct {
+	Team string `json:"team"`
+	Name string `json:"name"`
 }
 
 func NewWaitingRoom(config model.Config) *WaitingRoom {
@@ -25,6 +39,8 @@ func NewWaitingRoom(config model.Config) *WaitingRoom {
 }
 
 func (wr *WaitingRoom) AddConnection(team string, connection model.Connection) {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
 	value, _ := wr.connections.LoadOrStore(team, []model.Connection{})
 	connections := value.([]model.Connection)
 
@@ -93,7 +109,92 @@ func (wr *WaitingRoom) GetConnectionsWithMatchOptimizer(matches []map[model.Role
 	return roleMapConns, nil
 }
 
+// Hold はキー（room）を保留にする。保留中は人数が揃っても GetConnections が卓を立てない。
+func (wr *WaitingRoom) Hold(key string) { wr.held.Store(key, struct{}{}) }
+
+// Release は保留を外す。以後は揃い次第（既に揃っていれば呼び出し側の tryFormGame で即）卓が立つ。
+func (wr *WaitingRoom) Release(key string) { wr.held.Delete(key) }
+
+func (wr *WaitingRoom) IsHeld(key string) bool {
+	_, ok := wr.held.Load(key)
+	return ok
+}
+
+// Seats はキー（room）に着席中の接続一覧を返す（卓が立つとキーごと消えるので空になる）。
+func (wr *WaitingRoom) Seats(key string) []Seat {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	seats := []Seat{}
+	if value, ok := wr.connections.Load(key); ok {
+		for _, c := range value.([]model.Connection) {
+			seats = append(seats, Seat{Team: c.TeamName, Name: c.OriginalName})
+		}
+	}
+	return seats
+}
+
+// HasName はキー（room）の待合室に同じ接続名（OriginalName）が既に居るか。
+// 同名が同じ卓に2体入るとログで区別できず、人間離脱時の引き継ぎ（名前で席を探す）も誤るため、
+// 接続時にこれで弾く。
+func (wr *WaitingRoom) HasName(key, name string) bool {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	if value, ok := wr.connections.Load(key); ok {
+		for _, c := range value.([]model.Connection) {
+			if c.OriginalName == name {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// Drop はキー（room）の待機接続をすべて切断して待合室から消し、保留も外す。
+// ロビーが待合室のまま放置された卓を片付けるときに使う。
+func (wr *WaitingRoom) Drop(key string) int {
+	wr.held.Delete(key)
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	n := 0
+	if value, ok := wr.connections.LoadAndDelete(key); ok {
+		for _, c := range value.([]model.Connection) {
+			_ = c.Conn.Close()
+			n++
+		}
+	}
+	return n
+}
+
+// Sweep は待機中の全接続に ping を書き、書けなかった接続（相手が切った）を待合室から外す。
+// 待機中は誰も読まないので close フレームでは気付けず、書き込みの失敗で検出する。
+// 相手の FIN 後の最初の書き込みは通ることがあるため、検出には掃除2回ぶんかかりうる。
+func (wr *WaitingRoom) Sweep() {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
+	wr.connections.Range(func(key, value any) bool {
+		conns := value.([]model.Connection)
+		alive := conns[:0:0]
+		for _, c := range conns {
+			err := c.Conn.WriteControl(websocket.PingMessage, nil, time.Now().Add(3*time.Second))
+			if err != nil {
+				slog.Info("待機中の接続が切れていたため待合室から外します", "key", key, "team_name", c.TeamName, "error", err)
+				_ = c.Conn.Close()
+				continue
+			}
+			alive = append(alive, c)
+		}
+		if len(alive) == 0 {
+			wr.connections.Delete(key)
+		} else if len(alive) != len(conns) {
+			wr.connections.Store(key, alive)
+		}
+		return true
+	})
+}
+
 func (wr *WaitingRoom) GetConnections() ([]model.Connection, error) {
+	wr.mu.Lock()
+	defer wr.mu.Unlock()
 	connections := []model.Connection{}
 	ready := false
 
@@ -106,6 +207,10 @@ func (wr *WaitingRoom) GetConnections() ([]model.Connection, error) {
 			team := key.(string)
 			conns := value.([]model.Connection)
 
+			// 保留中の卓（待合室ゲート）は揃っていても立てない。
+			if wr.IsHeld(team) {
+				return true
+			}
 			if len(conns) >= wr.agentCount {
 				connections = append(connections, conns[:wr.agentCount]...)
 

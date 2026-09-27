@@ -16,6 +16,7 @@ from dotenv import load_dotenv
 from jinja2 import Template
 from langchain_core.messages import AIMessage, HumanMessage
 from langchain_core.output_parsers import StrOutputParser
+from langchain_anthropic import ChatAnthropic
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_ollama import ChatOllama
 from langchain_openai import ChatOpenAI
@@ -323,6 +324,14 @@ class Agent:
                     model=str(self.config["google"]["model"]),
                     temperature=float(self.config["google"]["temperature"]),
                     api_key=SecretStr(os.environ["GOOGLE_API_KEY"]),
+                )
+            case "anthropic":
+                self.llm_model = ChatAnthropic(
+                    model_name=str(self.config["anthropic"]["model"]),
+                    temperature=float(self.config["anthropic"]["temperature"]),
+                    api_key=SecretStr(os.environ["ANTHROPIC_API_KEY"]),
+                    timeout=None,
+                    stop=None,
                 )
             case "ollama":
                 self.llm_model = ChatOllama(

@@ -26,3 +26,7 @@ lobby/.generated/
 **/log/
 **/cache/
 .DS_Store
+
+# Docker なし起動のローカル設定（キーが入るため）
+native/env
+native/run/

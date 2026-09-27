@@ -48,7 +48,10 @@ export type FeedTone = 'day' | 'night' | 'vote' | 'result' | 'info';
 // name は原名（サーバ名）で持ち、表示時にローカライズする。species は 'WEREWOLF'|'HUMAN'。
 export type FeedEntry =
     | { kind: 'talk'; talk: Talk }
-    | { kind: 'system'; key: string; i18nKey: string; tone: FeedTone; day?: number; name?: string; species?: string };
+    | { kind: 'system'; key: string; i18nKey: string; tone: FeedTone; day?: number; name?: string; species?: string;
+        // 観戦（実況の読み込み）では、サーバが送ってくる日本語をそのまま出す。
+        // これがあるときは i18nKey ではなくこちらを表示する。
+        text?: string };
 
 export interface DemoSocket {
     status: ConnectionStatus;

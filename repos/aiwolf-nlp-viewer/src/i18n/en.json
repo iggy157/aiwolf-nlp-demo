@@ -263,15 +263,17 @@
       "agent": "Edit AI agent",
       "spectate": "Watch AI",
       "back": "Back",
-      "spectateDesc": "Watch AI vs AI"
+      "spectateDesc": "Watch AI vs AI",
+      "byo": "Bring your agent",
+      "byoDesc": "Connect your own agent process (multiple agents and humans per table)"
     },
     "spectate": {
       "title": "Watch AI",
-      "intro": "Spectate an AI-vs-AI game. You take a seat but don't act (auto-pass).",
+      "intro": "Watch AIs play against each other. You do not take a seat; the game runs entirely between AIs.",
       "myAi": "Number of your AIs",
       "composition": "{my} of your AI + {def} default AI",
       "start": "Start watching",
-      "watching": "👁 Spectating (watching the AIs play)",
+      "watching": "👁 Spectating (AIs are playing; you are not in the game)",
       "needAgent": "Create your AI first in “Create your AI” to include it"
     },
     "agent": {
@@ -472,11 +474,12 @@
       "retry": "Retry",
       "displayName": "Your display name: {name}",
       "unknownError": "Unknown error",
-      "startFailed": "Failed to start the session"
+      "startFailed": "Failed to start the session",
+      "startTimeout": "Could not start the AI agents. Nothing happened for 90 seconds, so we stopped waiting.\nIf you are using your own API key, check that the key is valid and that the selected model is available to it."
     },
     "feed": {
       "waitingStart": "Waiting for the game to start…",
-      "waitingConnect": "Waiting to connect. Open from the QR link (?url=…&team=…).",
+      "waitingConnect": "Waiting for the connection…",
       "talkOver": "(end of talk)",
       "talkSkip": "(skipped)",
       "morning": "── Morning of Day {day} ──",
@@ -487,7 +490,8 @@
       "finished": "🏁 Game over",
       "divineResult": "🔮 [Divination] {name} was {species}",
       "mediumResult": "🔮 [Medium] {name} was {species}",
-      "takeover": "👤 {name} left — an AI is now playing in their place"
+      "takeover": "👤 {name} left — an AI is now playing in their place",
+      "waitingSpectate": "Waiting for the AIs to start talking…"
     },
     "footer": {
       "skip": "Skip",
@@ -505,6 +509,27 @@
     "tab": {
       "play": "Play",
       "agent": "Edit agent"
+    },
+    "gate": {
+      "title": "Waiting room",
+      "seats": "Seated {count} / {size}",
+      "ready": "Ready",
+      "notReady": "Not ready",
+      "empty": "(empty seat)",
+      "starting": "Everyone is here. Starting…",
+      "readyBtn": "I'm ready",
+      "cancelReady": "Cancel ready",
+      "startBtn": "Start",
+      "hintReady": "The game starts once every player presses Ready and all seats are filled.",
+      "hintWaitOthers": "Waiting for the other players and for all seats to fill…",
+      "hintFilling": "Waiting for the AI players to take their seats…",
+      "hintHost": "The game will not start until you press Start.",
+      "notAllReady": "Some players are not ready yet."
+    },
+    "logs": {
+      "notice": "Game logs (talks, votes, results) are published.",
+      "link": "public log page",
+      "optOut": "Do not publish this table's log"
     }
   }
 }

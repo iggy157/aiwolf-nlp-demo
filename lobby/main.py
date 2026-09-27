@@ -16,6 +16,7 @@ from __future__ import annotations
 import asyncio
 import contextlib
 import os
+import re
 import secrets
 import signal
 import string
@@ -139,6 +140,106 @@ LLM_MODEL = _env("LLM_MODEL", "gpt-4o-mini")
 OPENAI_BASE_URL = os.environ.get("OPENAI_BASE_URL", "")
 
 # 1セッションあたりのAI体数（agent_count:5 のうち人間1枠を除いた数）
+# --- 卓ごとの LLM 指定（ユーザ持ち込みキー）------------------------------------
+#
+# サーバ側に既定（vLLM や運営のAPIキー）があればそれで遊べる。無い／止めている
+# ときは、遊ぶ人が自分のキーを入れればその卓だけそのキーで動く。
+#
+# キーは Session の寿命だけメモリに置く。ログにもレスポンスにも出さない。
+BYO_PROVIDERS = ("openai", "google", "anthropic")
+
+# モデル名が空のまま持ち込まれたときの、プロバイダ別の既定。
+# サーバ既定 LLM_MODEL は vLLM のモデル名であることが多く、商用APIにそのまま渡すと
+# 「そんなモデルは無い」で死ぬ（[[byo-default-model]]）。
+BYO_DEFAULT_MODELS = {
+    "openai": os.environ.get("BYO_DEFAULT_OPENAI", "gpt-5.6-luna"),
+    "google": os.environ.get("BYO_DEFAULT_GOOGLE", "gemini-2.5-flash-lite"),
+    "anthropic": os.environ.get("BYO_DEFAULT_ANTHROPIC", "claude-haiku-4-5"),
+}
+
+# 画面に出す「おすすめ」。価格（入力/出力 $/100万トークン）はどのプロバイダも
+# APIから取れないので手書きし、PRICE_ASOF を添えて出す。
+# /api/models が実際にそのキーで使える一覧と突き合わせるので、
+# ここが古くなっても「存在しないモデルを勧める」ことにはならない（消えるだけ）。
+PRICE_ASOF = "2026-09"
+RECOMMENDED_MODELS: dict[str, list[dict[str, str]]] = {
+    "openai": [
+        {"id": "gpt-5.6-luna", "note": "安くて速い。デモ向き", "price": "$0.20 / $1.20"},
+        {"id": "gpt-5.6-terra", "note": "会話の質を上げたいとき", "price": "$2.00 / $12.00"},
+    ],
+    "google": [
+        {"id": "gemini-2.5-flash-lite", "note": "最安。デモ向き", "price": "$0.10 / $0.40"},
+        {"id": "gemini-3.5-flash-lite", "note": "新しめで安い", "price": "$0.30 / $2.50"},
+    ],
+    "anthropic": [
+        {"id": "claude-haiku-4-5", "note": "安くて速い。デモ向き", "price": "$1.00 / $5.00"},
+        {"id": "claude-sonnet-5", "note": "会話の質を上げたいとき", "price": "$2.00 / $10.00"},
+    ],
+}
+PRICING_PAGES = {
+    "openai": "https://developers.openai.com/api/docs/pricing",
+    "google": "https://ai.google.dev/pricing",
+    "anthropic": "https://docs.anthropic.com/en/docs/about-claude/pricing",
+}
+
+
+def sanitize_llm(raw: Any) -> dict[str, str]:
+    """外から来た LLM 指定を検証する。使えない形なら空 dict（＝サーバ既定を使う）。"""
+    if not isinstance(raw, dict):
+        return {}
+    provider = str(raw.get("provider", "")).strip().lower()
+    api_key = str(raw.get("api_key", "")).strip()
+    model = str(raw.get("model", "")).strip()
+    if provider not in BYO_PROVIDERS or not api_key:
+        return {}
+    if len(api_key) > 512 or len(model) > 128:
+        return {}
+    return {"provider": provider, "api_key": api_key, "model": model}
+
+
+# vLLM の生死を毎回調べると重いので、少しのあいだ結果を覚えておく
+_VLLM_PROBE: dict[str, float | bool] = {"at": 0.0, "alive": False}
+_VLLM_PROBE_TTL = 15.0
+
+
+async def _vllm_alive() -> bool:
+    """vLLM が実際に応答するか。設定してあるだけで落ちている状態を見抜く。"""
+    if not OPENAI_BASE_URL:
+        return False
+    now = time.time()
+    if now - float(_VLLM_PROBE["at"]) < _VLLM_PROBE_TTL:
+        return bool(_VLLM_PROBE["alive"])
+
+    from urllib.parse import urlparse
+
+    u = urlparse(OPENAI_BASE_URL)
+    host, port = u.hostname, u.port or (443 if u.scheme == "https" else 80)
+    alive = False
+    if host:
+        try:
+            _, w = await asyncio.wait_for(asyncio.open_connection(host, port), timeout=1.0)
+            w.close()
+            alive = True
+        except Exception:  # noqa: BLE001  落ちている・届かない
+            alive = False
+    _VLLM_PROBE.update({"at": now, "alive": alive})
+    return alive
+
+
+async def server_llm_ready() -> bool:
+    """サーバ側の既定だけで遊べる状態か（＝キー無しで入れるか）。
+
+    vLLM は「設定してあるか」ではなく「本当に応答するか」で見る。
+    GPU を止めた時間帯は自動的に false になり、画面が
+    「いまは自分のAPIキーが要ります」に切り替わる。
+    """
+    if LLM_PROVIDER == "vllm":
+        return await _vllm_alive()
+    if LLM_PROVIDER == "google":
+        return bool(os.environ.get("GOOGLE_API_KEY"))
+    return bool(os.environ.get("OPENAI_API_KEY"))
+
+
 AI_COUNT = int(_env("AI_COUNT", "4"))
 # 1卓の総人数（サーバの game.agent_count と一致させる）。外部接続＋サンプルAI = この値。
 AGENT_TOTAL = int(_env("AGENT_TOTAL", "5"))
@@ -147,6 +248,19 @@ AGENT_TOTAL = int(_env("AGENT_TOTAL", "5"))
 # 実上限は LLM スループット（vLLMのGPU同時処理/商用APIレート）と spawn するプロセス数で決まるため、
 # 環境に合わせて .env で調整する。
 MAX_CONCURRENT_GAMES = int(_env("MAX_CONCURRENT_GAMES", "20"))
+# サーバ側 LLM（GPU）を使わない卓＝外部エージェントだけ／持ち込みキーの卓の同時数。
+# こちらはGPUを食わないので緩め（サーバの CPU/メモリと spawn 数で決める）。
+MAX_CONCURRENT_EXTERNAL = int(_env("MAX_CONCURRENT_EXTERNAL", "20"))
+
+# --- 試合ログの公開 ---
+# ゲームサーバが書くログの場所（game/*.log が CSV、json/*.json が JSON。サーバの cwd 基準）。
+GAME_LOG_DIR = Path(_env("GAME_LOG_DIR", str(WORK_ROOT / "log")))
+# 公開先（scp の宛先。例 aiwolf:/var/www/html/aiwolf/2026/demo）。空なら公開しない。
+LOG_PUBLISH_DEST = _env("LOG_PUBLISH_DEST", "")
+# 画面に出す公開ページのURL（「対戦ログは公開されます（リンク）」の飛び先）。
+LOG_PUBLIC_URL = _env("LOG_PUBLIC_URL", "")
+# 何秒おきに「終わったログ」を探して送るか
+LOG_PUBLISH_INTERVAL = int(_env("LOG_PUBLISH_INTERVAL", "60"))
 
 # --- 無人運転（HANDOFF §7）---
 # ハング卓の上限時間。これを超えて走行中ならAIプロセスを強制回収しスロット解放。
@@ -157,6 +271,47 @@ QUEUE_HEARTBEAT_TTL = int(_env("QUEUE_HEARTBEAT_TTL", "20"))  # 秒
 WAITING_ROOM_TTL = int(_env("WAITING_ROOM_TTL", "60"))  # 秒
 # 終了/エラー済みセッションを辞書から掃除するまでの保持時間。
 FINISHED_RETENTION_SECONDS = int(_env("FINISHED_RETENTION_SECONDS", "300"))
+
+# --- 待合室ゲート ---
+# ゲームサーバの /control/* を叩く共有鍵（サーバ側の CONTROL_KEY と同じ値）。
+# 未設定ならゲート無し＝人数が揃った瞬間に卓が立つ（旧来の挙動）。
+CONTROL_KEY = _env("CONTROL_KEY", "")
+# 待合室のまま誰も準備完了/開始を押さないときの上限。超えたら卓を片付ける。
+GATE_WAIT_TTL = int(_env("GATE_WAIT_TTL", "600"))  # 10分
+
+
+def _control_base(size: int, language: str) -> str:
+    # 内部 ws URL（ws://127.0.0.1:8080/ws）から http のベース（http://127.0.0.1:8080）を作る。
+    from urllib.parse import urlparse
+
+    u = urlparse(internal_url_for(size, language))
+    scheme = "https" if u.scheme == "wss" else "http"
+    return f"{scheme}://{u.netloc}"
+
+
+async def game_control(session: "Session", action: str) -> dict[str, Any] | None:
+    """ゲームサーバの待合室ゲート（/control/hold|release|drop|room）を叩く。
+
+    CONTROL_KEY 未設定・サーバが古い・失敗のときは None を返し、呼び出し側はゲート無しで続行する
+    （卓が立たなくなるより、旧来どおり揃った瞬間に始まる方がまし）。"""
+    if not CONTROL_KEY:
+        return None
+    import httpx
+
+    url = f"{_control_base(session.size, session.language)}/control/{action}"
+    method = "GET" if action == "room" else "POST"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.request(
+                method, url, params={"room": session.room}, headers={"X-Control-Key": CONTROL_KEY}
+            )
+    except Exception as ex:  # noqa: BLE001
+        print(f"[gate] {action} failed: {ex}", flush=True)
+        return None
+    if r.status_code != 200:
+        print(f"[gate] {action} -> HTTP {r.status_code}: {r.text[:200]}", flush=True)
+        return None
+    return r.json()
 
 # agent-llm を起動する Python 実行体（uv venv があれば優先）
 def _resolve_python() -> str:
@@ -193,8 +348,18 @@ class Participant:
 
 
 @dataclass
+class AgentEntry:
+    """持ち込み卓（byo）で外部エージェントが取った枠。name はチーム名（末尾数字なし）。
+    接続時は name+番号（例 myagent1, myagent2）を NAME に返す。count はその体数。"""
+    name: str
+    count: int
+    token: str          # 枠を取った端末のトークン（同じ端末からの取り直しを許す）
+    claimed_at: float = field(default_factory=time.time)
+
+
+@dataclass
 class Session:
-    """1卓（Room）。ソロ=人間1＋AI、マルチ=人間N＋AI。
+    """1卓（Room）。ソロ=人間1＋AI、マルチ=人間N＋AI、byo=外部エージェントN＋人間M＋AI。
 
     Phase 1（DB/アカウント）への布石として、卓は RoomStore（今は InMemoryRoomStore）越しに
     保持する。code は人間が共有して同卓に入るための短い合言葉（マルチのみ）。
@@ -224,6 +389,12 @@ class Session:
     # 各要素は (prompts_dict, count)。空なら _spawn が単一グループ((agent_prompts, ai_count))にフォールバック。
     ai_specs: list[Any] = field(default_factory=list)
     human_slots: int = 1    # 人間の席数（マルチでホストが指定。残りをAIが埋める）
+    # talk_length: 1回の発言の目安（文字）。0 なら指定しない。
+    # サーバ側の上限(base_length)は別にあるので、これはそれ以下でしか効かない。
+    talk_length: int = 0
+    # llm: この卓だけで使う LLM 指定（遊ぶ人が持ち込んだキー）。空ならサーバ既定。
+    # 卓が消えると一緒に消える。ログにもレスポンスにも出さない。
+    llm: dict[str, str] = field(default_factory=dict)
     host_token: str = ""    # ホスト（部屋作成者）の匿名トークン
     participants: list[Participant] = field(default_factory=list)
     process: Any = None     # subprocess.Popen | None
@@ -233,6 +404,19 @@ class Session:
     # 「○○が退出。AIが代わりに参加」をフィードに出すのに使う。
     takeover_events: list[str] = field(default_factory=list)
     config_path: Path | None = None
+    # --- 待合室ゲート ---
+    # off      = ゲート無し（揃った瞬間に開始。CONTROL_KEY 未設定や旧サーバ）
+    # hold     = 保留中。全員の準備完了（またはホストの開始）を待っている
+    # released = 保留解除済み。席が揃い次第サーバが卓を立てる
+    # started  = 卓が立った（INITIALIZE が飛んだ）
+    gate: str = "off"
+    ready: set[str] = field(default_factory=set)  # 準備完了を押した人間の team 名
+    released_at: float | None = None
+    # publish_logs: この卓のログを公開ページへ送るか（既定は公開。卓を作る人が外せる）。
+    publish_logs: bool = True
+    # --- 持ち込み卓（byo）---
+    agent_slots: int = 0                                   # 外部エージェントの席数（合計）
+    agent_entries: list[AgentEntry] = field(default_factory=list)  # 取られた枠
     created_at: float = field(default_factory=time.time)
     started_at: float | None = None
     finished_at: float | None = None
@@ -292,7 +476,11 @@ class Lobby:
         return f"s-{display_name}-{token}"
 
     async def create_session(
-        self, external_slots: int, size: int = 5, language: str = DEFAULT_LANGUAGE
+        self,
+        external_slots: int,
+        size: int = 5,
+        language: str = DEFAULT_LANGUAGE,
+        llm: dict[str, str] | None = None,
     ) -> Session:
         # size = 村の人数（5 or 9）。external_slots = 外部接続数（人間 + 持ち込みエージェント）。
         # 残り（size - external_slots）をサンプルAIで埋める。
@@ -316,14 +504,22 @@ class Lobby:
                 ai_count=max(0, size - external_slots),
                 external_slots=external_slots,
                 language=language,
+                llm=llm or {},
             )
             self.sessions[sid] = session
             self.queue.append(sid)
             return session
 
-    async def join(self, size: int = 5, language: str = DEFAULT_LANGUAGE) -> Session:
+    async def join(
+        self,
+        size: int = 5,
+        language: str = DEFAULT_LANGUAGE,
+        llm: dict[str, str] | None = None,
+    ) -> Session:
         # /demo の人間1枠（外部=人間1人、残りをAIが埋める）。後方互換用。
-        return await self.create_session(external_slots=1, size=size, language=language)
+        return await self.create_session(
+            external_slots=1, size=size, language=language, llm=llm
+        )
 
     # --- Room（ソロ/マルチ）---
     async def create_room(
@@ -335,6 +531,8 @@ class Lobby:
         token: str = "",
         agent_prompts: dict | None = None,
         my_ai_count: int = -1,
+        llm: dict[str, str] | None = None,
+        talk_length: int = 0,
     ) -> Session:
         """卓を作る。ソロは即開始（AI spawn）、マルチは待機（コード発行・ホスト参加）。
         agent_prompts があれば、この卓のサンプルAIにユーザ自作のリクエスト別プロンプトを使う。
@@ -342,9 +540,15 @@ class Lobby:
         if size not in VALID_SIZES:
             size = 5
         language = PROMPT_PROVIDER.resolve_language(language)
-        mode = "multi" if mode == "multi" else "solo"
-        # 人間席数: ソロは1、マルチは 1..size
-        human_slots = 1 if mode == "solo" else max(1, min(human_slots, size))
+        # spectate = AI同士の自己対戦。人間の席を作らず、全席をAIで埋める。
+        mode = mode if mode in ("multi", "spectate") else "solo"
+        # 人間席数: 観戦は0、ソロは1、マルチは 1..size
+        if mode == "spectate":
+            human_slots = 0
+        elif mode == "solo":
+            human_slots = 1
+        else:
+            human_slots = max(1, min(human_slots, size))
         token = token or secrets.token_urlsafe(9)
         agent_prompts = dict(agent_prompts or {})
         async with self._lock:
@@ -359,18 +563,22 @@ class Lobby:
                 size=size,
                 language=language,
                 mode=mode,
-                # solo: サンプルAIに自作プロンプトを使う(①)。multi: サンプルAIは既定とし、自作は
-                # host 参加者に持たせて「離脱時の takeover」に使う(②)。
-                agent_prompts=agent_prompts if mode == "solo" else {},
+                # solo/spectate: サンプルAIに自作プロンプトを使う(①)。multi: サンプルAIは既定とし、
+                # 自作は host 参加者に持たせて「離脱時の takeover」に使う(②)。
+                agent_prompts=agent_prompts if mode in ("solo", "spectate") else {},
+                llm=llm or {},
+                talk_length=max(0, min(int(talk_length or 0), 2000)),
                 human_slots=human_slots,
                 host_token=token,
                 participants=[host],
             )
             self.sessions[sid] = session
-            if mode == "solo":
-                # ソロは即「順番待ち→spawn」。AIで全席（size-1）埋める。
-                session.external_slots = 1
-                session.ai_count = max(0, size - 1)
+            if mode in ("solo", "spectate"):
+                # 即「順番待ち→spawn」。
+                #   solo     : 人間1席を空けて残り(size-1)をAIが埋める
+                #   spectate : 人間の席を作らず size 体すべてAI（自己対戦）
+                session.external_slots = 0 if mode == "spectate" else 1
+                session.ai_count = size if mode == "spectate" else max(0, size - 1)
                 # 自作プロンプトの構成: my_ai_count>=0 なら「自作×k＋既定×残り」、
                 # それ以外(=-1)で自作があれば全AIに適用（①の挙動）。
                 if agent_prompts and my_ai_count >= 0:
@@ -387,16 +595,119 @@ class Lobby:
                 session.status = "waiting"
             return session
 
+    # --- 持ち込み卓（byo）: 外部エージェント N ＋ 人間 M ＋ 残りサンプルAI ---
+    async def create_byo_room(
+        self,
+        size: int,
+        agent_slots: int,
+        human_slots: int,
+        language: str = DEFAULT_LANGUAGE,
+        token: str = "",
+        llm: dict[str, str] | None = None,
+        talk_length: int = 0,
+        publish_logs: bool = True,
+    ) -> Session:
+        """持ち込み卓を作る。合言葉を発行し、席数は固定（外部 agent_slots・人間 human_slots・残りAI）。
+        サンプルAIは即起動して待合室で待つ。外部エージェントは枠を取って接続、人間は /demo の合言葉で参加。
+        全員そろって人間が準備完了になれば始まる（人間ゼロならホストの開始ボタン）。"""
+        if size not in VALID_SIZES:
+            size = 5
+        language = PROMPT_PROVIDER.resolve_language(language)
+        agent_slots = max(0, min(int(agent_slots), size))
+        human_slots = max(0, min(int(human_slots), size - agent_slots))
+        if agent_slots + human_slots < 1:
+            raise ValueError("agent_slots + human_slots must be >= 1")
+        token = token or secrets.token_urlsafe(9)
+        async with self._lock:
+            display = self._next_display_name()
+            sid = secrets.token_urlsafe(9)
+            session = Session(
+                id=sid,
+                display_name=display,
+                team=self._new_team(display),
+                room=sid,
+                human_team="",
+                size=size,
+                language=language,
+                mode="byo",
+                ai_count=size - agent_slots - human_slots,
+                external_slots=agent_slots + human_slots,
+                human_slots=human_slots,
+                agent_slots=agent_slots,
+                llm=llm or {},
+                talk_length=max(0, min(int(talk_length or 0), 2000)),
+                host_token=token,
+                publish_logs=bool(publish_logs),
+            )
+            session.code = self._gen_code()
+            self._codes[session.code] = sid
+            self.sessions[sid] = session
+            session.status = "queued"
+            self.queue.append(sid)
+        # 外部エージェントは順番待ちの間にも繋いでくるので、AI起動を待たずに今すぐ保留を入れる
+        # （全員外部の卓だと、保留が無いまま人数が揃った瞬間に立ってしまう）。
+        session.gate = "hold" if await game_control(session, "hold") else "off"
+        return session
+
+    _NAME_RE = re.compile(r"^[A-Za-z][A-Za-z0-9_-]{0,31}$")
+    _RESERVED_PREFIXES = ("you-", "s-", "demo")
+
+    def validate_agent_name(self, name: str) -> str | None:
+        """外部エージェントのチーム名の決まり。None なら OK、文字列なら理由。"""
+        if not self._NAME_RE.match(name):
+            return "英字で始まる英数字・_・-（32文字まで）にしてください"
+        if name.rstrip("0123456789") != name:
+            return "末尾は数字以外にしてください（接続時に 1,2,… が付きます）"
+        if name.lower().startswith(self._RESERVED_PREFIXES):
+            return "you- / s- / demo で始まる名前は予約されています"
+        return None
+
+    def agent_slots_taken(self, session: Session) -> int:
+        return sum(e.count for e in session.agent_entries)
+
+    async def claim_agent_slot(self, code: str, name: str, count: int, token: str) -> tuple[Session, AgentEntry]:
+        """持ち込み卓の外部エージェント枠を name で取る。同じ端末(token)からの取り直しは上書き。"""
+        token = token or secrets.token_urlsafe(9)
+        count = max(1, int(count))
+        async with self._lock:
+            session = self.room_by_code(code)
+            if session is None or session.mode != "byo":
+                raise KeyError("room not found")
+            if session.status not in ("queued", "running") or session.gate == "started":
+                raise ValueError("room already started")
+            reason = self.validate_agent_name(name)
+            if reason:
+                raise ValueError(reason)
+            if name == session.team:
+                raise ValueError("その名前は使えません")
+            mine = next((e for e in session.agent_entries if e.token == token), None)
+            for e in session.agent_entries:
+                if e.name == name and e is not mine:
+                    raise ValueError("その名前は同じ卓で既に使われています")
+            taken = self.agent_slots_taken(session) - (mine.count if mine else 0)
+            if taken + count > session.agent_slots:
+                raise ValueError(f"枠が足りません（残り {session.agent_slots - taken}）")
+            if mine:
+                mine.name, mine.count, mine.claimed_at = name, count, time.time()
+                entry = mine
+            else:
+                entry = AgentEntry(name=name, count=count, token=token)
+                session.agent_entries.append(entry)
+            session.last_seen = time.time()
+            return session, entry
+
     async def join_room(self, code: str, token: str, agent_prompts: dict | None = None) -> tuple[Session, Participant]:
-        """マルチ卓に合言葉で参加する。空席が無ければ例外。既参加(同token)なら既存席を返す。
+        """マルチ卓／持ち込み卓に合言葉で参加する。空席が無ければ例外。既参加(同token)なら既存席を返す。
         agent_prompts はこの人の離脱時 takeover に使う自作プロンプト（リクエスト別辞書）。"""
         token = token or secrets.token_urlsafe(9)
         agent_prompts = dict(agent_prompts or {})
         async with self._lock:
             session = self.room_by_code(code)
-            if session is None or session.mode != "multi":
+            if session is None or session.mode not in ("multi", "byo"):
                 raise KeyError("room not found")
-            if session.status != "waiting":
+            if session.mode == "multi" and session.status != "waiting":
+                raise ValueError("room already started")
+            if session.mode == "byo" and (session.status not in ("queued", "running") or session.gate == "started"):
                 raise ValueError("room already started")
             for p in session.participants:
                 if p.token == token:  # 再入（リロード等）は既存席をそのまま（自作は最新に更新）
@@ -433,8 +744,16 @@ class Lobby:
                 return p
         return None
 
-    def running_count(self) -> int:
-        return sum(1 for s in self.sessions.values() if s.status == "running")
+    @staticmethod
+    def uses_server_llm(session: Session) -> bool:
+        # サンプルAIを1体でも起動し、かつ持ち込みキーが無い＝サーバ側 LLM（GPU）を使う卓
+        return session.ai_count > 0 and not session.llm
+
+    def running_count(self, server_llm: bool | None = None) -> int:
+        return sum(
+            1 for s in self.sessions.values()
+            if s.status == "running" and (server_llm is None or self.uses_server_llm(s) == server_llm)
+        )
 
     def position_of(self, sid: str) -> int:
         # 待機列での順位（1始まり）。走行中/不在は 0。
@@ -446,18 +765,241 @@ class Lobby:
     # --- スケジューラ: 空きスロットがあれば待機列の先頭を spawn ---
     async def _schedule(self) -> None:
         async with self._lock:
-            while self.queue and self.running_count() < MAX_CONCURRENT_GAMES:
-                sid = self.queue.pop(0)
-                session = self.sessions.get(sid)
-                if session is None or session.status != "queued":
-                    continue
-                try:
-                    self._spawn_agents(session)
-                    session.status = "running"
-                    session.started_at = time.time()
-                except Exception as ex:  # noqa: BLE001
-                    session.status = "error"
-                    session.error = str(ex)
+            # 2つの枠（GPU卓 / それ以外）を別々に見る。片方が満杯でももう片方の卓は待たせない。
+            progressed = True
+            while progressed and self.queue:
+                progressed = False
+                for sid in list(self.queue):
+                    session = self.sessions.get(sid)
+                    if session is None or session.status != "queued":
+                        self.queue.remove(sid)
+                        continue
+                    gpu = self.uses_server_llm(session)
+                    cap = MAX_CONCURRENT_GAMES if gpu else MAX_CONCURRENT_EXTERNAL
+                    if self.running_count(gpu) >= cap:
+                        continue
+                    self.queue.remove(sid)
+                    progressed = True
+                    if not session.publish_logs:
+                        self._mark_private(session)
+                    try:
+                        # 先に保留を入れてからAIを起動する（起動が速いと揃った瞬間に立ってしまう）。
+                        session.gate = "hold" if await game_control(session, "hold") else "off"
+                        self._spawn_agents(session)
+                        session.status = "running"
+                        session.started_at = time.time()
+                    except Exception as ex:  # noqa: BLE001
+                        session.status = "error"
+                        session.error = str(ex)
+
+    # --- 試合ログの公開 ---
+    # ログのファイル名は "{timestamp}_{teams}" なので、卓に居たチーム名で「どの卓のログか」が分かる。
+    # 公開しない卓のチーム名を1行ずつ残し、送るときにファイル名と突き合わせる（ロビー再起動をまたいでも効く）。
+    @staticmethod
+    def _private_file() -> Path:
+        return GAME_LOG_DIR / "private-teams.txt"
+
+    @staticmethod
+    def _published_file() -> Path:
+        return GAME_LOG_DIR / "published.txt"
+
+    def _mark_private(self, session: Session) -> None:
+        teams = {session.team, session.human_team, *(p.team for p in session.participants)}
+        teams = {t for t in teams if t}
+        try:
+            GAME_LOG_DIR.mkdir(parents=True, exist_ok=True)
+            with self._private_file().open("a", encoding="utf-8") as f:
+                for t in sorted(teams):
+                    f.write(t + "\n")
+        except OSError as ex:
+            print(f"[publish] private-teams write failed: {ex}", flush=True)
+
+    @staticmethod
+    def _read_lines(path: Path) -> set[str]:
+        try:
+            return {ln.strip() for ln in path.read_text(encoding="utf-8").splitlines() if ln.strip()}
+        except OSError:
+            return set()
+
+    @staticmethod
+    def _log_finished(path: Path) -> bool | None:
+        """完走したログか。True=完走 / False=中断（result が NONE）/ None=まだ書き終わっていない。"""
+        try:
+            with path.open("rb") as f:
+                f.seek(0, os.SEEK_END)
+                size = f.tell()
+                f.seek(max(0, size - 400))
+                tail = f.read().decode("utf-8", "replace").rstrip("\n").splitlines()
+        except OSError:
+            return None
+        if not tail:
+            return None
+        last = tail[-1].split(",")
+        if len(last) >= 5 and last[1] == "result":
+            return last[4].strip() != "NONE"
+        return None
+
+    async def _scp(self, src: Path, dest: str) -> bool:
+        proc = await asyncio.create_subprocess_exec(
+            "scp", "-q", "-o", "BatchMode=yes", "-o", "ConnectTimeout=10", str(src), dest,
+            stdout=asyncio.subprocess.DEVNULL, stderr=asyncio.subprocess.PIPE,
+        )
+        _, err = await proc.communicate()
+        if proc.returncode != 0:
+            print(f"[publish] scp {src.name} failed: {err.decode(errors='replace').strip()[:200]}", flush=True)
+            return False
+        return True
+
+    async def publish_logs(self) -> None:
+        """終わった試合のログを公開先へ1回だけ送る（繰り返しの同期はしない）。
+
+        - 末尾が result のファイルだけ（進行中は送らない）。中断（NONE）は送らずスキップ扱いにする。
+        - 公開しない卓（private-teams.txt のチーム名を含む）は送らない。
+        - 送った/スキップしたファイル名は published.txt に残し、二度と見ない。"""
+        if not LOG_PUBLISH_DEST:
+            return
+        game_dir = GAME_LOG_DIR / "game"
+        json_dir = GAME_LOG_DIR / "json"
+        if not game_dir.is_dir():
+            return
+        published = self._read_lines(self._published_file())
+        private = self._read_lines(self._private_file())
+        done: list[str] = []
+        now = time.time()
+        for f in sorted(game_dir.glob("*.log")):
+            if f.name in published:
+                continue
+            try:
+                age = now - f.stat().st_mtime
+            except OSError:
+                continue
+            if age < 20:
+                continue  # 書き終わりを待つ
+            finished = self._log_finished(f)
+            if finished is None:
+                if age > 6 * 3600:
+                    done.append(f.name)  # 結果が書かれないまま古くなった＝放棄。もう見ない
+                continue
+            if not finished or any(t and t in f.name for t in private):
+                done.append(f.name)
+                continue
+            ok = await self._scp(f, LOG_PUBLISH_DEST.rstrip("/") + "/log/")
+            if ok:
+                j = json_dir / (f.stem + ".json")
+                if j.exists():
+                    await self._scp(j, LOG_PUBLISH_DEST.rstrip("/") + "/json/")
+                done.append(f.name)
+                print(f"[publish] sent {f.name}", flush=True)
+        if done:
+            try:
+                with self._published_file().open("a", encoding="utf-8") as fh:
+                    for name in done:
+                        fh.write(name + "\n")
+            except OSError as ex:
+                print(f"[publish] published.txt write failed: {ex}", flush=True)
+
+    # --- 待合室ゲート ---
+    def human_teams(self, session: Session) -> list[str]:
+        """この卓で「準備完了」を押す必要がある人間の team 名。空なら開始ボタン式（観戦・AIのみ）。"""
+        if session.mode == "multi":
+            return [p.team for p in session.participants]
+        if session.mode == "spectate":
+            return []
+        if session.mode == "byo":
+            return [p.team for p in session.participants]
+        return [session.human_team]
+
+    def all_ready(self, session: Session) -> bool:
+        if session.mode == "byo" and len(session.participants) < session.human_slots:
+            return False  # 人間の席がまだ埋まっていない
+        return all(t in session.ready for t in self.human_teams(session))
+
+    async def gate_view(self, session: Session, token: str = "") -> dict[str, Any]:
+        """画面用の待合室ビュー。サーバの着席一覧と、ロビーが持つ準備完了を合わせる。"""
+        seats: list[dict[str, Any]] = []
+        count = 0
+        if session.gate in ("hold", "released"):
+            info = await game_control(session, "room")
+            if info is not None:
+                count = int(info.get("count", 0))
+                humans = set(self.human_teams(session))
+                for st in info.get("seats", []):
+                    team = str(st.get("team", ""))
+                    seats.append({
+                        "team": team,
+                        "name": str(st.get("name", "")),
+                        "human": team in humans,
+                        "ready": team in session.ready or team not in humans,
+                    })
+                # 解除後に席が消えた＝卓が立った
+                if session.gate == "released" and count == 0 and not info.get("held"):
+                    session.gate = "started"
+        is_host = bool(token) and token == session.host_token
+        # 持ち込み卓: 取られた枠ごとに「何体つながったか」（席の team 名で数える）
+        agents = []
+        if session.mode == "byo":
+            for e in session.agent_entries:
+                agents.append({
+                    "name": e.name, "count": e.count,
+                    "connected": sum(1 for st in seats if st["team"] == e.name),
+                    "mine": bool(token) and token == e.token,
+                })
+        return {
+            "code": session.code,
+            "mode": session.mode,
+            "agent_slots": session.agent_slots,
+            "agent_slots_taken": self.agent_slots_taken(session),
+            "agents": agents,
+            "human_slots": session.human_slots,
+            "humans_joined": [
+                {"name": p.display_name, "team": p.team, "ready": p.team in session.ready}
+                for p in session.participants
+            ],
+            "gate": session.gate,
+            "size": session.size,
+            "count": count,
+            "seats": seats,
+            "humans": self.human_teams(session),
+            "ready": sorted(session.ready),
+            "all_ready": self.all_ready(session),
+            "is_host": is_host,
+            # 開始ボタンを出す条件: ホストで、人間が全員準備完了（人間なしなら即）
+            "can_start": is_host and session.gate == "hold" and self.all_ready(session),
+        }
+
+    async def set_ready(self, session: Session, team: str, ready: bool) -> None:
+        if team not in self.human_teams(session):
+            raise KeyError("not a human seat")
+        if ready:
+            session.ready.add(team)
+        else:
+            session.ready.discard(team)
+        await self.maybe_release(session)
+
+    async def maybe_release(self, session: Session) -> None:
+        """全人間が準備完了で、席も揃っていれば保留を外す（人間なしの卓は開始ボタン待ち）。"""
+        if session.gate != "hold" or not self.human_teams(session) or not self.all_ready(session):
+            return
+        info = await game_control(session, "room")
+        if info is not None and int(info.get("count", 0)) >= session.size:
+            await self.release(session)
+
+    async def release(self, session: Session) -> None:
+        if session.gate != "hold":
+            return
+        r = await game_control(session, "release")
+        session.released_at = time.time()
+        if r is None:
+            session.gate = "off"
+        else:
+            session.gate = "started" if r.get("formed") else "released"
+
+    def _drop_gate(self, session: Session) -> None:
+        # 待合室に残った接続を切って片付ける（fire-and-forget。失敗しても害はない）。
+        if session.gate in ("hold", "released"):
+            session.gate = "off"
+            with contextlib.suppress(RuntimeError):
+                asyncio.get_running_loop().create_task(game_control(session, "drop"))
 
     def _spawn_agents(self, session: Session) -> None:
         # AI席のグループ (prompts, count)。ai_specs があれば異種AI（自作AI＋既定 等）、
@@ -479,7 +1021,9 @@ class Lobby:
         session.process = None
         for i, (prompts, count) in enumerate(specs):
             team = session.team if i == 0 else self._new_team(f"{session.display_name}-g{i}")
-            cfg = self._build_agent_config(team, count, ai_url, session.language, prompts)
+            cfg = self._build_agent_config(
+                team, count, ai_url, session.language, prompts, session.llm, session.talk_length
+            )
             cfg_path = GENERATED_DIR / (f"{session.id}.yml" if i == 0 else f"{session.id}-g{i}.yml")
             with cfg_path.open("w", encoding="utf-8") as f:
                 yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
@@ -487,7 +1031,7 @@ class Lobby:
             proc = subprocess.Popen(  # noqa: S603
                 [AGENT_LLM_PYTHON, "src/main.py", "-c", str(cfg_path)],
                 cwd=str(AGENT_LLM_DIR),
-                env=self._child_env(),
+                env=self._child_env(session.llm),
                 start_new_session=True,
             )
             if i == 0:
@@ -499,15 +1043,40 @@ class Lobby:
                 session.takeover_processes.append((proc, cfg_path))
 
     @staticmethod
-    def _child_env() -> dict[str, str]:
+    def _child_env(llm: dict[str, str] | None = None) -> dict[str, str]:
         # APIキー等は os.environ.copy() で子に引き継がれる（agent.py は os.environ を参照）。
         # OPENAI_BASE_URL は vLLM のときだけ渡し、それ以外では取り除く（[[openai-base-url-footgun]]）。
         env = os.environ.copy()
-        if LLM_PROVIDER == "vllm" and OPENAI_BASE_URL:
+        provider = (llm or {}).get("provider") or LLM_PROVIDER
+
+        if provider == "vllm" and OPENAI_BASE_URL:
             env["OPENAI_BASE_URL"] = OPENAI_BASE_URL
         else:
             env.pop("OPENAI_BASE_URL", None)
             env.pop("OPENAI_API_BASE", None)
+
+        # 持ち込みキーはこの子プロセスの環境にだけ入れる。
+        # 親の os.environ は触らないので、他の卓には漏れない。
+        if llm and llm.get("api_key"):
+            for name in ("OPENAI_API_KEY", "GOOGLE_API_KEY", "ANTHROPIC_API_KEY"):
+                env.pop(name, None)
+            # Gemini のライブラリは、APIキーより先にサービスアカウント認証(ADC)を
+            # 見にいくことがある。運営マシンに ADC が置いてあると、参加者のキーが
+            # 無視されて別プロジェクトの認証待ちで固まる（落ちないので検知もされない）。
+            # 持ち込みキーのときは ADC 系を子に渡さない。
+            for name in (
+                "GOOGLE_APPLICATION_CREDENTIALS",
+                "GOOGLE_CLOUD_PROJECT",
+                "GOOGLE_CLOUD_QUOTA_PROJECT",
+                "GCLOUD_PROJECT",
+                "GCP_PROJECT",
+            ):
+                env.pop(name, None)
+            key_env = {
+                "google": "GOOGLE_API_KEY",
+                "anthropic": "ANTHROPIC_API_KEY",
+            }.get(provider, "OPENAI_API_KEY")
+            env[key_env] = llm["api_key"]
         return env
 
     def _spawn_takeover_ai(self, session: Session, original_name: str, custom_prompts: dict | None = None) -> bool:
@@ -522,14 +1091,16 @@ class Lobby:
         GENERATED_DIR.mkdir(parents=True, exist_ok=True)
         base_url = with_room(internal_url_for(session.size, session.language), session.room)
         ai_url = base_url + ("&" if "?" in base_url else "?") + "takeover=" + quote(original_name, safe="")
-        cfg = self._build_agent_config("takeover", 1, ai_url, session.language, custom_prompts)
+        cfg = self._build_agent_config(
+            "takeover", 1, ai_url, session.language, custom_prompts, session.llm, session.talk_length
+        )
         cfg_path = GENERATED_DIR / f"{session.id}-takeover-{secrets.token_hex(3)}.yml"
         with cfg_path.open("w", encoding="utf-8") as f:
             yaml.safe_dump(cfg, f, allow_unicode=True, sort_keys=False)
         proc = subprocess.Popen(  # noqa: S603
             [AGENT_LLM_PYTHON, "src/main.py", "-c", str(cfg_path)],
             cwd=str(AGENT_LLM_DIR),
-            env=self._child_env(),
+            env=self._child_env(session.llm),
             start_new_session=True,
         )
         session.takeover_processes.append((proc, cfg_path))
@@ -548,12 +1119,17 @@ class Lobby:
                 else:
                     session.participants = [p for p in session.participants if p.token != token]
                     return "left"
-            elif session.status == "running" and session.mode == "multi":
+            elif session.status in ("queued", "running") and session.mode in ("multi", "byo"):
                 p = self.participant_of(session, token)
                 if p is None:
                     return "left"
                 remaining = [x for x in session.participants if x.token != token]
-                if not remaining:
+                if session.mode == "byo" and session.gate in ("hold", "released"):
+                    # まだ始まっていない → 席を空けるだけ（接続は待合室の掃除で消える）
+                    session.participants = remaining
+                    session.ready.discard(p.team)
+                    return "left"
+                if not remaining and session.agent_slots == 0:
                     # 最後の人間が抜けた → 卓を終了する。
                     # 人間が誰も居ないのに takeover してAI-vs-AIで無駄に走らせない（LLMコスト防止）。
                     to_kill = session
@@ -578,6 +1154,8 @@ class Lobby:
         internal_url: str,
         language: str = DEFAULT_LANGUAGE,
         custom_prompts: dict | None = None,
+        llm: dict[str, str] | None = None,
+        talk_length: int = 0,
     ) -> dict[str, Any]:
         # provider が base.yml + prompts/<lang>.yml をマージした config を返す。
         # custom_prompts があればユーザ自作のリクエスト別プロンプトで上書きする。
@@ -589,29 +1167,53 @@ class Lobby:
         cfg["web_socket"]["token"] = cfg["web_socket"].get("token")
         cfg["web_socket"]["auto_reconnect"] = False
 
+        # 発言の長さは、プロンプトの最後に一文足して伝える。
+        # 自作プロンプトを上書きしないよう、末尾に付け足すだけにする。
+        if talk_length > 0:
+            base = cfg.setdefault("prompt", {}).get("initialize", "")
+            cfg["prompt"]["initialize"] = (
+                base.rstrip()
+                + f"\n\n1回の発言は{talk_length}文字以内にしてください。長くなりそうなときは要点だけを述べてください。"
+            )
+
         cfg.setdefault("agent", {})
         cfg["agent"]["num"] = ai_count
         cfg["agent"]["team"] = team
         cfg["agent"]["kill_on_timeout"] = True
 
-        cfg.setdefault("llm", {})
-        cfg["llm"]["type"] = LLM_PROVIDER  # openai|google|vllm（agent.py が解釈）
+        # 卓ごとの指定があればそれを、無ければサーバ既定を使う（[[byo-key-fallback]]）。
+        provider = (llm.get("provider") or LLM_PROVIDER) if llm else LLM_PROVIDER
+        if llm:
+            # 持ち込みキーでモデル名が空のときは、そのプロバイダ用の既定へ。
+            # LLM_MODEL（サーバ既定）はプロバイダが同じときだけ流用できる。
+            model = llm.get("model") or (
+                LLM_MODEL if provider == LLM_PROVIDER else BYO_DEFAULT_MODELS.get(provider, "")
+            )
+        else:
+            model = LLM_MODEL
+        # base_url は vLLM のときだけ。持ち込みキーは商用APIなので付けない。
+        base_url = OPENAI_BASE_URL if (provider == "vllm" and OPENAI_BASE_URL) else ""
 
-        # プロバイダ別にモデル名（と base_url）を反映
-        if LLM_PROVIDER in ("openai", "vllm"):
+        cfg.setdefault("llm", {})
+        cfg["llm"]["type"] = provider  # openai|google|vllm（agent.py が解釈）
+
+        if provider in ("openai", "vllm"):
             cfg.setdefault("openai", {})
-            cfg["openai"]["model"] = LLM_MODEL
+            cfg["openai"]["model"] = model
             cfg["openai"].setdefault("temperature", 0.7)
-            # base_url は vllm のときだけ設定（商用openai に vLLM用URLが混入しないように）
-            if LLM_PROVIDER == "vllm" and OPENAI_BASE_URL:
-                cfg["openai"]["base_url"] = OPENAI_BASE_URL
-        elif LLM_PROVIDER == "google":
+            if base_url:
+                cfg["openai"]["base_url"] = base_url
+        elif provider == "google":
             cfg.setdefault("google", {})
-            cfg["google"]["model"] = LLM_MODEL
+            cfg["google"]["model"] = model
             cfg["google"].setdefault("temperature", 0.7)
-        elif LLM_PROVIDER == "ollama":
+        elif provider == "anthropic":
+            cfg.setdefault("anthropic", {})
+            cfg["anthropic"]["model"] = model
+            cfg["anthropic"].setdefault("temperature", 0.7)
+        elif provider == "ollama":
             cfg.setdefault("ollama", {})
-            cfg["ollama"]["model"] = LLM_MODEL
+            cfg["ollama"]["model"] = model
             cfg["ollama"].setdefault("temperature", 0.7)
 
         return cfg
@@ -627,10 +1229,25 @@ class Lobby:
             for session in self.sessions.values():
                 if session.status != "running":
                     continue
+                # 待合室のまま放置（誰も準備完了/開始を押さない、または画面が閉じられて誰もポーリングしない）
+                if session.gate == "hold" and session.started_at and (
+                    (now - session.started_at) > GATE_WAIT_TTL
+                    or (now - session.alive_seen()) > WAITING_ROOM_TTL
+                ):
+                    await game_control(session, "drop")
+                    session.gate = "off"
+                    self._terminate_process(session)
+                    session.status = "error"
+                    session.error = "waiting room expired (nobody pressed ready/start)"
+                    session.finished_at = now
+                    self._cleanup_config(session)
+                    continue
+                # 上限時間の起点は「実際にゲームが始まった時刻」（待合室の時間は数えない）
+                clock_start = session.released_at or session.started_at
                 if session.process is None:
                     # 外部接続のみの卓（サンプルAIなし）はプロセスを持たないため、
                     # 時間切れ(MAX_SESSION_SECONDS)でのみスロットを解放する。
-                    if session.started_at and (now - session.started_at) > MAX_SESSION_SECONDS:
+                    if clock_start and (now - clock_start) > MAX_SESSION_SECONDS:
                         session.status = "finished"
                         session.finished_at = now
                     continue
@@ -644,7 +1261,7 @@ class Lobby:
                         session.error = f"agent process exited with code {ret}"
                     session.finished_at = now
                     self._cleanup_config(session)
-                elif session.started_at and (now - session.started_at) > MAX_SESSION_SECONDS:
+                elif clock_start and (now - clock_start) > MAX_SESSION_SECONDS:
                     # ハング卓: 上限時間を超過 → 強制回収
                     self._terminate_process(session)
                     session.status = "error"
@@ -709,6 +1326,7 @@ class Lobby:
         session.takeover_processes = []
 
     def kill_session(self, session: Session) -> None:
+        self._drop_gate(session)
         self._terminate_process(session)
         if session.status in ("waiting", "queued", "running"):
             session.status = "finished"
@@ -727,9 +1345,16 @@ lobby = Lobby()
 # バックグラウンドループ（スケジューラ + リーパー）
 # ---------------------------------------------------------------------------
 async def _background_loop() -> None:
+    last_publish = 0.0
     while True:
         await lobby._reap()      # noqa: SLF001
         await lobby._schedule()  # noqa: SLF001
+        if time.time() - last_publish >= LOG_PUBLISH_INTERVAL:
+            last_publish = time.time()
+            try:
+                await lobby.publish_logs()
+            except Exception as ex:  # noqa: BLE001  公開が失敗しても卓の運転は止めない
+                print(f"[publish] error: {ex}", flush=True)
         await asyncio.sleep(1.0)
 
 
@@ -757,9 +1382,21 @@ class JoinResponse(BaseModel):
     language: str
 
 
+class LlmRequest(BaseModel):
+    """遊ぶ人が持ち込む LLM の指定。省略するとサーバ既定を使う。
+
+    キーはこの卓が生きているあいだメモリに置くだけで、保存もログ出力もしない。
+    """
+
+    provider: str = ""   # openai | google
+    model: str = ""      # 省略時はサーバ既定のモデル名
+    api_key: str = ""
+
+
 class JoinRequest(BaseModel):
     size: int = 5  # 村の人数（5 or 9）
     language: str = DEFAULT_LANGUAGE  # ゲーム言語（AIの発話/プロンプト言語）
+    llm: LlmRequest | None = None  # 持ち込みキー（任意）
 
 
 class StatusResponse(BaseModel):
@@ -772,6 +1409,7 @@ class StatusResponse(BaseModel):
     size: int
     language: str
     error: str | None = None
+    gate: str = "off"            # 待合室ゲートの状態（off|hold|released|started）
 
 
 _bg_task: asyncio.Task | None = None
@@ -820,8 +1458,123 @@ async def health() -> dict[str, Any]:
         "running": lobby.running_count(),
         "queued": len(lobby.queue),
         "max_concurrent": MAX_CONCURRENT_GAMES,
+        "running_gpu": lobby.running_count(True),
+        "running_external": lobby.running_count(False),
+        "max_concurrent_external": MAX_CONCURRENT_EXTERNAL,
+        # 試合ログの公開ページ（空なら公開していない）
+        "log_public_url": LOG_PUBLIC_URL if LOG_PUBLISH_DEST else "",
+        # 接続ガイド用: 外部エージェントが繋ぐ公開 WebSocket（5人村 / 9人村）。実際は ?room= が付く
+        "public_ws_url": GAME_WS_PUBLIC_URL,
+        "public_ws_url_9": GAME_WS_PUBLIC_URL_9,
         "provider": LLM_PROVIDER,
         "model": LLM_MODEL,
+        # サーバ側の既定だけで遊べるか。false なら画面がキーの入力欄を出す。
+        "server_llm_ready": await server_llm_ready(),
+        # 持ち込みキーで選べるプロバイダ
+        "byo_providers": list(BYO_PROVIDERS),
+        # モデル名を省略したときにプロバイダ別で使われる既定
+        "byo_defaults": dict(BYO_DEFAULT_MODELS),
+    }
+
+
+class ModelsRequest(BaseModel):
+    """持ち込みキーで使えるモデル一覧の問い合わせ。キーの有効性チェックを兼ねる。"""
+
+    provider: str = ""
+    api_key: str = ""
+
+
+def _looks_chatty_openai(model_id: str) -> bool:
+    """OpenAI の一覧は埋め込みや音声も混ざるので、会話に使える見込みのものだけ通す。"""
+    mid = model_id.lower()
+    if not mid.startswith(("gpt", "o1", "o3", "o4", "chatgpt")):
+        return False
+    blocked = (
+        "embedding", "whisper", "tts", "dall-e", "audio", "realtime",
+        "moderation", "transcribe", "image", "search", "instruct", "codex",
+    )
+    return not any(b in mid for b in blocked)
+
+
+async def _fetch_models(provider: str, api_key: str) -> list[str]:
+    """そのキーで実際に使えるモデルをプロバイダに聞く。
+
+    3社とも一覧APIにはキーが必要＝ここを通れば「キーが生きている」ことも分かる。
+    キーはヘッダにだけ載せ、URLやログには出さない。
+    """
+    import httpx
+
+    async with httpx.AsyncClient(timeout=httpx.Timeout(10.0)) as client:
+        if provider == "openai":
+            r = await client.get(
+                "https://api.openai.com/v1/models",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+            r.raise_for_status()
+            ids = [str(m.get("id", "")) for m in r.json().get("data", [])]
+            return sorted(i for i in ids if _looks_chatty_openai(i))
+        if provider == "google":
+            r = await client.get(
+                "https://generativelanguage.googleapis.com/v1beta/models",
+                params={"pageSize": 1000},
+                headers={"x-goog-api-key": api_key},
+            )
+            r.raise_for_status()
+            out: list[str] = []
+            for m in r.json().get("models", []):
+                if "generateContent" not in (m.get("supportedGenerationMethods") or []):
+                    continue
+                out.append(str(m.get("name", "")).removeprefix("models/"))
+            return sorted(out)
+        if provider == "anthropic":
+            r = await client.get(
+                "https://api.anthropic.com/v1/models",
+                params={"limit": 100},
+                headers={"x-api-key": api_key, "anthropic-version": "2023-06-01"},
+            )
+            r.raise_for_status()
+            return [str(m.get("id", "")) for m in r.json().get("data", [])]
+    return []
+
+
+@app.post("/api/models")
+async def list_models(req: ModelsRequest) -> dict[str, Any]:
+    """企業を選んでキーを入れた時点で呼ばれ、そのキーで選べるモデルを返す。
+
+    おすすめ（価格つき・手書き）は、取れた一覧と突き合わせて
+    実在するものだけ返す。キーは保存もログ出力もしない。
+    """
+    provider = req.provider.strip().lower()
+    api_key = req.api_key.strip()
+    if provider not in BYO_PROVIDERS:
+        return {"ok": False, "error": "対応していないプロバイダです"}
+    if not api_key or len(api_key) > 512:
+        return {"ok": False, "error": "キーを入力してください"}
+
+    import httpx
+
+    try:
+        models = await _fetch_models(provider, api_key)
+    except httpx.HTTPStatusError as e:
+        code = e.response.status_code
+        # Google は無効キーを 400 INVALID_ARGUMENT で返す（一覧GETで400になる他の理由はまず無い）
+        if code in (401, 403) or (provider == "google" and code == 400):
+            return {"ok": False, "error": "キーが無効です（認証に失敗しました）"}
+        if code == 429:
+            return {"ok": False, "error": "レート制限に当たりました。少し待ってやり直してください"}
+        return {"ok": False, "error": f"プロバイダ側のエラーです（HTTP {code}）"}
+    except Exception:  # noqa: BLE001  ネットワーク断・タイムアウトなど
+        return {"ok": False, "error": "プロバイダに接続できませんでした"}
+
+    available = set(models)
+    recommended = [dict(m) for m in RECOMMENDED_MODELS.get(provider, []) if m["id"] in available]
+    return {
+        "ok": True,
+        "models": models,
+        "recommended": recommended,
+        "default_model": BYO_DEFAULT_MODELS.get(provider, ""),
+        "price_asof": PRICE_ASOF,
+        "pricing_page": PRICING_PAGES.get(provider, ""),
     }
 
 
@@ -838,7 +1591,13 @@ async def languages() -> dict[str, Any]:
 async def join(req: JoinRequest | None = None) -> JoinResponse:
     size = req.size if req else 5
     language = req.language if req else DEFAULT_LANGUAGE
-    session = await lobby.join(size=size, language=language)
+    llm = sanitize_llm(req.llm.model_dump() if req and req.llm else None)
+    if not llm and not await server_llm_ready():
+        raise HTTPException(
+            status_code=503,
+            detail="いまは自分の API キーが要ります",
+        )
+    session = await lobby.join(size=size, language=language, llm=llm)
     # すぐ空きがあれば spawn を試みる
     await lobby._schedule()  # noqa: SLF001
     return JoinResponse(
@@ -861,6 +1620,10 @@ class ByoRequest(BaseModel):
     human: bool = False      # 人間プレイヤー(/demo)も1枠入れるか
     size: int = 5            # 村の人数（5 or 9）
     language: str = DEFAULT_LANGUAGE  # ゲーム言語（埋めのサンプルAIの発話言語）
+    token: str = ""          # 作成者（ホスト）の匿名トークン。開始ボタンの認可に使う
+    llm: LlmRequest | None = None    # 埋めのサンプルAIに使う持ち込みキー（任意）
+    talk_length: int = 0
+    publish_logs: bool = True        # 試合ログを公開ページへ送るか（既定: 公開）
 
 
 class ByoResponse(BaseModel):
@@ -869,6 +1632,8 @@ class ByoResponse(BaseModel):
     ws_url: str              # 接続先 WebSocket URL
     ai_count: int            # 残りを埋めるサンプルAI数
     agent_slots: int         # 持ち込みエージェント枠
+    host_token: str = ""     # 開始ボタン用（作成者にだけ返す）
+    gate: str = "off"
     human_slots: int         # 人間枠(0/1)
     agent_total: int         # 1卓の総数
     status: str
@@ -887,7 +1652,17 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
     if external > size:
         raise HTTPException(status_code=400, detail=f"external slots must be <= {size}")
 
-    session = await lobby.create_session(external_slots=external, size=size, language=req.language)
+    llm = sanitize_llm(req.llm.model_dump() if req.llm else None)
+    # サンプルAIが1体でも要るなら、サーバ側LLMか持ち込みキーが必要
+    if size - external > 0 and not llm and not await server_llm_ready():
+        raise HTTPException(status_code=503, detail="いまは自分の API キーが要ります")
+    token = req.token or secrets.token_urlsafe(9)
+    session = await lobby.create_session(external_slots=external, size=size, language=req.language, llm=llm)
+    session.mode = "byo"
+    session.human_slots = human
+    session.host_token = token
+    session.talk_length = max(0, min(int(req.talk_length or 0), 2000))
+    session.publish_logs = bool(req.publish_logs)
     await lobby._schedule()  # noqa: SLF001
 
     # 持ち込みエージェントも人間も ?room=<session.room> を付けて同一卓(room)に入る。
@@ -898,10 +1673,12 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
         # url には room 付き URL を、team には人間と分かるチーム名を渡す。
         from urllib.parse import quote
         # lang も渡し、人間のUIの初期表示言語を卓のゲーム言語に合わせる（UI言語は後から変更可）。
+        # sid を渡すと /demo が待合室（着席状況・準備完了ボタン）を出せる。
         human_url = (
             f"/demo?url={quote(pub_room, safe='')}"
             f"&team={quote(session.human_team, safe='')}"
             f"&lang={quote(session.language, safe='')}"
+            f"&sid={quote(session.id, safe='')}"
         )
 
     return ByoResponse(
@@ -915,6 +1692,8 @@ async def create_byo(req: ByoRequest) -> ByoResponse:
         status=session.status,
         language=session.language,
         human_join_url=human_url,
+        host_token=token,
+        gate=session.gate,
     )
 
 
@@ -934,7 +1713,58 @@ async def get_session(session_id: str) -> StatusResponse:
         size=session.size,
         language=session.language,
         error=session.error,
+        gate=session.gate,
     )
+
+
+# --- 待合室ゲート API ---
+class ReadyRequest(BaseModel):
+    team: str = ""       # 準備完了を押した人間の team 名（接続に使っているもの）
+    ready: bool = True
+
+
+class StartRequest(BaseModel):
+    token: str = ""      # ホストのトークン（卓の作成者）
+
+
+@app.get("/api/session/{session_id}/gate")
+async def session_gate(session_id: str, token: str = "") -> dict[str, Any]:
+    """待合室の状態。画面が1.5秒おきに読む（ハートビートも兼ねる）。"""
+    session = lobby.sessions.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    session.last_seen = time.time()
+    view = await lobby.gate_view(session, token)
+    view["status"] = session.status
+    view["error"] = session.error
+    return view
+
+
+@app.post("/api/session/{session_id}/ready")
+async def session_ready(session_id: str, req: ReadyRequest) -> dict[str, Any]:
+    """人間が「準備完了」を押した/外した。全員そろって席も揃えば自動で開始する。"""
+    session = lobby.sessions.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    try:
+        await lobby.set_ready(session, req.team, req.ready)
+    except KeyError:
+        raise HTTPException(status_code=400, detail="not a human seat")
+    return await lobby.gate_view(session)
+
+
+@app.post("/api/session/{session_id}/start")
+async def session_start(session_id: str, req: StartRequest) -> dict[str, Any]:
+    """ホストの開始ボタン。観戦（人間なし）はこれでしか始まらない。人間がいる卓は全員準備完了が条件。"""
+    session = lobby.sessions.get(session_id)
+    if session is None:
+        raise HTTPException(status_code=404, detail="session not found")
+    if not req.token or req.token != session.host_token:
+        raise HTTPException(status_code=403, detail="only the host can start")
+    if not lobby.all_ready(session):
+        raise HTTPException(status_code=409, detail="not everyone is ready")
+    await lobby.release(session)
+    return await lobby.gate_view(session, req.token)
 
 
 @app.post("/api/session/{session_id}/leave")
@@ -957,6 +1787,9 @@ class CreateRoomRequest(BaseModel):
     token: str = ""                  # 端末の匿名トークン（localStorage）
     agent_prompts: dict[str, str] = {}  # 自作AIのリクエスト別プロンプト（任意）。AI席に注入。
     my_ai_count: int = -1            # AI席のうち自作AIにする数（観戦の構成用。-1=自作適用なら全AI）
+    llm: LlmRequest | None = None    # 持ち込みキー（任意）
+    talk_length: int = 0             # 1回の発言の目安（文字）。0 で指定なし
+    publish_logs: bool = True        # 試合ログを公開ページへ送るか（既定: 公開）
 
 
 class JoinRoomRequest(BaseModel):
@@ -986,6 +1819,12 @@ class RoomResponse(BaseModel):
     takeover_events: list[str] = []  # AIが引き継いだ離脱者の表示名（時系列）
     position: int = 0
     error: str | None = None
+    gate: str = "off"                # 待合室ゲートの状態（off|hold|released|started）
+    agent_slots: int = 0             # 持ち込み卓: 外部エージェントの席数
+    agents: list[dict[str, Any]] = []  # 持ち込み卓: 取られた枠 [{name, count}]
+    # 観戦のとき、ゲームサーバの実況ファイルを見分けるためのチーム名。
+    # ファイル名が "<時刻>_<team>_<team>_..." なので、これで自分の卓を特定できる。
+    ai_team: str = ""
 
 
 def _room_response(session: Session, token: str) -> RoomResponse:
@@ -998,6 +1837,7 @@ def _room_response(session: Session, token: str) -> RoomResponse:
         for p in session.participants
     ]
     return RoomResponse(
+        ai_team=session.team,
         room_id=session.id,
         code=session.code,
         mode=session.mode,
@@ -1016,6 +1856,9 @@ def _room_response(session: Session, token: str) -> RoomResponse:
         takeover_events=list(session.takeover_events),
         position=lobby.position_of(session.id),
         error=session.error,
+        gate=session.gate,
+        agent_slots=session.agent_slots,
+        agents=[{"name": e.name, "count": e.count} for e in session.agent_entries],
     )
 
 
@@ -1044,13 +1887,94 @@ async def prompt_defaults(language: str = DEFAULT_LANGUAGE) -> dict[str, Any]:
 @app.post("/api/rooms", response_model=RoomResponse)
 async def create_room(req: CreateRoomRequest) -> RoomResponse:
     token = req.token or secrets.token_urlsafe(9)
+    llm = sanitize_llm(req.llm.model_dump() if req.llm else None)
+    if not llm and not await server_llm_ready():
+        raise HTTPException(
+            status_code=503,
+            detail="いまは自分の API キーが要ります",
+        )
     session = await lobby.create_room(
         mode=req.mode, size=req.size, language=req.language, human_slots=req.human_slots,
         token=token, agent_prompts=req.agent_prompts, my_ai_count=req.my_ai_count,
+        llm=llm, talk_length=req.talk_length,
     )
-    if session.mode == "solo":
-        await lobby._schedule()  # noqa: SLF001  ソロは即開始
+    session.publish_logs = bool(req.publish_logs)
+    if session.mode in ("solo", "spectate"):
+        await lobby._schedule()  # noqa: SLF001  ソロ・観戦は即開始
     return _room_response(session, token)
+
+
+class CreateByoRoomRequest(BaseModel):
+    size: int = 5
+    agent_slots: int = 1             # 外部エージェントの席数
+    human_slots: int = 0             # 人間の席数（/demo の合言葉で入る）
+    language: str = DEFAULT_LANGUAGE
+    token: str = ""                  # 作成者（ホスト）の端末トークン
+    llm: LlmRequest | None = None    # 埋めのサンプルAIに使う持ち込みキー（任意）
+    talk_length: int = 0
+    publish_logs: bool = True
+
+
+@app.post("/api/rooms/byo", response_model=RoomResponse)
+async def create_byo_room(req: CreateByoRoomRequest) -> RoomResponse:
+    """持ち込み卓を作る（外部エージェント N ＋ 人間 M ＋ 残りサンプルAI）。合言葉を返す。"""
+    token = req.token or secrets.token_urlsafe(9)
+    llm = sanitize_llm(req.llm.model_dump() if req.llm else None)
+    size = req.size if req.size in VALID_SIZES else 5
+    ai_count = size - max(0, req.agent_slots) - max(0, req.human_slots)
+    if ai_count > 0 and not llm and not await server_llm_ready():
+        raise HTTPException(status_code=503, detail="いまは自分の API キーが要ります（サンプルAIを使わないなら不要）")
+    try:
+        session = await lobby.create_byo_room(
+            size=size, agent_slots=req.agent_slots, human_slots=req.human_slots, language=req.language,
+            token=token, llm=llm, talk_length=req.talk_length, publish_logs=req.publish_logs,
+        )
+    except ValueError as ex:
+        raise HTTPException(status_code=400, detail=str(ex))
+    await lobby._schedule()  # noqa: SLF001
+    return _room_response(session, token)
+
+
+class ClaimAgentRequest(BaseModel):
+    name: str                        # チーム名（末尾数字なし）
+    count: int = 1                   # この名前で繋ぐ体数
+    token: str = ""
+
+
+@app.post("/api/rooms/{code}/agent")
+async def claim_agent(code: str, req: ClaimAgentRequest) -> dict[str, Any]:
+    """持ち込み卓の外部エージェント枠を取る。接続 URL と使う名前を返す。"""
+    try:
+        session, entry = await lobby.claim_agent_slot(code.upper(), req.name.strip(), req.count, req.token)
+    except KeyError:
+        raise HTTPException(status_code=404, detail="room not found")
+    except ValueError as ex:
+        raise HTTPException(status_code=409, detail=str(ex))
+    return {
+        "room_id": session.id,
+        "code": session.code,
+        "name": entry.name,
+        "count": entry.count,
+        "ws_url": with_room(public_url_for(session.size, session.language), session.room),
+        "size": session.size,
+        "language": session.language,
+        "remaining": session.agent_slots - lobby.agent_slots_taken(session),
+    }
+
+
+@app.get("/api/rooms/{code}/gate")
+async def room_gate(code: str, token: str = "") -> dict[str, Any]:
+    """合言葉で待合室の状態を見る（/byo のホスト画面・枠を取った人の画面用）。"""
+    session = lobby.room_by_code(code.upper())
+    if session is None:
+        raise HTTPException(status_code=404, detail="room not found")
+    session.last_seen = time.time()
+    view = await lobby.gate_view(session, token)
+    view["room_id"] = session.id
+    view["status"] = session.status
+    view["error"] = session.error
+    view["ws_url"] = with_room(public_url_for(session.size, session.language), session.room)
+    return view
 
 
 @app.post("/api/rooms/{code}/join", response_model=RoomResponse)

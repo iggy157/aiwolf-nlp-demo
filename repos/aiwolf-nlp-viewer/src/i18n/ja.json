@@ -263,15 +263,17 @@
       "agent": "AIエージェントを編集",
       "spectate": "AI観戦",
       "back": "戻る",
-      "spectateDesc": "AI同士の対戦を観る"
+      "spectateDesc": "AI同士の対戦を観る",
+      "byo": "持ち込みエージェント",
+      "byoDesc": "自作エージェントを外部から繋いで対戦（複数人・人間も同卓可）"
     },
     "spectate": {
       "title": "AI観戦",
-      "intro": "AI同士の対戦を観戦します。あなたも席に着きますが操作はしません（自動でパス）。",
+      "intro": "AI同士の対戦を観戦します。あなたは席に着かず、AIだけで試合が進みます。",
       "myAi": "自作AIの数",
       "composition": "自作AI {my} 体 ＋ 既定AI {def} 体",
       "start": "観戦を始める",
-      "watching": "👁 観戦中（AI同士の対戦を観ています）",
+      "watching": "👁 観戦中（AI同士の対戦を観ています。あなたは参加していません）",
       "needAgent": "自作AIを入れるには先に「自作AIを作る」で作成してください"
     },
     "agent": {
@@ -472,11 +474,12 @@
       "retry": "再試行",
       "displayName": "あなたの表示名: {name}",
       "unknownError": "不明なエラー",
-      "startFailed": "セッションの起動に失敗しました"
+      "startFailed": "セッションの起動に失敗しました",
+      "startTimeout": "AIを起動できませんでした。90秒待っても対戦が始まらないので中断しました。\n自分のAPIキーを使っている場合は、キーが有効か・選んだモデルがそのキーで使えるかを確かめてください。"
     },
     "feed": {
       "waitingStart": "ゲームの開始を待っています…",
-      "waitingConnect": "接続待ち。QRリンク（?url=…&team=…）から開いてください。",
+      "waitingConnect": "接続を待っています…",
       "talkOver": "（発言終了）",
       "talkSkip": "（スキップ）",
       "morning": "── {day}日目の朝 ──",
@@ -487,7 +490,8 @@
       "finished": "🏁 ゲーム終了",
       "divineResult": "🔮【占い結果】{name} は {species} でした",
       "mediumResult": "🔮【霊媒結果】{name} は {species} でした",
-      "takeover": "👤 {name} が退出したため、AIが代わりに参加しました"
+      "takeover": "👤 {name} が退出したため、AIが代わりに参加しました",
+      "waitingSpectate": "AIたちの会話を待っています…（数秒かかります）"
     },
     "footer": {
       "skip": "スキップ",
@@ -505,6 +509,27 @@
     "tab": {
       "play": "遊ぶ",
       "agent": "エージェント編集"
+    },
+    "gate": {
+      "title": "待合室",
+      "seats": "着席 {count} / {size}",
+      "ready": "準備完了",
+      "notReady": "準備中",
+      "empty": "（空席）",
+      "starting": "全員そろいました。開始します…",
+      "readyBtn": "準備完了",
+      "cancelReady": "準備完了を取り消す",
+      "startBtn": "開始",
+      "hintReady": "全員が「準備完了」を押し、席が揃うとゲームが始まります。",
+      "hintWaitOthers": "ほかの参加者の準備完了と、席が揃うのを待っています…",
+      "hintFilling": "AIが着席するのを待っています…",
+      "hintHost": "「開始」を押すまでゲームは始まりません。",
+      "notAllReady": "まだ準備完了していない参加者がいます。"
+    },
+    "logs": {
+      "notice": "対戦ログ（会話・投票・結果）は公開されます。",
+      "link": "公開ページ",
+      "optOut": "この卓のログは公開しない"
     }
   }
 }

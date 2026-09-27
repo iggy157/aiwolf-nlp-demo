@@ -270,13 +270,110 @@
   let lobbyPhase = $state<"idle" | "joining" | "queued" | "starting" | "playing" | "error">("idle");
   let displayName = $state<string | null>(null);
   let queuePos = $state(0);
+
+  // 開始の締め切り。AIが起動できないとき（キーやモデル名が違う、認証で固まる等）、
+  // 卓はサーバ側では running のままなので画面が永遠に「準備中」になる。
+  // 一定時間たっても盤面が動かなければ、待つのをやめて理由を出す。
+  const START_DEADLINE_MS = 90_000;
+  let startWatch: ReturnType<typeof setTimeout> | null = null;
+
+  function armStartWatch() {
+    clearStartWatch();
+    startWatch = setTimeout(() => {
+      // 待合室で準備完了/開始を待っている間は数えない（押されてから90秒で見る）
+      if (gateView && gateView.gate === "hold") { armStartWatch(); return; }
+      // すでに始まっていれば何もしない
+      if (status === "connected" || feed.length > 0 || lobbyPhase === "playing") return;
+      lobbyPhase = "error";
+      lobbyError = $_("demo.start.startTimeout");
+    }, START_DEADLINE_MS);
+  }
+  function clearStartWatch() {
+    if (startWatch) { clearTimeout(startWatch); startWatch = null; }
+  }
+  onDestroy(clearStartWatch);
   let lobbyError = $state<string | null>(null);
   let sessionId: string | null = null;
-  let lobbyBase = ""; // 同一オリジン（Caddy 経由）。?lobby= で上書き可。
+
+  // ---- 待合室ゲート ----
+  // 卓が立っても、全員が「準備完了」を押す（人間のいない卓は開始ボタン）までサーバは最初の
+  // リクエストを送らない。ここはその状態を lobby から読んで、ボタンを出すだけ。
+  type GateSeat = { team: string; name: string; human: boolean; ready: boolean };
+  type GateView = {
+    gate: "off" | "hold" | "released" | "started";
+    size: number; count: number; seats: GateSeat[];
+    humans: string[]; ready: string[]; all_ready: boolean; is_host: boolean; can_start: boolean;
+  };
+  let gateView = $state<GateView | null>(null);
+  let gateBusy = $state(false);
+  let gateSid: string | null = null; // 直リンク(?sid=)のときは sessionId と別に持つ（leave を送らないため）
+  let gateTimer: ReturnType<typeof setTimeout> | null = null;
+  const gateOpen = $derived(!!gateView && (gateView.gate === "hold" || gateView.gate === "released"));
+  const myReady = $derived(!!gateView && !!myTeam && gateView.ready.includes(myTeam));
+  const iAmHuman = $derived(!!gateView && !!myTeam && gateView.humans.includes(myTeam));
+
+  function stopGatePoll() {
+    if (gateTimer) { clearTimeout(gateTimer); gateTimer = null; }
+  }
+  function startGatePoll(sid: string) {
+    stopGatePoll();
+    gateSid = sid;
+    gateView = null;
+    void pollGate();
+  }
+  async function pollGate() {
+    if (!gateSid) return;
+    try {
+      const res = await fetch(`${lobbyBase}/api/session/${encodeURIComponent(gateSid)}/gate?token=${encodeURIComponent(deviceToken)}`, { cache: "no-store" });
+      if (res.ok) {
+        const prev = gateView?.gate;
+        gateView = await res.json();
+        if (gateView && gateView.gate !== prev && (gateView.gate === "released" || gateView.gate === "started")) {
+          armStartWatch(); // ここから90秒で動かなければ異常
+        }
+        if (gateView && (gateView.gate === "started" || gateView.gate === "off")) { stopGatePoll(); return; }
+      } else if (res.status === 404) { stopGatePoll(); return; }
+    } catch {
+      /* 一時失敗は次で回復 */
+    }
+    gateTimer = setTimeout(pollGate, 1500);
+  }
+  async function toggleReady() {
+    if (!gateSid || !myTeam || gateBusy) return;
+    gateBusy = true;
+    try {
+      const res = await fetch(`${lobbyBase}/api/session/${encodeURIComponent(gateSid)}/ready`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ team: myTeam, ready: !myReady }),
+      });
+      if (res.ok) gateView = { ...(gateView as GateView), ...(await res.json()) };
+    } catch { /* 次のポーリングで追いつく */ }
+    gateBusy = false;
+  }
+  async function pressStart() {
+    if (!gateSid || gateBusy) return;
+    gateBusy = true;
+    try {
+      const res = await fetch(`${lobbyBase}/api/session/${encodeURIComponent(gateSid)}/start`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ token: deviceToken }),
+      });
+      if (res.ok) gateView = { ...(gateView as GateView), ...(await res.json()) };
+      else if (res.status === 409) lobbyError = $_("demo.gate.notAllReady");
+    } catch { /* 次のポーリングで追いつく */ }
+    gateBusy = false;
+  }
+  onDestroy(stopGatePoll);
+  // 同一オリジン。サブパスに置かれたときは base が付く（例 /game）。?lobby= で上書き可。
+  let lobbyBase = base;
   let directMode = $state(false); // ?url= 直接接続（手動検証用）
 
   let pollTimer: ReturnType<typeof setTimeout> | null = null;
   let villageSize = $state(5); // 村の人数（5 or 9）。最初のページで選択。
+  // 1回の発言の目安（文字）。0 は指定しない＝モデルまかせ。
+  // サーバ側の上限より短いぶんにしか効かない。
+  let talkLength = $state(0);
+  const TALK_LENGTHS = [0, 60, 120, 200, 300];
 
   // 任意の役職・キャラ指定（既定=おまかせ=ランダム。今と同じ挙動）。
   // 役職は村サイズに存在するものだけ。キャラは characterList の index（サーバの profiles 並びと一致）。
@@ -596,6 +693,163 @@
   }
   let myAiCount = $state(1); // 観戦: AI席のうち自作AIにする数
   let deviceToken = ""; // 端末の匿名トークン（localStorage）。アカウント無しの席識別用。
+
+  // ---- 持ち込みAPIキー ----
+  // サーバ側にLLMの用意がある時間帯（GPU稼働中など）は何も入れずに遊べる。
+  // 用意が無いときだけ、自分のキーを入れれば遊べる。
+  // キーはこのブラウザの中と、卓が生きているあいだのサーバのメモリにしか無い。
+  let serverLlmReady = $state(true);   // /api/health で確かめる
+  let serverProvider = $state("");     // サーバ側が使っている提供元
+  let serverModel = $state("");        // サーバ側が使っているモデル名
+  let byoProviders = $state(["openai", "google"]);
+  let byoProvider = $state("openai");
+  let byoModel = $state("");
+  let byoKey = $state("");
+  let byoRemember = $state(false);     // 同意した人だけ localStorage に残す
+  let byoOpen = $state(false);         // 用意があるときは畳んでおく
+
+  const BYO_STORE = "aiwolf-byo-key";
+
+  // ---- モデル選択（キーを確認して一覧から選ぶ）----
+  let byoDefaults = $state<Record<string, string>>({}); // モデル名省略時の既定（/api/health から）
+  let byoModels = $state<string[]>([]);
+  let byoRecommended = $state<{ id: string; note: string; price: string }[]>([]);
+  let byoChecking = $state(false);
+  let byoChecked = $state(false); // いまのキーで一覧を取得済み
+  let byoError = $state<string | null>(null);
+  let byoPriceAsof = $state("");
+  let byoPricingPage = $state("");
+  let byoManual = $state(false); // 一覧を取らずに手入力するモード
+
+  // 平文HTTPでは参加者のキーを預からない（会場のネットワークで盗聴できてしまう）。
+  // localhost だけは開発用に許す。
+  const byoInsecure = $derived(
+    browser &&
+      window.location.protocol !== "https:" &&
+      !["localhost", "127.0.0.1"].includes(window.location.hostname),
+  );
+
+  function providerLabel(pv: string): string {
+    return pv === "google" ? "Gemini" : pv === "anthropic" ? "Claude" : "OpenAI";
+  }
+  function keyPlaceholder(pv: string): string {
+    return pv === "google" ? "AIza..." : pv === "anthropic" ? "sk-ant-..." : "sk-...";
+  }
+
+  function resetByoCheck() {
+    byoChecked = false;
+    byoModels = [];
+    byoRecommended = [];
+    byoError = null;
+  }
+
+  /** キーの有効性を確かめつつ、そのキーで選べるモデル一覧をロビー経由で取る */
+  async function checkByoKey() {
+    const key = byoKey.trim();
+    if (!key || byoChecking) return;
+    byoChecking = true;
+    byoError = null;
+    try {
+      const res = await fetch(`${lobbyBase}/api/models`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ provider: byoProvider, api_key: key }),
+      });
+      const d = await res.json();
+      if (!d.ok) {
+        resetByoCheck();
+        byoError = d.error ?? "確認に失敗しました";
+        return;
+      }
+      byoModels = d.models ?? [];
+      byoRecommended = d.recommended ?? [];
+      byoPriceAsof = d.price_asof ?? "";
+      byoPricingPage = d.pricing_page ?? "";
+      byoChecked = true;
+      byoManual = false;
+      if (!byoModel.trim() || !byoModels.includes(byoModel.trim())) {
+        byoModel = byoRecommended[0]?.id ?? d.default_model ?? byoModels[0] ?? "";
+      }
+      saveByo();
+    } catch {
+      resetByoCheck();
+      byoError = "サーバに接続できませんでした";
+    } finally {
+      byoChecking = false;
+    }
+  }
+
+  /**
+   * いまこの卓を動かすモデルの表示名。
+   *
+   *   キーを入れている        → そのキーで選んだモデル
+   *   サーバ側のAIが動いている → その動いているモデル
+   *   どちらでもない          → 「まだ決まっていない」
+   *
+   * サーバ側が止まっているのに設定上のモデル名（vllm / gemma-… など）を出すと、
+   * 使えないモデルを使うように見えてしまうので出さない。
+   */
+  const activeModel = $derived(
+    byoKey.trim()
+      ? `${providerLabel(byoProvider)} / ${byoModel.trim() || byoDefaults[byoProvider] || "既定のモデル"}`
+      : serverLlmReady && serverModel
+        ? `${serverProvider} / ${serverModel}`
+        : "未設定",
+  );
+
+  /** 「使うモデル」の欄に添える一言 */
+  const activeModelNote = $derived(
+    byoKey.trim()
+      ? "あなたのキーで動きます"
+      : serverLlmReady && serverModel
+        ? "サーバ側で用意しています。登録なしで遊べます"
+        : "サーバ側のAIは止まっています。下でキーを入れるとモデルを選べます",
+  );
+
+  function loadByo() {
+    try {
+      const raw = localStorage.getItem(BYO_STORE);
+      if (!raw) return;
+      const v = JSON.parse(raw);
+      byoProvider = v.provider ?? byoProvider;
+      byoModel = v.model ?? "";
+      byoKey = v.api_key ?? "";
+      byoRemember = true;
+    } catch { /* 壊れていたら無視 */ }
+  }
+
+  function saveByo() {
+    try {
+      if (byoRemember && byoKey) {
+        localStorage.setItem(BYO_STORE, JSON.stringify({ provider: byoProvider, model: byoModel, api_key: byoKey }));
+      } else {
+        localStorage.removeItem(BYO_STORE);
+      }
+    } catch { /* 保存できなくても遊べる */ }
+  }
+
+  /** 卓を作るときに送る LLM 指定。空なら送らない（＝サーバ既定を使う） */
+  function byoPayload() {
+    if (byoInsecure) return undefined; // 平文HTTPではキーを外に出さない
+    if (!byoKey.trim()) return undefined;
+    return { provider: byoProvider, model: byoModel.trim(), api_key: byoKey.trim() };
+  }
+
+  async function checkServerLlm() {
+    try {
+      const res = await fetch(`${lobbyBase}/api/health`);
+      const h = await res.json();
+      serverLlmReady = h.server_llm_ready !== false;
+      serverProvider = h.provider ?? "";
+      serverModel = h.model ?? "";
+      if (Array.isArray(h.byo_providers) && h.byo_providers.length) byoProviders = h.byo_providers;
+      if (h.byo_defaults && typeof h.byo_defaults === "object") byoDefaults = h.byo_defaults;
+      logPublicUrl = typeof h.log_public_url === "string" ? h.log_public_url : "";
+    } catch { serverLlmReady = true; }
+  }
+  // 試合ログの公開。既定は公開で、卓を作る人が外せる。空URLなら（公開していない構成なら）何も出さない。
+  let logPublicUrl = $state("");
+  let noPublishLogs = $state(false);
   let humanSlots = $state(2); // マルチの人間席数（1..villageSize）
   let roomCode = $state<string>(""); // 参加中のマルチ部屋の合言葉
   let hostToken = $state<string>(""); // 自分がホストのときの start 認可トークン
@@ -603,7 +857,7 @@
   let roomParticipants = $state<{ display_name: string; is_host: boolean }[]>([]);
   let roomStatus = $state<string>("");
   let joinCodeInput = $state("");
-  let myTeam: string | null = null; // 接続に使う自分の team（you.team）
+  let myTeam = $state<string | null>(null); // 接続に使う自分の team（you.team）
   let codeCopied = $state(false);
   let roomPollTimer: ReturnType<typeof setTimeout> | null = null;
   // 村サイズを変えたら人間席数を範囲内に収める。
@@ -635,6 +889,10 @@
           // 自作AIを k 体・残りはサンプル（k は AI席=size-1 を超えない）
           agent_prompts: hasCustomAgent ? ($myAgent.prompts ?? {}) : {},
           my_ai_count: hasCustomAgent ? Math.min(myAiCount, villageSize - 1) : 0,
+          // 持ち込みキー。空なら送らない＝サーバ側の用意を使う
+          llm: byoPayload(),
+          talk_length: talkLength,
+          publish_logs: !noPublishLogs,
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -658,42 +916,126 @@
   }
 
   // ---- AI観戦: AI同士の対戦を観る（自分は席に着くが自動でパス）----
+  // ---- AI観戦 ----
+  // 席を取らずに、ゲームサーバの実況（/realtime）を読んでチャットに流す。
+  // 全席AIなので 5人村なら5体、9人村なら9体がそろって発言する。
+  let spectateTimer: ReturnType<typeof setInterval> | null = null;
+  let spectateSeen = 0;      // 何行目まで取り込んだか
+  let spectateNames: Record<number, string> = {};
+
+  function stopSpectate() {
+    if (spectateTimer) { clearInterval(spectateTimer); spectateTimer = null; }
+  }
+  onDestroy(stopSpectate);
+
+  /** 実況の1パケットを、チャットの1行に translate する */
+  function packetToEntry(p: any): FeedEntry | null {
+    for (const a of p.agents ?? []) spectateNames[a.idx] = a.name;
+    const msg = (p.message ?? "").trim();
+    if (!msg) return null;
+    const who = spectateNames[p.bubble_idx];
+    // 発言者がいれば吹き出し、いなければ中央のお知らせ
+    if (who) return { kind: "talk", talk: { agent: who, text: msg } } as FeedEntry;
+    const ev = String(p.event ?? "");
+    const tone =
+      ev.includes("夜") ? "night" : ev.includes("投票") ? "vote" :
+      ev.includes("結果") || ev.includes("終了") ? "result" :
+      ev.includes("日") || ev.includes("開始") ? "day" : "info";
+    return { kind: "system", key: `s${p.idx ?? spectateSeen}`, i18nKey: "", tone, text: msg, day: p.day } as FeedEntry;
+  }
+
+  async function pollSpectate(feedBase: string, aiTeam: string) {
+    try {
+      const gs = await (await fetch(`${feedBase}/realtime/games.json`, { cache: "no-store" })).json();
+      // 自分の卓だけを見る。見つからないうちは何も出さない。
+      // （「最新の試合」で代用すると、他の人の進行中の試合が途中から流れてしまう）
+      const game = gs.find((g: any) => String(g.filename).includes(aiTeam));
+      if (!game) return;
+      const text = await (await fetch(`${feedBase}/realtime/${game.filename}.jsonl`, { cache: "no-store" })).text();
+      const lines = text.split("\n").filter((l) => l.trim());
+      if (lines.length <= spectateSeen) return;
+      const added: FeedEntry[] = [];
+      for (const line of lines.slice(spectateSeen)) {
+        try {
+          const e = packetToEntry(JSON.parse(line));
+          if (e) added.push(e);
+        } catch { /* 途中まで書かれた行は次回に */ }
+      }
+      spectateSeen = lines.length;
+      if (added.length) {
+        feed = [...feed, ...added];
+        if (lobbyPhase !== "playing") { clearStartWatch(); lobbyPhase = "playing"; }
+      }
+    } catch { /* まだファイルが無い。次の周期で拾う */ }
+  }
+
+  /** 順番待ちのあいだ、卓が始まるのを待つ */
+  async function waitSpectateStart(sid: string): Promise<void> {
+    for (;;) {
+      const res = await fetch(`${lobbyBase}/api/session/${encodeURIComponent(sid)}`);
+      if (!res.ok) throw new Error(`status ${res.status}`);
+      const st = await res.json();
+      if (st.status === "running") return;
+      if (st.status === "error") throw new Error(st.error ?? "卓を用意できませんでした");
+      // 待っている人数を出す（同時にやれる数を超えたぶんはここで待つ）
+      queuePos = st.position ?? 0;
+      lobbyPhase = "queued";
+      await new Promise((r) => setTimeout(r, 1500));
+    }
+  }
+
   async function startSpectate() {
     lobbyPhase = "joining";
     lobbyError = null;
-    introAck = true; // 観戦では役職ポップアップを出さない
-    introOpen = false;
     isMulti = false;
     isSpectate = true;
+    feed = [];
+    spectateSeen = 0;
+    spectateNames = {};
+    stopSpectate();
     try {
       const res = await fetch(`${lobbyBase}/api/rooms`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          mode: "solo", size: villageSize, language: gameLanguage, token: deviceToken,
+          mode: "spectate", size: villageSize, language: gameLanguage, token: deviceToken,
           agent_prompts: hasCustomAgent ? ($myAgent.prompts ?? {}) : {},
-          my_ai_count: hasCustomAgent ? Math.min(myAiCount, villageSize - 1) : 0,
+          // 観戦ではAI席が size 体ぶんある
+          my_ai_count: hasCustomAgent ? Math.min(myAiCount, villageSize) : 0,
+          // 持ち込みキー。空なら送らない＝サーバ側の用意を使う
+          llm: byoPayload(),
+          talk_length: talkLength,
+          publish_logs: !noPublishLogs,
         }),
       });
-      if (!res.ok) throw new Error(`create failed: ${res.status}`);
+      if (!res.ok) {
+        const body = await res.json().catch(() => null);
+        throw new Error(body?.detail ?? `create failed: ${res.status}`);
+      }
       const data = await res.json();
       sessionId = data.room_id;
-      myTeam = data.you?.team ?? null;
       displayName = data.you?.display_name ?? null;
-      if (data.ws_url) {
-        agentSettings.update((value) => ({
-          ...value,
-          connection: { url: data.ws_url, token: "" },
-          team: myTeam ?? value.team,
-        }));
-      }
-      applyLobbyStatus(data.status, data.position);
-      pollSession();
+      const aiTeam = data.ai_team ?? "";
+
+      // 同時にやれる数を超えていたら、ここで順番を待つ（他の人の試合は混ざらない）
+      if (data.status !== "running") await waitSpectateStart(sessionId);
+
+      lobbyPhase = "starting";
+      armStartWatch();
+      startGatePoll(sessionId); // AIが揃ったら「開始」を押すまで始まらない
+      const origin = lobbyBase || window.location.origin;
+      const feedBase = `${origin}${base}${villageSize === 9 ? "/gs9" : "/gs"}`;
+      // 実況は即時に書かれる。1秒ごとに追いかける。
+      spectateTimer = setInterval(() => void pollSpectate(feedBase, aiTeam), 1000);
+      void pollSpectate(feedBase, aiTeam);
     } catch (e) {
       lobbyPhase = "error";
       lobbyError = e instanceof Error ? e.message : String(e);
     }
   }
+
+
+
 
   // 観戦中は自分の手番を自動でパスする（発言はOver、投票/夜は生存対象の先頭）。
   let spectateActedDeadline: number | null = null;
@@ -722,6 +1064,10 @@
           mode: "multi", size: villageSize, language: gameLanguage,
           human_slots: humanSlots, token: deviceToken,
           agent_prompts: myPromptsPayload(),
+          // 持ち込みキー。空なら送らない＝サーバ側の用意を使う
+          llm: byoPayload(),
+          talk_length: talkLength,
+          publish_logs: !noPublishLogs,
         }),
       });
       if (!res.ok) throw new Error(`create failed: ${res.status}`);
@@ -782,8 +1128,10 @@
       }));
       stopRoomPoll();
       lobbyPhase = "starting";
+      armStartWatch();
       demoSocketState.connect();
       lobbyPhase = "playing";
+      if (sessionId) startGatePoll(sessionId); // 全員の「準備完了」を待つ
       pollRoomNotices(); // プレイ中、離脱→AI引き継ぎの告知を拾ってフィードに出す
     } else if (data.status === "finished" || data.status === "error") {
       // ホスト退出などで部屋が閉じた
@@ -887,8 +1235,10 @@
     } else if (s === "running") {
       if (status !== "connected" && lobbyPhase !== "playing") {
         lobbyPhase = "starting";
-        demoSocketState.connect(); // 卓が立った → 人間枠を接続
+        demoSocketState.connect(); // 卓が立った → 人間枠を接続（待合室で準備完了を待つ）
         lobbyPhase = "playing";
+        armStartWatch();
+        if (sessionId) startGatePoll(sessionId);
       }
     } else if (s === "error") {
       lobbyPhase = "error";
@@ -929,6 +1279,9 @@
     if (confirmFirst && !confirm($_("demo.leaveConfirm"))) {
       return;
     }
+    // 観戦の実況読み込みも止める（止めないと裏で回り続ける）
+    stopSpectate();
+    isSpectate = false;
     if (pollTimer) {
       clearTimeout(pollTimer);
       pollTimer = null;
@@ -945,6 +1298,9 @@
     }
     stopRoomPoll();
     stopPlayPoll();
+    stopGatePoll();
+    gateView = null;
+    gateSid = null;
     shownTakeovers = 0;
     demoSocketState.reset();
     infoOpen = false;
@@ -984,8 +1340,19 @@
     const lobbyParam = params.get("lobby");
     const langParam = params.get("lang");
     if (lobbyParam) lobbyBase = lobbyParam.replace(/\/$/, "");
+    // ?code=XXXX で来たら（/byo の「人間として参加」リンク）合言葉入力を開いて埋めておく
+    const codeParam = params.get("code");
+    if (codeParam && !url) {
+      joinCodeInput = codeParam.toUpperCase();
+      screen = "multiJoin";
+    }
     // 直リンクに lang が付いていれば UI 言語を卓のゲーム言語に合わせる（UI言語は後から変更可）。
     if (langParam) language.set(normalizeLanguage(langParam, "ja"));
+
+    // サーバ側LLMの有無・選べるプロバイダを取り、覚えさせたキーがあれば復元する。
+    // （定義だけあって呼ばれていなかった。ここが無いと「そのまま遊べます」の出し分けも動かない）
+    loadByo();
+    void checkServerLlm();
 
     if (url) {
       directMode = true;
@@ -995,6 +1362,12 @@
         team: team ?? value.team,
       }));
       demoSocketState.connect();
+      // 持ち込み卓（/byo）から来たときは sid が付く → 待合室（着席・準備完了）を出す
+      const sid = params.get("sid");
+      if (sid) {
+        myTeam = team ?? null;
+        startGatePoll(sid);
+      }
     }
 
     const beforeUnload = (e: BeforeUnloadEvent) => {
@@ -1004,6 +1377,7 @@
 
     onDestroy(() => {
       window.removeEventListener("beforeunload", beforeUnload);
+      stopSpectate();
       if (pollTimer) clearTimeout(pollTimer);
       stopRoomPoll();
       stopPlayPoll();
@@ -1066,7 +1440,7 @@
           {paused ? $_("demo.header.resume") : $_("demo.header.pause")}
         </button>
       {/if}
-      {#if status === "connected" && !finished}
+      {#if (status === "connected" || isSpectate) && !finished}
         <button class="btn btn-xs btn-ghost" onclick={() => (infoOpen = true)} aria-label={$_("demo.header.info")}>
           <iconify-icon icon="mdi:information-outline"></iconify-icon>{$_("demo.header.info")}
         </button>
@@ -1221,6 +1595,71 @@
     {/if}
   </div>
 
+  <!-- 試合ログの公開注意（公開している構成のときだけ）。ソロ/マルチ作成/観戦の開始ボタンの上に置く -->
+  {#snippet logNotice()}
+    {#if logPublicUrl}
+      <div class="flex flex-col items-center gap-1 w-full max-w-xs text-xs opacity-80">
+        <div>
+          {$_("demo.logs.notice")}
+          <a class="link link-primary" href={logPublicUrl} target="_blank" rel="noopener">{$_("demo.logs.link")}</a>
+        </div>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" class="checkbox checkbox-xs" bind:checked={noPublishLogs} />
+          <span>{$_("demo.logs.optOut")}</span>
+        </label>
+      </div>
+    {/if}
+  {/snippet}
+
+  <!-- 待合室: 着席状況と「準備完了」/「開始」。ソロ・マルチ・観戦・持ち込みで共通 -->
+  {#snippet gatePanel()}
+    {#if gateView}
+      <div class="w-full max-w-xs mx-auto card bg-base-200 p-4 flex flex-col items-center gap-3">
+        <div class="font-bold">{$_("demo.gate.title")}</div>
+        <div class="text-sm opacity-70">{$_("demo.gate.seats", { values: { count: gateView.count, size: gateView.size } })}</div>
+        <div class="w-full flex flex-col gap-1">
+          {#each gateView.seats as st (st.team + "/" + st.name)}
+            <div class="flex items-center gap-2 p-1.5 rounded bg-base-100">
+              <iconify-icon icon={st.human ? "mdi:account" : "mdi:robot"} class="opacity-70"></iconify-icon>
+              <span class="text-sm font-bold truncate">{st.name}{st.team === myTeam ? `（${$_("demo.multi.you2")}）` : ""}</span>
+              <span class="ml-auto badge badge-sm {st.ready ? 'badge-success' : 'badge-ghost'}">{st.ready ? $_("demo.gate.ready") : $_("demo.gate.notReady")}</span>
+            </div>
+          {/each}
+          {#each Array(Math.max(0, gateView.size - gateView.seats.length)) as _slot, i (i)}
+            <div class="flex items-center gap-2 p-1.5 rounded bg-base-100 opacity-40">
+              <iconify-icon icon="mdi:seat-outline"></iconify-icon>
+              <span class="text-sm">{$_("demo.gate.empty")}</span>
+            </div>
+          {/each}
+        </div>
+        {#if gateView.gate === "released"}
+          <span class="loading loading-dots loading-md"></span>
+          <div class="text-sm opacity-70">{$_("demo.gate.starting")}</div>
+        {:else}
+          {#if iAmHuman}
+            <button class="btn btn-lg {myReady ? 'btn-outline' : 'btn-primary'}" disabled={gateBusy} onclick={toggleReady}>
+              {myReady ? $_("demo.gate.cancelReady") : $_("demo.gate.readyBtn")}
+            </button>
+          {/if}
+          {#if gateView.is_host && gateView.humans.length === 0}
+            <button class="btn btn-primary btn-lg" disabled={gateBusy || gateView.count < gateView.size} onclick={pressStart}>
+              {$_("demo.gate.startBtn")}
+            </button>
+          {/if}
+          <div class="text-xs opacity-60 text-center">
+            {#if gateView.humans.length === 0}
+              {gateView.count < gateView.size ? $_("demo.gate.hintFilling") : $_("demo.gate.hintHost")}
+            {:else if myReady}
+              {$_("demo.gate.hintWaitOthers")}
+            {:else}
+              {$_("demo.gate.hintReady")}
+            {/if}
+          </div>
+        {/if}
+      </div>
+    {/if}
+  {/snippet}
+
   <!-- マルチ作成/参加で共通: 「離脱したら自作AIが引き継ぐ」トグル -->
   {#snippet takeoverToggle()}
     <div class="flex flex-col items-center gap-1 w-full max-w-xs">
@@ -1337,7 +1776,7 @@
 
   {#if showStartScreen}
     <!-- スタート/順番待ち画面（ロビー連携）-->
-    <div class="grow flex flex-col items-center justify-center gap-4 p-6 text-center">
+    <div class="grow overflow-y-auto flex flex-col items-center justify-center gap-4 p-6 text-center">
       <h1 class="text-xl font-bold">{$_("demo.title")}</h1>
       <p class="opacity-70 text-sm max-w-xs">
         {$_("demo.tagline")}
@@ -1352,7 +1791,7 @@
 
         {#if screen === "mode"}
           <!-- ① モード選択: ソロ/マルチ/AI観戦 を同サイズの3カードで。合言葉参加は試合系なので中央に残す。 -->
-          <div class="flex flex-col gap-3 w-full max-w-xs">
+          <div class="flex flex-col gap-3 w-full max-w-sm">
             <button class="btn btn-primary h-auto py-3 flex-col" onclick={() => (screen = "solo")}>
               <span class="text-base font-bold">{$_("demo.mode.solo")}</span>
               <span class="text-xs font-normal opacity-80">{$_("demo.mode.soloDesc")}</span>
@@ -1365,7 +1804,154 @@
               <span class="text-base font-bold">{$_("demo.mode.spectate")}</span>
               <span class="text-xs font-normal opacity-80">{$_("demo.mode.spectateDesc")}</span>
             </button>
+            <!-- 持ち込み: 自作エージェント（外部プロセス）を繋ぐ卓は /byo で作る -->
+            <a class="btn btn-outline h-auto py-3 flex-col" href={`${base}/byo`}>
+              <span class="text-base font-bold">{$_("demo.mode.byo")}</span>
+              <span class="text-xs font-normal opacity-80">{$_("demo.mode.byoDesc")}</span>
+            </a>
             <button class="btn btn-ghost btn-sm" onclick={() => (screen = "multiJoin")}>{$_("demo.multi.join")}</button>
+
+              <!-- 発言の長さ。短くすると1周が速くなる -->
+              <div class="flex flex-col items-center gap-2">
+                <div class="text-sm font-bold opacity-70">発言の長さ</div>
+                <div class="join">
+                  {#each TALK_LENGTHS as n}
+                    <button
+                      type="button"
+                      class="join-item btn btn-xs {talkLength === n ? 'btn-primary' : 'btn-outline'}"
+                      onclick={() => (talkLength = n)}
+                    >{n === 0 ? "おまかせ" : `${n}字`}</button>
+                  {/each}
+                </div>
+                <p class="text-xs opacity-60">短いほど1周が速くなります</p>
+              </div>
+
+              <!-- いま使われているモデル -->
+              <div class="flex flex-col items-center gap-1">
+                <div class="text-sm font-bold opacity-70">使うモデル</div>
+                <div class="font-mono text-xs break-all">{activeModel}</div>
+                <p class="text-xs opacity-60">{activeModelNote}</p>
+              </div>
+
+              <!-- 持ち込みAPIキー。サーバ側に用意がある時間帯は畳んでおく -->
+              <div class="card bg-base-200 p-3 text-left">
+                {#if serverLlmReady}
+                  <button type="button" class="flex w-full items-center gap-2 text-left" onclick={() => (byoOpen = !byoOpen)}>
+                    <span class="badge badge-success badge-xs"></span>
+                    <span class="text-xs font-bold">そのまま遊べます</span>
+                    <span class="ml-auto text-[11px] opacity-50">{byoOpen ? "閉じる" : "自分のAPIキーを使う"}</span>
+                  </button>
+                {:else}
+                  <div class="flex items-center gap-2">
+                    <span class="badge badge-warning badge-xs"></span>
+                    <span class="text-xs font-bold">いまは自分のAPIキーが要ります</span>
+                  </div>
+                  <p class="mt-1 text-[11px] leading-relaxed opacity-60">サーバ側のAIを止めている時間帯です。お手持ちのキーを入れれば遊べます。</p>
+                {/if}
+
+                {#if byoOpen || !serverLlmReady}
+                  {#if byoInsecure}
+                    <!-- 平文HTTPで開かれている。ここでキーを預かると会場のネットワークで盗聴されうる -->
+                    <div class="mt-3 rounded-box border border-warning/50 bg-warning/10 p-2 text-left">
+                      <p class="text-[11px] leading-relaxed">
+                        この接続は暗号化されていません（http）。APIキーを入力すると第三者に盗み見られる
+                        おそれがあるため、この画面では受け付けていません。運営がHTTPS（鍵マークの付くURL）で
+                        公開しているときに使えます。
+                      </p>
+                    </div>
+                  {:else}
+                    <div class="mt-3 flex flex-col gap-2">
+                      <!-- 1. 企業を選ぶ -->
+                      <div class="join">
+                        {#each byoProviders as pv}
+                          <button
+                            type="button"
+                            class="join-item btn btn-xs {byoProvider === pv ? 'btn-primary' : 'btn-outline'}"
+                            onclick={() => {
+                              byoProvider = pv;
+                              resetByoCheck();
+                              saveByo();
+                            }}>{providerLabel(pv)}</button>
+                        {/each}
+                      </div>
+                      <!-- 2. キーを入れて確認 → そのキーで使えるモデルが出る -->
+                      <div class="join w-full">
+                        <input
+                          class="join-item input input-sm input-bordered w-full font-mono"
+                          type="password"
+                          autocomplete="off"
+                          placeholder={keyPlaceholder(byoProvider)}
+                          bind:value={byoKey}
+                          oninput={() => {
+                            resetByoCheck();
+                            saveByo();
+                          }}
+                        />
+                        <button
+                          type="button"
+                          class="join-item btn btn-sm btn-primary"
+                          disabled={!byoKey.trim() || byoChecking}
+                          onclick={checkByoKey}>{byoChecking ? "確認中…" : "モデルを選ぶ"}</button>
+                      </div>
+                      {#if byoError}
+                        <p class="text-[11px] text-error">{byoError}</p>
+                      {/if}
+
+                      {#if byoChecked}
+                        <!-- 3. おすすめから選ぶ（価格つき）。細かく選びたい人は下の一覧から -->
+                        <p class="text-[11px] text-success">キーは有効です。{byoModels.length}個のモデルが使えます</p>
+                        {#if byoRecommended.length}
+                          <div class="flex flex-col gap-1">
+                            {#each byoRecommended as m}
+                              <button
+                                type="button"
+                                class="btn btn-xs h-auto min-h-0 justify-start gap-2 py-1 text-left {byoModel === m.id ? 'btn-primary' : 'btn-outline'}"
+                                onclick={() => {
+                                  byoModel = m.id;
+                                  saveByo();
+                                }}>
+                                <span class="font-mono">{m.id}</span>
+                                <span class="text-[10px] opacity-70">{m.note}</span>
+                                <span class="ml-auto font-mono text-[10px] opacity-70">{m.price}</span>
+                              </button>
+                            {/each}
+                          </div>
+                        {/if}
+                        <select class="select select-sm select-bordered w-full font-mono" bind:value={byoModel} onchange={saveByo}>
+                          {#each byoModels as id}
+                            <option value={id}>{id}</option>
+                          {/each}
+                        </select>
+                        {#if byoPriceAsof}
+                          <p class="text-[10px] leading-relaxed opacity-50">
+                            おすすめの価格は入力/出力の $/100万トークン（{byoPriceAsof}時点の目安）。最新は
+                            <a class="link" href={byoPricingPage} target="_blank" rel="noreferrer">公式の価格表</a>
+                            を確認してください。
+                          </p>
+                        {/if}
+                      {:else if byoManual}
+                        <input
+                          class="input input-sm input-bordered w-full font-mono"
+                          type="text"
+                          placeholder={`モデル名（空欄で ${byoDefaults[byoProvider] || "既定"}）`}
+                          bind:value={byoModel}
+                          oninput={saveByo}
+                        />
+                      {:else}
+                        <button type="button" class="self-start text-[10px] underline opacity-50" onclick={() => (byoManual = true)}>
+                          一覧を取得せず、モデル名を手で入れる
+                        </button>
+                      {/if}
+
+                      <label class="label cursor-pointer justify-start gap-2 py-0">
+                        <input type="checkbox" class="checkbox checkbox-xs" bind:checked={byoRemember} onchange={saveByo} />
+                        <span class="label-text text-[11px] opacity-70">このブラウザに覚えさせる</span>
+                      </label>
+                      <p class="text-[11px] leading-relaxed opacity-50">キーはあなたのブラウザと、対戦中のサーバのメモリにしか置きません。保存も記録もせず、対戦が終わると消えます。料金はキーの持ち主に請求されます。</p>
+                    </div>
+                  {/if}
+                {/if}
+              </div>
           </div>
         {:else if screen === "spectate"}
           <!-- 👁 AI観戦: AI同士の対戦を観る -->
@@ -1379,6 +1965,7 @@
             </div>
           </div>
           {@render customAiSlider(villageSize - 1)}
+          {@render logNotice()}
           <button class="btn btn-primary btn-lg" onclick={startSpectate}>{$_("demo.spectate.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "agent"}
@@ -1494,6 +2081,7 @@
           </div>
           <!-- 自作AIをAI席に何体使うか（残りはサンプル）。あなた1席を除く size-1 が上限。 -->
           {@render customAiSlider(villageSize - 1)}
+          {@render logNotice()}
           <button class="btn btn-primary btn-lg" onclick={startSolo}>{$_("demo.start.start")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "multiCreate"}
@@ -1512,6 +2100,7 @@
             <div class="text-xs opacity-60">{$_("demo.multi.aiFill", { values: { count: villageSize - humanSlots } })}</div>
           </div>
           {@render takeoverToggle()}
+          {@render logNotice()}
           <button class="btn btn-primary btn-lg" onclick={createRoom}>{$_("demo.multi.createBtn")}</button>
           <button class="btn btn-ghost btn-sm" onclick={() => (screen = "mode")}>← {$_("demo.mode.back")}</button>
         {:else if screen === "multiJoin"}
@@ -1570,8 +2159,12 @@
         <div>{$_("demo.start.queuePosition", { values: { pos: queuePos } })}</div>
         <div class="text-xs opacity-60">{$_("demo.start.queueNote")}</div>
       {:else if lobbyPhase === "starting"}
-        <span class="loading loading-spinner loading-lg"></span>
-        <div>{$_("demo.start.preparing")}</div>
+        {#if gateOpen}
+          {@render gatePanel()}
+        {:else}
+          <span class="loading loading-spinner loading-lg"></span>
+          <div>{$_("demo.start.preparing")}</div>
+        {/if}
       {:else if lobbyPhase === "error"}
         <div class="alert alert-error">
           <span>{$_("demo.start.error", { values: { message: lobbyError ?? $_("demo.start.unknownError") } })}</span>
@@ -1586,12 +2179,20 @@
   {:else}
   <!-- LINE風 逐次ストリーム -->
   <div class="grow overflow-y-auto p-4 flex flex-col gap-1" bind:this={streamEl}>
-    {#if feed.length === 0}
+    {#if feed.length === 0 && gateOpen}
+      <!-- 待合室: 全員の準備完了（または開始ボタン）まで最初のリクエストは来ない -->
+      <div class="m-auto w-full">{@render gatePanel()}</div>
+    {:else if feed.length === 0}
+      <!-- まだ1行も来ていないとき。観戦は WebSocket を使わないので status では分けられない -->
       <div class="m-auto text-center opacity-50">
-        {#if status === "connected"}
+        {#if isSpectate}
+          {$_("demo.feed.waitingSpectate")}
+        {:else if status === "connected"}
           {$_("demo.feed.waitingStart")}
-        {:else}
+        {:else if directMode}
           {$_("demo.feed.waitingConnect")}
+        {:else}
+          {$_("demo.feed.waitingStart")}
         {/if}
       </div>
     {/if}
@@ -1602,7 +2203,7 @@
         <div class="my-1 text-center">
           <span class="badge badge-sm
             {entry.tone === 'day' ? 'badge-warning' : entry.tone === 'night' ? 'badge-neutral' : entry.tone === 'vote' ? 'badge-info' : entry.tone === 'result' ? 'badge-error' : 'badge-ghost'}
-            whitespace-normal h-auto py-1">{$_(entry.i18nKey, { values: { day: entry.day, name: nameOf(entry.name), species: speciesName(entry.species) } })}</span>
+            whitespace-normal h-auto py-1">{entry.text ?? $_(entry.i18nKey, { values: { day: entry.day, name: nameOf(entry.name), species: speciesName(entry.species) } })}</span>
         </div>
       {:else}
         {@const talk = entry.talk}
@@ -1644,6 +2245,7 @@
       <div class="flex items-center justify-center gap-2 py-2 text-sm opacity-70">
         <span class="loading loading-dots loading-sm"></span>
         {$_("demo.spectate.watching")}
+        <span class="ml-2 font-mono text-[10px] opacity-50">{activeModel}</span>
       </div>
     {:else if isMyTurn && effectivePaused}
       <div class="flex items-center justify-center gap-3 py-2">

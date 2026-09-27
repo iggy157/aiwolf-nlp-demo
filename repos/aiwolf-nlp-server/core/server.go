@@ -97,6 +97,17 @@ func (s *Server) Run() {
 		s.handleConnections(c.Writer, c.Request)
 	})
 
+	if s.config.Matching.RoomMatch {
+		s.registerControlRoutes(router)
+		// 待合室で待っている間は誰も読まないので、定期的に ping を書いて切断済みを掃除する。
+		go func() {
+			for {
+				time.Sleep(10 * time.Second)
+				s.waitingRoom.Sweep()
+			}
+		}()
+	}
+
 	if s.config.RealtimeBroadcaster.Enable {
 		realtimeGroup := router.Group("/realtime")
 		if s.config.Server.Authentication.Enable {
@@ -230,8 +241,21 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 			conn.DesiredCharacter = ci
 		}
 	}
+	// 同じ卓に同じ名前が既に待っていたら断る（room_match のときだけ。卓が違えば同名でも構わない）。
+	if s.config.Matching.RoomMatch && s.waitingRoom.HasName(groupKey, conn.OriginalName) {
+		slog.Warn("同じ名前の接続が既に同じ卓で待っているため切断します", "room", groupKey, "name", conn.OriginalName)
+		_ = conn.Conn.WriteMessage(websocket.TextMessage, []byte(`{"error":"duplicate name in room: `+conn.OriginalName+`"}`))
+		_ = conn.Conn.Close()
+		return
+	}
 	s.waitingRoom.AddConnection(groupKey, *conn)
+	s.tryFormGame()
+}
 
+// tryFormGame は待合室に揃った卓があれば1つ立てて走らせる。
+// 接続が増えたとき（handleConnections）と、保留が外れたとき（/control/release）の両方から呼ばれる。
+// 立てたら true。
+func (s *Server) tryFormGame() bool {
 	var game *logic.Game
 	if s.config.Matching.IsOptimize {
 		s.waitingRoom.connections.Range(func(key, value any) bool {
@@ -243,14 +267,14 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 		roleMapConns, err := s.waitingRoom.GetConnectionsWithMatchOptimizer(matches)
 		if err != nil {
 			slog.Error("待機部屋からの接続の取得に失敗しました", "error", err)
-			return
+			return false
 		}
 		game = logic.NewGameWithRole(&s.config, s.gameSetting, roleMapConns)
 	} else {
 		connections, err := s.waitingRoom.GetConnections()
 		if err != nil {
 			slog.Error("待機部屋からの接続の取得に失敗しました", "error", err)
-			return
+			return false
 		}
 		game = logic.NewGame(&s.config, s.gameSetting, connections)
 	}
@@ -278,6 +302,86 @@ func (s *Server) handleConnections(w http.ResponseWriter, r *http.Request) {
 			}
 		}
 	}()
+	return true
+}
+
+// controlAuth は /control/* をロビー専用にする。共有鍵 CONTROL_KEY（環境変数）を
+// X-Control-Key ヘッダで照合。未設定なら機能ごと無効（503）にして、外から触れないようにする。
+func (s *Server) controlAuth() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		key := os.Getenv("CONTROL_KEY")
+		if key == "" {
+			c.AbortWithStatusJSON(http.StatusServiceUnavailable, gin.H{"error": "CONTROL_KEY が未設定です"})
+			return
+		}
+		if c.GetHeader("X-Control-Key") != key {
+			c.AbortWithStatus(http.StatusUnauthorized)
+			return
+		}
+		c.Next()
+	}
+}
+
+// registerControlRoutes は待合室ゲートの操作口。room_match のときだけ生える。
+//   POST /control/hold?room=     揃っても卓を立てない（卓作成時にロビーが呼ぶ）
+//   POST /control/release?room=  保留を外す。揃っていれば即立てる → {formed, count}
+//   POST /control/drop?room=     待機接続を全部切って片付ける（放置卓の回収）
+//   GET  /control/room?room=     {held, count, seats:[{team,name}]}
+func (s *Server) registerControlRoutes(router *gin.Engine) {
+	ctrl := router.Group("/control", s.controlAuth())
+	roomOf := func(c *gin.Context) (string, bool) {
+		room := c.Query("room")
+		if room == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "room が必要です"})
+			return "", false
+		}
+		return room, true
+	}
+	ctrl.POST("/hold", func(c *gin.Context) {
+		room, ok := roomOf(c)
+		if !ok {
+			return
+		}
+		s.waitingRoom.Hold(room)
+		slog.Info("卓を保留にしました", "room", room)
+		c.JSON(http.StatusOK, gin.H{"held": true, "count": len(s.waitingRoom.Seats(room))})
+	})
+	ctrl.POST("/release", func(c *gin.Context) {
+		room, ok := roomOf(c)
+		if !ok {
+			return
+		}
+		s.waitingRoom.Release(room)
+		s.waitingRoom.Sweep()
+		formed := false
+		if len(s.waitingRoom.Seats(room)) >= s.config.Game.AgentCount {
+			formed = s.tryFormGame()
+		}
+		slog.Info("卓の保留を外しました", "room", room, "formed", formed)
+		c.JSON(http.StatusOK, gin.H{"held": false, "formed": formed, "count": len(s.waitingRoom.Seats(room))})
+	})
+	ctrl.POST("/drop", func(c *gin.Context) {
+		room, ok := roomOf(c)
+		if !ok {
+			return
+		}
+		n := s.waitingRoom.Drop(room)
+		slog.Info("待機中の卓を片付けました", "room", room, "dropped", n)
+		c.JSON(http.StatusOK, gin.H{"dropped": n})
+	})
+	ctrl.GET("/room", func(c *gin.Context) {
+		room, ok := roomOf(c)
+		if !ok {
+			return
+		}
+		seats := s.waitingRoom.Seats(room)
+		c.JSON(http.StatusOK, gin.H{
+			"held":  s.waitingRoom.IsHeld(room),
+			"count": len(seats),
+			"size":  s.config.Game.AgentCount,
+			"seats": seats,
+		})
+	})
 }
 
 func (s *Server) verifyMiddleware() gin.HandlerFunc {
